@@ -1,0 +1,17 @@
+/* Flex Container */
+.stats-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  padding: 24px;
+}
+
+/* Flex Items */
+.stats-item {
+  flex: 1 1 600px;
+  min-width: 300px;
+  max-width: 600px;
+
+  padding: 25px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
