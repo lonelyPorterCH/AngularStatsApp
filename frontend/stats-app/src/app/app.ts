@@ -1,11 +1,13 @@
-import { Component, signal } from '@angular/core';
+import {Component, signal} from '@angular/core';
 import {StatsList} from './stats-list/stats-list';
+import {MatToolbar} from '@angular/material/toolbar';
+import {MatIcon} from '@angular/material/icon';
 
 @Component({
   selector: 'app-root',
-  imports: [StatsList],
+  imports: [StatsList, MatToolbar, MatIcon],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrl: './app.scss'
 })
 export class App {
   protected readonly title = signal('stats-app');

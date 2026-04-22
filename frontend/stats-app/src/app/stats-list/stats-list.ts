@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import {Component} from '@angular/core';
 
 @Component({
   selector: 'app-stats-list',
   imports: [],
   templateUrl: './stats-list.html',
-  styleUrl: './stats-list.css',
+  styleUrl: './stats-list.scss',
 })
-export class StatsList {}
+export class StatsList {
+}
