@@ -1,5 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {MatButton} from "@angular/material/button";
+import {Stat} from '../models/stat.model';
 
 @Component({
   selector: 'app-stats-card',
@@ -10,5 +11,5 @@ import {MatButton} from "@angular/material/button";
   styleUrl: './stats-card.css',
 })
 export class StatsCard {
-  @Input() stat: any;
+  @Input() stat?: Stat;
 }
