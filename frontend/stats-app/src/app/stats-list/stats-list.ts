@@ -1,10 +1,10 @@
 import {Component} from '@angular/core';
-import {MatButton} from '@angular/material/button';
+import {StatsCard} from '../stats-card/stats-card';
 
 @Component({
   selector: 'app-stats-list',
   imports: [
-    MatButton
+    StatsCard
   ],
   templateUrl: './stats-list.html',
   styleUrl: './stats-list.scss',

@@ -1,9 +1,6 @@
 <h2>Stats Overview</h2>
 <div class="stats-overview">
   @for (stat of stats; track stat.id) {
-    <div class="stats-item">
-      <h3>{{ stat.title }}</h3>
-      <button matButton="text">View Details</button>
-    </div>
+    <app-stats-card [stat]="stat"></app-stats-card>
   }
 </div>
