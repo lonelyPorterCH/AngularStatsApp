@@ -10,7 +10,6 @@ import {MatButton} from '@angular/material/button';
   styleUrl: './stats-list.scss',
 })
 export class StatsList {
-
   //TODO: temporary, will be replaced with backend call later
   stats = [
     {

@@ -1,11 +1,9 @@
 <h2>Stats Overview</h2>
 <div class="stats-overview">
-  <div class="stats-item">
-    <h3>{{ stats[0].title }}</h3>
-    <button matButton="text">View Details</button>
-  </div>
-  <div class="stats-item">
-    <h3>{{ stats[1].title }}</h3>
-    <button matButton="text">View Details</button>
-  </div>
+  @for (stat of stats; track stat.id) {
+    <div class="stats-item">
+      <h3>{{ stat.title }}</h3>
+      <button matButton="text">View Details</button>
+    </div>
+  }
 </div>
