@@ -1,4 +1,4 @@
-import {Component, signal} from '@angular/core';
+import {Component} from '@angular/core';
 import {StatsList} from './stats-list/stats-list';
 import {MatToolbar} from '@angular/material/toolbar';
 import {MatIcon} from '@angular/material/icon';
@@ -10,5 +10,4 @@ import {MatIcon} from '@angular/material/icon';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('stats-app');
 }

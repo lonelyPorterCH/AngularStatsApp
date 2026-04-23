@@ -3,11 +3,13 @@ package ch.lonelyporter.statsapp.web.api;
 import ch.lonelyporter.statsapp.service.StatisticService;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/stats")
@@ -17,6 +19,7 @@ public class StatsApiController {
 
     @GetMapping
     public ResponseEntity<List<Statistic>> getStatistics() {
+        log.debug("GET /api/stats");
         return ResponseEntity.ok(statisticService.getStatistics());
     }
 

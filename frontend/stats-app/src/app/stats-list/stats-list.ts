@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, signal} from '@angular/core';
 import {StatsCard} from '../stats-card/stats-card';
 import {StatService} from '../services/stat-service';
 import {Stat} from '../models/stat.model';
@@ -12,12 +12,19 @@ import {Stat} from '../models/stat.model';
   styleUrl: './stats-list.scss',
 })
 export class StatsList implements OnInit {
-  stats: Stat[] = [];
+  stats = signal<Stat[]>([]);
 
   constructor(private statService: StatService) {
   }
 
   ngOnInit(): void {
-    this.stats = this.statService.getStats();
+    this.statService.getStats().subscribe({
+      next: data => {
+        this.stats.set(data);
+      },
+      error: err => {
+        console.log(err);
+      }
+    });
   }
 }
