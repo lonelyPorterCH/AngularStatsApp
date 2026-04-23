@@ -1,5 +1,6 @@
-import {Component} from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import {StatsCard} from '../stats-card/stats-card';
+import {StatService} from '../services/stat-service';
 import {Stat} from '../models/stat.model';
 
 @Component({
@@ -10,24 +11,13 @@ import {Stat} from '../models/stat.model';
   templateUrl: './stats-list.html',
   styleUrl: './stats-list.scss',
 })
-export class StatsList {
-  //TODO: temporary, will be replaced with backend call later
-  stats: Stat[] = [
-    {
-      id: "arc-raiders-trials",
-      title: "ARC Raiders - Trials",
-      reverse: false,
-      xAxisName: "Week",
-      yAxisName: "Score",
-      dataPoints: [{x: "2026-02-16", y: "21351"}, {x: "2026-02-23", y: "25801"}]
-    },
-    {
-      id: "pogo-coins-2026",
-      title: "Pokécoins PoGO - 2026",
-      reverse: false,
-      xAxisName: "Date",
-      yAxisName: "Coins",
-      dataPoints: [{x: "2026-01-01", y: "4565"}, {x: "2026-01-02", y: "4615"}]
-    }
-  ];
+export class StatsList implements OnInit {
+  stats: Stat[] = [];
+
+  constructor(private statService: StatService) {
+  }
+
+  ngOnInit(): void {
+    this.stats = this.statService.getStats();
+  }
 }
