@@ -1,0 +1,26 @@
+<h1>Create New Chart</h1>
+
+<form [formGroup]="statForm">
+  <div class="form-group">
+    <label for="id">Id:</label>
+    <input formControlName="id" id="id" type="text"/>
+  </div>
+  <div class="form-group">
+    <label for="title">Title:</label>
+    <input formControlName="title" id="title" type="text"/>
+  </div>
+  <div class="form-group">
+    <label for="xAxisName">X Axis Name:</label>
+    <input formControlName="xAxisName" id="xAxisName" type="text"/>
+  </div>
+  <div class="form-group">
+    <label for="yAxisName">Y Axis Name:</label>
+    <input formControlName="yAxisName" id="yAxisName" type="text"/>
+  </div>
+  <div class="form-group">
+    <label for="reverse">Reverse:</label>
+    <input formControlName="reverse" id="reverse" type="checkbox"/>
+  </div>
+
+  <button matButton="filled" type="submit">Create</button>
+</form>
