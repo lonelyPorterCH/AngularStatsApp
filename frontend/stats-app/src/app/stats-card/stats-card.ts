@@ -2,12 +2,14 @@ import {Component, Input} from '@angular/core';
 import {MatButton} from "@angular/material/button";
 import {Stat} from '../models/stat.model';
 import {RouterLink} from '@angular/router';
+import {ChartComponent} from '../chart/chart';
 
 @Component({
   selector: 'app-stats-card',
   imports: [
     MatButton,
-    RouterLink
+    RouterLink,
+    ChartComponent
   ],
   templateUrl: './stats-card.html',
   styleUrl: './stats-card.css',

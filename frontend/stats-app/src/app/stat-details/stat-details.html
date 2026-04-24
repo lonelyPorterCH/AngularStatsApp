@@ -1,5 +1,6 @@
 @if (stat()) {
   <h2>{{ stat()!.title }}</h2>
+  <app-chart [stat]="stat()!"></app-chart>
 } @else if (notFound()) {
   <p>Statistic not found.</p>
 } @else {

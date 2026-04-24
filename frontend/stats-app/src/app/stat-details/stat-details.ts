@@ -3,12 +3,14 @@ import {Stat} from '../models/stat.model';
 import {StatService} from '../services/stat-service';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {MatButton} from '@angular/material/button';
+import {ChartComponent} from '../chart/chart';
 
 @Component({
   selector: 'app-stat-details',
   imports: [
     MatButton,
-    RouterLink
+    RouterLink,
+    ChartComponent
   ],
   templateUrl: './stat-details.html',
   styleUrl: './stat-details.css',
