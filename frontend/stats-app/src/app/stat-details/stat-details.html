@@ -1,7 +1,8 @@
 @if (stat()) {
-  <h1>{{ stat()!.title }}</h1>
+  <h2>{{ stat()!.title }}</h2>
+} @else if (notFound()) {
+  <p>Statistic not found.</p>
 } @else {
   <p>Loading...</p>
 }
-
 <button [routerLink]="['/stats']" matButton="outlined">Back</button>

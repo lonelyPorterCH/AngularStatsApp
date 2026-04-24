@@ -15,6 +15,8 @@ import {MatButton} from '@angular/material/button';
 })
 export class StatDetails implements OnInit {
   stat = signal<Stat | undefined>(undefined);
+  loading = signal<boolean>(true);
+  notFound = signal<boolean>(false);
 
   constructor(private statService: StatService, private route: ActivatedRoute) {
   }
@@ -32,9 +34,16 @@ export class StatDetails implements OnInit {
     this.statService.getStatById(id).subscribe({
       next: data => {
         this.stat.set(data);
+        this.loading.set(false);
       },
       error: err => {
-        console.error(err);
+        this.loading.set(false);
+
+        if (err.status === 404) {
+          this.notFound.set(true)
+        } else {
+          console.error(err);
+        }
       }
     })
   }

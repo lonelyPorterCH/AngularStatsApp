@@ -1,6 +1,7 @@
 package ch.lonelyporter.statsapp.persistence;
 
 import ch.lonelyporter.statsapp.StorageProperties;
+import ch.lonelyporter.statsapp.exception.StatisticNotFoundException;
 import ch.lonelyporter.statsapp.exception.StatisticStorageException;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,9 @@ public class StatisticRepository {
 
     public Statistic findById(String id) {
         Path file = Paths.get(storageProperties.getStoragePath()).resolve(id + ".json");
+        if (!Files.exists(file)) {
+            throw new StatisticNotFoundException(id);
+        }
         return objectMapper.readValue(file.toFile(), Statistic.class);
     }
 
