@@ -1,11 +1,11 @@
 import {Component} from '@angular/core';
-import {StatsList} from './stats-list/stats-list';
 import {MatToolbar} from '@angular/material/toolbar';
 import {MatIcon} from '@angular/material/icon';
+import {RouterOutlet} from '@angular/router';
 
 @Component({
   selector: 'app-root',
-  imports: [StatsList, MatToolbar, MatIcon],
+  imports: [MatToolbar, MatIcon, RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
