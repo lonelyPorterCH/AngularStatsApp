@@ -1,4 +1,4 @@
 <div class="stats-card">
   <h3>{{ stat?.title }}</h3>
-  <button matButton="text">View Details</button>
+  <button [routerLink]="['/stats', stat?.id]" matButton="text">View Details</button>
 </div>
