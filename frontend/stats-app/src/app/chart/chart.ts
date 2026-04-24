@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, ElementRef, Input, OnChanges, viewChild} from '@angular/core';
 import {Chart, registerables} from 'chart.js';
 import 'chartjs-adapter-luxon';
-import {Stat} from '../models/stat.model';
+import {Stat} from '../models/stat';
 
 Chart.register(...registerables);
 

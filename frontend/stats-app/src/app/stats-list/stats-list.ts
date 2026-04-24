@@ -1,7 +1,7 @@
 import {Component, OnInit, signal} from '@angular/core';
 import {StatsCard} from '../stats-card/stats-card';
 import {StatService} from '../services/stat-service';
-import {Stat} from '../models/stat.model';
+import {Stat} from '../models/stat';
 
 @Component({
   selector: 'app-stats-list',

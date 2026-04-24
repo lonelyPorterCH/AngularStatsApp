@@ -1,5 +1,5 @@
 import {Component, OnInit, signal} from '@angular/core';
-import {Stat} from '../models/stat.model';
+import {Stat} from '../models/stat';
 import {StatService} from '../services/stat-service';
 import {ActivatedRoute, RouterLink} from '@angular/router';
 import {MatButton} from '@angular/material/button';

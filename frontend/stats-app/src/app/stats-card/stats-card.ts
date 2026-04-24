@@ -1,6 +1,6 @@
 import {Component, Input} from '@angular/core';
 import {MatButton} from "@angular/material/button";
-import {Stat} from '../models/stat.model';
+import {Stat} from '../models/stat';
 import {RouterLink} from '@angular/router';
 import {ChartComponent} from '../chart/chart';
 
