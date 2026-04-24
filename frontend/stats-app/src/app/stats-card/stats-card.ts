@@ -12,7 +12,7 @@ import {ChartComponent} from '../chart/chart';
     ChartComponent
   ],
   templateUrl: './stats-card.html',
-  styleUrl: './stats-card.css',
+  styleUrl: './stats-card.scss',
 })
 export class StatsCard {
   @Input() stat?: Stat;

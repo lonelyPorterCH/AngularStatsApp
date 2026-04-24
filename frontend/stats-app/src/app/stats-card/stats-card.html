@@ -1,5 +1,7 @@
 <div class="stats-card">
   <h3>{{ stat?.title }}</h3>
-  <app-chart [stat]="stat!"></app-chart>
+  <div class="chart-wrapper">
+    <app-chart [stat]="stat!"></app-chart>
+  </div>
   <button [routerLink]="['/stats', stat?.id]" matButton="text">View Details</button>
 </div>

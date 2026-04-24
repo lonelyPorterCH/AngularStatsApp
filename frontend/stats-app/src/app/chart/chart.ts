@@ -49,6 +49,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         scales: {
           x: {
             type: 'time',
