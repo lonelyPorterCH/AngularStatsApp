@@ -23,6 +23,12 @@ public class StatsApiController {
         return ResponseEntity.ok(statisticService.getStatistics());
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<Statistic> getStatisticById(@PathVariable String id) {
+        log.debug("GET /api/stats/{}", id);
+        return ResponseEntity.ok(statisticService.getStatisticById(id));
+    }
+
     @PostMapping
     public ResponseEntity<Void> createStatistic(@RequestBody Statistic statistic) {
         statisticService.createStatistic(statistic);

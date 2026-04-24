@@ -1,1 +1,7 @@
-<p>stat-details works!</p>
+@if (stat()) {
+  <h1>{{ stat()!.title }}</h1>
+} @else {
+  <p>Loading...</p>
+}
+
+<button [routerLink]="['/stats']" matButton="outlined">Back</button>

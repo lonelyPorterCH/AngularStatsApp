@@ -17,4 +17,8 @@ export class StatService {
     return this.http.get<Stat[]>(this.baseUrl);
   }
 
+  getStatById(id: string): Observable<Stat> {
+    return this.http.get<Stat>(`${this.baseUrl}/${id}`);
+  }
+
 }

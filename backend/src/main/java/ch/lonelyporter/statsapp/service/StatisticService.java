@@ -26,4 +26,8 @@ public class StatisticService {
         statistic.getDataPoints().add(dataPoint);
         repository.save(statistic);
     }
+
+    public Statistic getStatisticById(String id) {
+        return repository.findById(id);
+    }
 }
