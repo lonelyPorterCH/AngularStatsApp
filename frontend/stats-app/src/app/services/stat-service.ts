@@ -1,5 +1,5 @@
 import {Injectable} from '@angular/core';
-import {Stat} from '../models/stat';
+import {DataPoint, Stat} from '../models/stat';
 import {HttpClient} from '@angular/common/http';
 import {catchError, map, Observable, of} from 'rxjs';
 
@@ -36,4 +36,7 @@ export class StatService {
     return this.http.delete<Stat>(`${this.baseUrl}/${id}`);
   }
 
+  addDataPoint(id: string, dataPoint: DataPoint): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/datapoint`, dataPoint);
+  }
 }
