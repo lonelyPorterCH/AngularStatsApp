@@ -54,7 +54,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           x: {
             type: 'time',
             ticks: {maxTicksLimit: 6},
-            time: {tooltipFormat: 'DD T'},
+            time: {tooltipFormat: 'DD'},
             title: {display: true, text: this.stat.xAxisName}
           },
           y: {
