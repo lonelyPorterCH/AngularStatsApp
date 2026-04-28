@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {Stat} from '../models/stat';
 import {HttpClient} from '@angular/common/http';
-import {Observable} from 'rxjs';
+import {catchError, map, Observable, of} from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +19,13 @@ export class StatService {
 
   getStatById(id: string): Observable<Stat> {
     return this.http.get<Stat>(`${this.baseUrl}/${id}`);
+  }
+
+  existsById(id: string): Observable<boolean> {
+    return this.http.get<Stat>(`${this.baseUrl}/${id}`).pipe(
+      map(() => true),
+      catchError(() => of(false))
+    );
   }
 
 }
