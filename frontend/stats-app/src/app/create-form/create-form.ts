@@ -26,10 +26,6 @@ export class CreateForm implements OnInit {
   constructor(private formBuilder: FormBuilder, private statService: StatService) {
   }
 
-  get id() {
-    return this.statForm.get('id');
-  }
-
   ngOnInit(): void {
     this.statForm = this.formBuilder.group({
       id: ['', Validators.required, idExistsValidator(this.statService)],
