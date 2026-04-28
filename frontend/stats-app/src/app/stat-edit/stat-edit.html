@@ -9,7 +9,9 @@
   <form (ngSubmit)="onAddPoint()" [formGroup]="addPointForm">
     <mat-form-field appearance="outline">
       <mat-label>Date</mat-label>
-      <input formControlName="x" matInput type="date"/>
+      <input [matDatepicker]="picker" formControlName="x" matInput/>
+      <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
       @if (addPointForm.get('x')?.errors?.['required']) {
         <mat-error>Date is required</mat-error>
       }
