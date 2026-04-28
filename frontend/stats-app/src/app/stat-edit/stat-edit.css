@@ -4,9 +4,18 @@
   margin-bottom: 24px;
 }
 
+mat-tab-group {
+  max-width: 500px;
+}
+
 form {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 500px;
+  padding-top: 16px;
+}
+
+/*Fix Scrollbars appearing inside the tabs*/
+::ng-deep .mat-mdc-tab-body-content {
+  overflow: hidden !important;
 }

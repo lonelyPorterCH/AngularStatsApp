@@ -10,10 +10,11 @@ import {ActivatedRoute} from '@angular/router';
 import {Title} from '@angular/platform-browser';
 import {ChartComponent} from '../chart/chart';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {MatTab, MatTabGroup} from '@angular/material/tabs';
 
 @Component({
   selector: 'app-stat-edit',
-  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatDatepickerInput, MatDatepickerToggle, MatDatepicker],
+  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatDatepickerInput, MatDatepickerToggle, MatDatepicker, MatTabGroup, MatTab],
   templateUrl: './stat-edit.html',
   styleUrl: './stat-edit.css'
 })
