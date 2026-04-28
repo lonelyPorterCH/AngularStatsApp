@@ -1,6 +1,6 @@
 <h1>Create New Chart</h1>
 
-<form [formGroup]="statForm">
+<form (ngSubmit)="onSubmit()" [formGroup]="statForm">
 
   <mat-form-field appearance="outline">
     <mat-label>ID</mat-label>
@@ -39,6 +39,6 @@
 
   <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
 
-  <button mat-flat-button type="submit">Create</button>
+  <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>
 
 </form>

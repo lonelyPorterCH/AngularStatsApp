@@ -5,6 +5,8 @@ import {idExistsValidator} from '../validators/id-exists.validator';
 import {StatService} from '../services/stat-service';
 import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatCheckbox} from '@angular/material/checkbox';
+import {Stat} from '../models/stat';
+import {Router} from '@angular/router';
 
 @Component({
   selector: 'app-create-form',
@@ -22,8 +24,9 @@ import {MatCheckbox} from '@angular/material/checkbox';
 })
 export class CreateForm implements OnInit {
   statForm!: FormGroup;
+  submissionError: string = '';
 
-  constructor(private formBuilder: FormBuilder, private statService: StatService) {
+  constructor(private formBuilder: FormBuilder, private statService: StatService, private router: Router) {
   }
 
   ngOnInit(): void {
@@ -34,5 +37,30 @@ export class CreateForm implements OnInit {
       yAxisName: ['', Validators.required],
       reverse: [false, Validators.required]
     }, {updateOn: 'blur'});
+  }
+
+  protected onSubmit(): void {
+    if (this.statForm.invalid) {
+      return
+    }
+
+    const newStat: Stat = {
+      id: this.statForm.value.id,
+      title: this.statForm.value.title,
+      xAxisName: this.statForm.value.xAxisName,
+      yAxisName: this.statForm.value.yAxisName,
+      reverse: this.statForm.value.reverse,
+      dataPoints: []
+    }
+
+    this.statService.addStat(newStat).subscribe({
+      next: () => {
+        this.router.navigate(['/stats', this.statForm.get('id')?.value]);
+      },
+      error: err => {
+        console.error(err);
+        this.submissionError = 'There was a problem saving your stat';
+      }
+    });
   }
 }

@@ -28,4 +28,8 @@ export class StatService {
     );
   }
 
+  addStat(stat: Stat) {
+    return this.http.post<Stat>(`${this.baseUrl}`, stat);
+  }
+
 }
