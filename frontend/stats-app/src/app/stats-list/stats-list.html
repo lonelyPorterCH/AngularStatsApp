@@ -1,4 +1,8 @@
 <h2>Stats Overview</h2>
+<button [routerLink]="['/stats/new']" matButton="filled">
+  <mat-icon>add</mat-icon>
+  <span>New Statistic</span>
+</button>
 <div class="stats-overview">
   @for (stat of stats(); track stat.id) {
     <app-stats-card [stat]="stat"></app-stats-card>
