@@ -21,6 +21,7 @@ export class StatEdit implements OnInit {
 
   stat = signal<Stat | undefined>(undefined);
   addPointForm!: FormGroup;
+  increaseForm!: FormGroup;
 
   constructor(
     private statService: StatService,
@@ -47,6 +48,11 @@ export class StatEdit implements OnInit {
       x: ['', Validators.required],
       y: ['', Validators.required]
     }, {updateOn: 'blur'});
+
+    this.increaseForm = this.formBuilder.group({
+      x: ['', Validators.required],
+      amount: ['', Validators.required]
+    }, {updateOn: 'blur'});
   }
 
   onAddPoint(): void {
@@ -64,6 +70,35 @@ export class StatEdit implements OnInit {
           next: data => {
             this.stat.set(data);
             this.addPointForm.reset();
+          }
+        });
+      },
+      error: err => console.error(err)
+    });
+  }
+
+  onIncrease(): void {
+    if (this.increaseForm.invalid || !this.stat()) return;
+
+    const latestPoint = this.stat()!.dataPoints
+      .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime())
+      .at(-1);
+
+    if (!latestPoint) return;
+
+    const newValue = parseFloat(latestPoint.y) + parseFloat(this.increaseForm.get('amount')?.value);
+
+    const newPoint: DataPoint = {
+      x: this.increaseForm.get('x')?.value,
+      y: newValue.toString()
+    };
+
+    this.statService.addDataPoint(this.stat()!.id, newPoint).subscribe({
+      next: () => {
+        this.statService.getStatById(this.stat()!.id).subscribe({
+          next: data => {
+            this.stat.set(data);
+            this.increaseForm.reset();
           }
         });
       },
