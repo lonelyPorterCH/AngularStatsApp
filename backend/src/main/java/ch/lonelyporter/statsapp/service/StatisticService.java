@@ -30,4 +30,8 @@ public class StatisticService {
     public Statistic getStatisticById(String id) {
         return repository.findById(id);
     }
+
+    public void deleteStatisticById(String id) {
+        repository.deleteById(id);
+    }
 }

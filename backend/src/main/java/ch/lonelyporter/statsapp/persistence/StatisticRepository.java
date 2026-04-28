@@ -59,4 +59,15 @@ public class StatisticRepository {
             throw new StatisticStorageException("Failed to find statistics", e);
         }
     }
+
+    public void deleteById(String id) {
+        try {
+            Path folder = Paths.get(storageProperties.getStoragePath());
+            Files.createDirectories(folder);
+            Path file = folder.resolve(id + ".json");
+            Files.deleteIfExists(file);
+        } catch (IOException e) {
+            throw new StatisticStorageException("Failed to delete statistic: " + id, e);
+        }
+    }
 }

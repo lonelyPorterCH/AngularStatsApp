@@ -9,3 +9,7 @@
   <p>Loading...</p>
 }
 <button [routerLink]="['/stats']" matButton="outlined">Back</button>
+<button (click)="onDelete()" mat-flat-button>
+  <mat-icon>delete</mat-icon>
+  Delete
+</button>

@@ -32,4 +32,8 @@ export class StatService {
     return this.http.post<Stat>(`${this.baseUrl}`, stat);
   }
 
+  deleteStat(id: string) {
+    return this.http.delete<Stat>(`${this.baseUrl}/${id}`);
+  }
+
 }

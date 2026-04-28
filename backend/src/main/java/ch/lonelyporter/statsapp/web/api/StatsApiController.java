@@ -23,15 +23,22 @@ public class StatsApiController {
         return ResponseEntity.ok(statisticService.getStatistics());
     }
 
+    @PostMapping
+    public ResponseEntity<Void> createStatistic(@RequestBody Statistic statistic) {
+        statisticService.createStatistic(statistic);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Statistic> getStatisticById(@PathVariable String id) {
         log.debug("GET /api/stats/{}", id);
         return ResponseEntity.ok(statisticService.getStatisticById(id));
     }
 
-    @PostMapping
-    public ResponseEntity<Void> createStatistic(@RequestBody Statistic statistic) {
-        statisticService.createStatistic(statistic);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Statistic> deleteStatisticById(@PathVariable String id) {
+        log.debug("DELETE /api/stats/{}", id);
+        statisticService.deleteStatisticById(id);
         return ResponseEntity.ok().build();
     }
 
