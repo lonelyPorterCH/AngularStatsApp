@@ -7,6 +7,7 @@ import {ChartComponent} from '../chart/chart';
 import {MatIcon} from '@angular/material/icon';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
+import {Title} from '@angular/platform-browser';
 
 @Component({
   selector: 'app-stat-details',
@@ -28,7 +29,8 @@ export class StatDetails implements OnInit {
     private statService: StatService,
     private route: ActivatedRoute,
     private dialog: MatDialog,
-    private router: Router) {
+    private router: Router,
+    private title: Title) {
   }
 
   ngOnInit(): void {
@@ -45,6 +47,7 @@ export class StatDetails implements OnInit {
       next: data => {
         this.stat.set(data);
         this.loading.set(false);
+        this.title.setTitle(`StatsApp - ${data.title}`);
       },
       error: err => {
         this.loading.set(false);
