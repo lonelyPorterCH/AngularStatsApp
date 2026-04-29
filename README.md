@@ -1,6 +1,6 @@
 # StatsApp
 
-A personal statistics tracking app built with Angular 19 and Spring Boot.
+A personal statistics tracking app built with Angular 21 and Spring Boot.
 
 ## Project Structure
 
@@ -8,7 +8,7 @@ A personal statistics tracking app built with Angular 19 and Spring Boot.
 StatsApp/
 ├── Dockerfile
 ├── frontend/
-│   └── stats-app/      ← Angular 19
+│   └── stats-app/      ← Angular 21
 └── backend/            ← Spring Boot
 ```
 
