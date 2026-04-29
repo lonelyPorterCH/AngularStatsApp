@@ -48,4 +48,11 @@ public class StatsApiController {
         statisticService.addDataPoint(id, dataPoint);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}/datapoint")
+    public ResponseEntity<Void> deleteDataPoint(@PathVariable String id,
+                                                @RequestBody Statistic.DataPoint dataPoint) {
+        statisticService.deleteDataPoint(id, dataPoint);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -39,4 +39,8 @@ export class StatService {
   addDataPoint(id: string, dataPoint: DataPoint): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/datapoint`, dataPoint);
   }
+
+  deleteDataPoint(id: string, dataPoint: DataPoint): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}/datapoint`, {body: dataPoint});
+  }
 }

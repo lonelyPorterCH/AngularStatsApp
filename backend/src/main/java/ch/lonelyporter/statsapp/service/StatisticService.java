@@ -34,4 +34,12 @@ public class StatisticService {
     public void deleteStatisticById(String id) {
         repository.deleteById(id);
     }
+
+    public void deleteDataPoint(String id, Statistic.DataPoint dataPoint) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDataPoints().removeIf(dp ->
+                dp.getX().equals(dataPoint.getX()) && dp.getY().equals(dataPoint.getY())
+        );
+        repository.save(statistic);
+    }
 }
