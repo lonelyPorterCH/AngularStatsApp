@@ -12,7 +12,6 @@ import {MatButton} from '@angular/material/button';
     MatDialogClose
   ],
   templateUrl: './confirm-dialog.html',
-  styleUrl: './confirm-dialog.css',
 })
 export class ConfirmDialog {
 }
