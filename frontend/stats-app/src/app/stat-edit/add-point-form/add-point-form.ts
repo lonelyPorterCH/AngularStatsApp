@@ -7,6 +7,7 @@ import {StatService} from '../../services/stat-service';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
+import {DateTime} from 'luxon';
 
 @Component({
   selector: 'app-add-point-form',
@@ -50,7 +51,7 @@ export class AddPointForm implements OnInit {
     if (this.addPointForm.invalid || !this.stat) return;
 
     const newPoint: DataPoint = {
-      x: this.addPointForm.get('x')?.value,
+      x: DateTime.fromJSDate(this.addPointForm.get('x')?.value).toFormat('yyyy-MM-dd'),
       y: this.addPointForm.get('y')?.value
     };
 
