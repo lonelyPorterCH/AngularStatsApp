@@ -15,28 +15,7 @@
     </mat-tab>
 
     <mat-tab label="Edit / Delete Point">
-      <form (ngSubmit)="onEditPoint()" [formGroup]="editPointForm" class="edit-form">
-        <mat-form-field appearance="outline">
-          <mat-label>Select Data Point</mat-label>
-          <mat-select (selectionChange)="onPointSelected($event)" formControlName="selectedPoint">
-            @for (point of sortedDataPoints(); track point.x) {
-              <mat-option [value]="point">
-                {{ point.x | date:'dd.MM.yyyy' }} - {{ point.y }}
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Value</mat-label>
-          <input formControlName="value" matInput type="number"/>
-        </mat-form-field>
-
-        <button mat-flat-button type="submit">
-          <mat-icon>save</mat-icon>
-          Save
-        </button>
-      </form>
+      <app-edit-delete-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-edit-delete-form>
     </mat-tab>
   </mat-tab-group>
 } @else {
