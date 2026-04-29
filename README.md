@@ -44,58 +44,12 @@ docker build -t statsapp .
 docker save statsapp -o statsapp.tar
 ```
 
-### 3. Copy the tar to your NAS
-```bash
-scp statsapp.tar user@your-nas-ip:/volume1/docker/
-```
+### 3. Upload to Synology
 
-### 4. Import the image on the NAS
-SSH into NAS and run:
-```bash
-ssh user@nas-ip
-docker load -i /volume1/docker/statsapp.tar
-```
-
-### 5. Run the container
-```bash
-docker run -d \
-  --name statsapp \
-  -p 8081:8081 \
-  -v /volume1/docker/statsapp/data:/data \
-  --restart unless-stopped \
-  statsapp
-```
-
-Or via `docker compose` — place a `docker-compose.yml` at `/volume1/docker/statsapp/`:
-```yaml
-services:
-  statsapp:
-    image: statsapp
-    ports:
-      - "8081:8081"
-    volumes:
-      - /volume1/docker/statsapp/data:/data
-    restart: unless-stopped
-```
-
-Then run:
-```bash
-docker compose up -d
-```
-
-### 6. Update to a new version
-```bash
-# locally
-docker build -t statsapp .
-docker save statsapp -o statsapp.tar
-scp statsapp.tar user@nas-ip:/volume1/docker/
-
-# on the NAS
-docker load -i /volume1/docker/statsapp.tar
-docker compose up -d   # picks up the new image automatically
-```
-
----
+1. Upload tar file to docker (or any other folder)
+2. Open Container Manager
+3. Images: select statsapp, then Action > Import > Add From File > From this DSM
+4. Container: select statsapp, stop, reset, start
 
 ## Configuration
 
