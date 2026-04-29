@@ -1,8 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {MatFormFieldModule} from '@angular/material/form-field';
+import {MatError, MatFormField, MatInput, MatInputModule, MatLabel} from '@angular/material/input';
 import {DataPoint, Stat} from '../../models/stat';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {StatService} from '../../services/stat-service';
-import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
@@ -10,6 +11,8 @@ import {MatButton} from '@angular/material/button';
 @Component({
   selector: 'app-add-point-form',
   imports: [
+    MatFormFieldModule,
+    MatInputModule,
     MatFormField,
     MatLabel,
     MatDatepickerInput,
@@ -22,6 +25,7 @@ import {MatButton} from '@angular/material/button';
     MatButton
   ],
   templateUrl: './add-point-form.html',
+  styleUrl: './add-point-form.css'
 })
 export class AddPointForm implements OnInit {
 

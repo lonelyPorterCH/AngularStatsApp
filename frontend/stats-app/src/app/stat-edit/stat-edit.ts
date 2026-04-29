@@ -112,6 +112,16 @@ export class StatEdit implements OnInit {
     }
   }
 
+  protected reloadStat(): void {
+    this.statService.getStatById(this.stat()!.id).subscribe({
+      next: data => {
+        this.stat.set(data);
+        this.editPointForm.reset();
+        this.increaseForm.reset();
+      }
+    });
+  }
+
   private deletePoint(point: DataPoint): void {
     this.statService.deleteDataPoint(this.stat()!.id, point).subscribe({
       next: () => this.reloadStat(),
@@ -129,16 +139,6 @@ export class StatEdit implements OnInit {
         });
       },
       error: err => console.error(err)
-    });
-  }
-
-  private reloadStat(): void {
-    this.statService.getStatById(this.stat()!.id).subscribe({
-      next: data => {
-        this.stat.set(data);
-        this.editPointForm.reset();
-        this.increaseForm.reset();
-      }
     });
   }
 }
