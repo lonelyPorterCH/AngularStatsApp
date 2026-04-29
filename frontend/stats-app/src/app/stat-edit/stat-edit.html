@@ -7,30 +7,7 @@
 
   <mat-tab-group>
     <mat-tab label="Add Data Point">
-      <form (ngSubmit)="onAddPoint()" [formGroup]="addPointForm">
-        <mat-form-field appearance="outline">
-          <mat-label>Date</mat-label>
-          <input [matDatepicker]="picker" formControlName="x" matInput/>
-          <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-          @if (addPointForm.get('x')?.errors?.['required']) {
-            <mat-error>Date is required</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>{{ stat()!.yAxisName }}</mat-label>
-          <input formControlName="y" matInput type="number"/>
-          @if (addPointForm.get('y')?.errors?.['required']) {
-            <mat-error>Value is required</mat-error>
-          }
-        </mat-form-field>
-
-        <button mat-flat-button type="submit">
-          <mat-icon>add</mat-icon>
-          Add Point
-        </button>
-      </form>
+      <app-add-point-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-add-point-form>
     </mat-tab>
 
     <mat-tab label="Increase Latest Value">

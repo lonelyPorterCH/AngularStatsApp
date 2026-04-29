@@ -15,17 +15,17 @@ import {MatOption, MatSelect} from '@angular/material/select';
 import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
 import {MatDialog} from '@angular/material/dialog';
 import {DatePipe} from '@angular/common';
+import {AddPointForm} from './add-point-form/add-point-form';
 
 @Component({
   selector: 'app-stat-edit',
-  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatDatepickerInput, MatDatepickerToggle, MatDatepicker, MatTabGroup, MatTab, MatSelect, MatOption, DatePipe],
+  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatDatepickerInput, MatDatepickerToggle, MatDatepicker, MatTabGroup, MatTab, MatSelect, MatOption, DatePipe, AddPointForm],
   templateUrl: './stat-edit.html',
   styleUrl: './stat-edit.css'
 })
 export class StatEdit implements OnInit {
 
   stat = signal<Stat | undefined>(undefined);
-  addPointForm!: FormGroup;
   increaseForm!: FormGroup;
   editPointForm!: FormGroup;
 
@@ -57,11 +57,6 @@ export class StatEdit implements OnInit {
       }
     });
 
-    this.addPointForm = this.formBuilder.group({
-      x: ['', Validators.required],
-      y: ['', Validators.required]
-    }, {updateOn: 'blur'});
-
     this.increaseForm = this.formBuilder.group({
       x: ['', Validators.required],
       amount: ['', Validators.required]
@@ -71,20 +66,6 @@ export class StatEdit implements OnInit {
       selectedPoint: [null, Validators.required],
       value: ['']
     }, {updateOn: 'blur'});
-  }
-
-  onAddPoint(): void {
-    if (this.addPointForm.invalid || !this.stat()) return;
-
-    const newPoint: DataPoint = {
-      x: this.addPointForm.get('x')?.value,
-      y: this.addPointForm.get('y')?.value
-    };
-
-    this.statService.addDataPoint(this.stat()!.id, newPoint).subscribe({
-      next: () => this.reloadStat(),
-      error: err => console.error(err)
-    });
   }
 
   onIncrease(): void {
@@ -157,7 +138,6 @@ export class StatEdit implements OnInit {
         this.stat.set(data);
         this.editPointForm.reset();
         this.increaseForm.reset();
-        this.addPointForm.reset();
       }
     });
   }
