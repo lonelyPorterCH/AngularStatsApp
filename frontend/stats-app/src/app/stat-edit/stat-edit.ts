@@ -9,24 +9,23 @@ import {StatService} from '../services/stat-service';
 import {ActivatedRoute} from '@angular/router';
 import {Title} from '@angular/platform-browser';
 import {ChartComponent} from '../chart/chart';
-import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {MatOption, MatSelect} from '@angular/material/select';
 import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
 import {MatDialog} from '@angular/material/dialog';
 import {DatePipe} from '@angular/common';
 import {AddPointForm} from './add-point-form/add-point-form';
+import {IncreaseForm} from './increase-form/increase-form';
 
 @Component({
   selector: 'app-stat-edit',
-  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatDatepickerInput, MatDatepickerToggle, MatDatepicker, MatTabGroup, MatTab, MatSelect, MatOption, DatePipe, AddPointForm],
+  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatTabGroup, MatTab, MatSelect, MatOption, DatePipe, AddPointForm, IncreaseForm],
   templateUrl: './stat-edit.html',
   styleUrl: './stat-edit.css'
 })
 export class StatEdit implements OnInit {
 
   stat = signal<Stat | undefined>(undefined);
-  increaseForm!: FormGroup;
   editPointForm!: FormGroup;
 
   sortedDataPoints = computed(() => {
@@ -57,37 +56,10 @@ export class StatEdit implements OnInit {
       }
     });
 
-    this.increaseForm = this.formBuilder.group({
-      x: ['', Validators.required],
-      amount: ['', Validators.required]
-    }, {updateOn: 'blur'});
-
     this.editPointForm = this.formBuilder.group({
       selectedPoint: [null, Validators.required],
       value: ['']
     }, {updateOn: 'blur'});
-  }
-
-  onIncrease(): void {
-    if (this.increaseForm.invalid || !this.stat()) return;
-
-    const latestPoint = this.stat()!.dataPoints
-      .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime())
-      .at(-1);
-
-    if (!latestPoint) return;
-
-    const newValue = parseFloat(latestPoint.y) + parseFloat(this.increaseForm.get('amount')?.value);
-
-    const newPoint: DataPoint = {
-      x: this.increaseForm.get('x')?.value,
-      y: newValue.toString()
-    };
-
-    this.statService.addDataPoint(this.stat()!.id, newPoint).subscribe({
-      next: () => this.reloadStat(),
-      error: err => console.error(err)
-    });
   }
 
   onPointSelected(event: any): void {
@@ -117,7 +89,6 @@ export class StatEdit implements OnInit {
       next: data => {
         this.stat.set(data);
         this.editPointForm.reset();
-        this.increaseForm.reset();
       }
     });
   }
