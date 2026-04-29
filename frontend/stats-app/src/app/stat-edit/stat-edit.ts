@@ -82,15 +82,7 @@ export class StatEdit implements OnInit {
     };
 
     this.statService.addDataPoint(this.stat()!.id, newPoint).subscribe({
-      next: () => {
-        // reload the stat so the chart updates
-        this.statService.getStatById(this.stat()!.id).subscribe({
-          next: data => {
-            this.stat.set(data);
-            this.addPointForm.reset();
-          }
-        });
-      },
+      next: () => this.reloadStat(),
       error: err => console.error(err)
     });
   }
@@ -112,14 +104,7 @@ export class StatEdit implements OnInit {
     };
 
     this.statService.addDataPoint(this.stat()!.id, newPoint).subscribe({
-      next: () => {
-        this.statService.getStatById(this.stat()!.id).subscribe({
-          next: data => {
-            this.stat.set(data);
-            this.increaseForm.reset();
-          }
-        });
-      },
+      next: () => this.reloadStat(),
       error: err => console.error(err)
     });
   }
@@ -171,6 +156,8 @@ export class StatEdit implements OnInit {
       next: data => {
         this.stat.set(data);
         this.editPointForm.reset();
+        this.increaseForm.reset();
+        this.addPointForm.reset();
       }
     });
   }
