@@ -14,7 +14,7 @@ describe('idExistsValidator', () => {
     };
   });
 
-  it('should return idExists error when ID already exists', async () => {
+  it('should return true when ID already exists', async () => {
     (statServiceMock.existsById as any) = vi.fn().mockReturnValue(of(true));
 
     const validator = idExistsValidator(statServiceMock as StatService);
