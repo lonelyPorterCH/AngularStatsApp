@@ -45,6 +45,7 @@ public class StatsApiController {
     @PostMapping("/{id}/datapoint")
     public ResponseEntity<Void> addDataPoint(@PathVariable String id,
                                              @RequestBody Statistic.DataPoint dataPoint) {
+        log.debug("POST /api/stats/{}/datapoint. Datapoint ({}, {})", id, dataPoint.getX(), dataPoint.getY());
         statisticService.addDataPoint(id, dataPoint);
         return ResponseEntity.ok().build();
     }

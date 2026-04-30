@@ -7,7 +7,6 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataPoint, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
 import {MatButton} from '@angular/material/button';
-import {DateTime} from 'luxon';
 
 @Component({
   selector: 'app-increase-form',
@@ -56,7 +55,7 @@ export class IncreaseForm implements OnInit {
     const newValue = parseFloat(latestPoint.y) + parseFloat(this.increaseForm.get('amount')?.value);
 
     const newPoint: DataPoint = {
-      x: DateTime.fromJSDate(this.increaseForm.get('x')?.value).toFormat('yyyy-MM-dd'),
+      x: this.increaseForm.get('x')?.value.toFormat('yyyy-MM-dd'),
       y: newValue.toString()
     };
 
