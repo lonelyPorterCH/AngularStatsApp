@@ -2,13 +2,14 @@ import {Injectable} from '@angular/core';
 import {DataPoint, Stat} from '../models/stat';
 import {HttpClient} from '@angular/common/http';
 import {catchError, map, Observable, of} from 'rxjs';
+import {environment} from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class StatService {
 
-  private baseUrl = '/api/stats';
+  private baseUrl = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) {
   }
