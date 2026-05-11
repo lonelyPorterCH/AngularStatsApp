@@ -6,6 +6,10 @@
   </div>
 
   <mat-tab-group>
+    <mat-tab label="Manage Datasets">
+      <app-manage-datasets-form (datasetsChanged)="reloadStat()" [stat]="stat()!"></app-manage-datasets-form>
+    </mat-tab>
+
     <mat-tab label="Add Data Point">
       <app-add-point-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-add-point-form>
     </mat-tab>

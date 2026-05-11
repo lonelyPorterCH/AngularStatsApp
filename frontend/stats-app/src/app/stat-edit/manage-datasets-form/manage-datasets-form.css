@@ -1,0 +1,18 @@
+.datasets-container {
+  padding: 16px 0;
+}
+
+.add-dataset-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+mat-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+

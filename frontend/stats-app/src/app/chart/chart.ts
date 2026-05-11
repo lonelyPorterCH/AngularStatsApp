@@ -17,6 +17,15 @@ export class ChartComponent implements OnChanges, AfterViewInit {
   private chart?: Chart;
   private viewInitialized = false;
 
+  private readonly COLORS = [
+    {border: 'rgb(0 119 255 / 0.85)', background: 'rgb(0 119 255 / 0.2)'},
+    {border: 'rgb(255 99 132 / 0.85)', background: 'rgb(255 99 132 / 0.2)'},
+    {border: 'rgb(75 192 192 / 0.85)', background: 'rgb(75 192 192 / 0.2)'},
+    {border: 'rgb(255 205 86 / 0.85)', background: 'rgb(255 205 86 / 0.2)'},
+    {border: 'rgb(153 102 255 / 0.85)', background: 'rgb(153 102 255 / 0.2)'},
+    {border: 'rgb(255 159 64 / 0.85)', background: 'rgb(255 159 64 / 0.2)'},
+  ];
+
   ngAfterViewInit(): void {
     this.viewInitialized = true;
     this.buildChart();
@@ -33,19 +42,22 @@ export class ChartComponent implements OnChanges, AfterViewInit {
     this.chart = new Chart(this.canvas().nativeElement, {
       type: 'line',
       data: {
-        datasets: [{
-          data: this.stat.dataPoints.map(dp => ({
-            x: dp.x as any,
-            y: parseFloat(dp.y)
-          })),
-          label: this.stat.yAxisName,
-          fill: false,
-          tension: 0,
-          borderWidth: 1,
-          pointRadius: 2,
-          borderColor: 'rgb(0 119 255 / 0.75)',
-          backgroundColor: 'rgb(95 139 227 / 0.8)',
-        }]
+        datasets: this.stat.datasets.map((ds, i) => {
+          const color = this.COLORS[i % this.COLORS.length];
+          return {
+            label: ds.label,
+            data: ds.dataPoints.map(dp => ({
+              x: dp.x as any,
+              y: parseFloat(dp.y)
+            })),
+            fill: false,
+            tension: 0,
+            borderWidth: 1,
+            pointRadius: 2,
+            borderColor: color.border,
+            backgroundColor: color.background,
+          };
+        })
       },
       options: {
         responsive: true,

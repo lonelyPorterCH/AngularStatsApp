@@ -1,0 +1,28 @@
+<div class="datasets-container">
+  <h3>Datasets</h3>
+
+  <mat-list>
+    @for (ds of stat.datasets; track ds.label) {
+      <mat-list-item>
+        <span>{{ ds.label }}</span>
+        <button mat-icon-button (click)="onDeleteDataset(ds.label)" aria-label="Delete dataset">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-list-item>
+    } @empty {
+      <mat-list-item>No datasets yet.</mat-list-item>
+    }
+  </mat-list>
+
+  <form (ngSubmit)="onAddDataset()" [formGroup]="addDatasetForm" class="add-dataset-form">
+    <mat-form-field appearance="outline">
+      <mat-label>New Dataset Label</mat-label>
+      <input formControlName="label" matInput/>
+    </mat-form-field>
+    <button mat-flat-button type="submit">
+      <mat-icon>add</mat-icon>
+      Add Dataset
+    </button>
+  </form>
+</div>
+

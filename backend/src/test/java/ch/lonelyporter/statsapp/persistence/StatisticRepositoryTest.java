@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,19 +27,25 @@ class StatisticRepositoryTest {
         repository = new StatisticRepository(props, new ObjectMapper());
     }
 
+    private Statistic createStatisticWithDataset(String id, String title, String xAxis, String yAxis) {
+        Statistic statistic = new Statistic();
+        statistic.setId(id);
+        statistic.setTitle(title);
+        statistic.setReverse(false);
+        statistic.setXAxisName(xAxis);
+        statistic.setYAxisName(yAxis);
+        Statistic.Dataset ds = new Statistic.Dataset(yAxis, new ArrayList<>(List.of(
+                new Statistic.DataPoint("2024-01-01", "100"),
+                new Statistic.DataPoint("2024-01-15", "150"),
+                new Statistic.DataPoint("2024-02-01", "130")
+        )));
+        statistic.setDatasets(new ArrayList<>(List.of(ds)));
+        return statistic;
+    }
+
     @Test
     void save_writesJsonFile() {
-        Statistic statistic = new Statistic(
-                "test-chart",
-                "My Chart",
-                false,
-                "Date",
-                "Price",
-                List.of(
-                        new Statistic.DataPoint("2024-01-01", "100"),
-                        new Statistic.DataPoint("2024-01-15", "150"),
-                        new Statistic.DataPoint("2024-02-01", "130"))
-        );
+        Statistic statistic = createStatisticWithDataset("test-chart", "My Chart", "Date", "Price");
 
         repository.save(statistic);
 
@@ -48,17 +55,7 @@ class StatisticRepositoryTest {
 
     @Test
     void save_thenFindById_returnsEquivalentStatistic() {
-        Statistic original = new Statistic(
-                "test-chart",
-                "My Chart",
-                false,
-                "Date",
-                "Price",
-                List.of(
-                        new Statistic.DataPoint("2024-01-01", "100"),
-                        new Statistic.DataPoint("2024-01-15", "150"),
-                        new Statistic.DataPoint("2024-02-01", "130"))
-        );
+        Statistic original = createStatisticWithDataset("test-chart", "My Chart", "Date", "Price");
 
         repository.save(original);
         Statistic loaded = repository.findById("test-chart");
@@ -66,7 +63,8 @@ class StatisticRepositoryTest {
         assertThat(loaded.getId()).isEqualTo("test-chart");
         assertThat(loaded.getXAxisName()).isEqualTo("Date");
         assertThat(loaded.getYAxisName()).isEqualTo("Price");
-        assertThat(loaded.getDataPoints()).containsExactly(
+        assertThat(loaded.getDatasets()).hasSize(1);
+        assertThat(loaded.getDatasets().get(0).getDataPoints()).containsExactly(
                 new Statistic.DataPoint("2024-01-01", "100"),
                 new Statistic.DataPoint("2024-01-15", "150"),
                 new Statistic.DataPoint("2024-02-01", "130"));
@@ -74,10 +72,20 @@ class StatisticRepositoryTest {
 
     @Test
     void findAll_returnsAllSavedStatistics() {
-        repository.save(new Statistic("chart-1", "Chart 1", false, "Date", "Price",
-                List.of(new Statistic.DataPoint("2024-01-01", "100"))));
-        repository.save(new Statistic("chart-2", "Chart 2", false, "Date", "Volume",
-                List.of(new Statistic.DataPoint("2024-01-01", "200"))));
+        Statistic s1 = new Statistic();
+        s1.setId("chart-1");
+        s1.setTitle("Chart 1");
+        s1.setXAxisName("Date");
+        s1.setYAxisName("Price");
+        s1.setDatasets(new ArrayList<>(List.of(new Statistic.Dataset("Price", new ArrayList<>(List.of(new Statistic.DataPoint("2024-01-01", "100")))))));
+        Statistic s2 = new Statistic();
+        s2.setId("chart-2");
+        s2.setTitle("Chart 2");
+        s2.setXAxisName("Date");
+        s2.setYAxisName("Volume");
+        s2.setDatasets(new ArrayList<>(List.of(new Statistic.Dataset("Volume", new ArrayList<>(List.of(new Statistic.DataPoint("2024-01-01", "200")))))));
+        repository.save(s1);
+        repository.save(s2);
 
         List<Statistic> all = repository.findAll();
 

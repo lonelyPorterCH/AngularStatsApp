@@ -13,10 +13,11 @@ import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {AddPointForm} from './add-point-form/add-point-form';
 import {IncreaseForm} from './increase-form/increase-form';
 import {EditDeleteForm} from './edit-delete-form/edit-delete-form';
+import {ManageDatasetsForm} from './manage-datasets-form/manage-datasets-form';
 
 @Component({
   selector: 'app-stat-edit',
-  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatTabGroup, MatTab, AddPointForm, IncreaseForm, EditDeleteForm],
+  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatTabGroup, MatTab, AddPointForm, IncreaseForm, EditDeleteForm, ManageDatasetsForm],
   templateUrl: './stat-edit.html',
   styleUrl: './stat-edit.css'
 })

@@ -5,6 +5,7 @@ import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -21,12 +22,6 @@ public class StatisticService {
         repository.save(statistic);
     }
 
-    public void addDataPoint(String id, Statistic.DataPoint dataPoint) {
-        Statistic statistic = repository.findById(id);
-        statistic.getDataPoints().add(dataPoint);
-        repository.save(statistic);
-    }
-
     public Statistic getStatisticById(String id) {
         return repository.findById(id);
     }
@@ -35,11 +30,35 @@ public class StatisticService {
         repository.deleteById(id);
     }
 
-    public void deleteDataPoint(String id, Statistic.DataPoint dataPoint) {
+    public void addDataset(String id, String label) {
         Statistic statistic = repository.findById(id);
-        statistic.getDataPoints().removeIf(dp ->
-                dp.getX().equals(dataPoint.getX()) && dp.getY().equals(dataPoint.getY())
-        );
+        statistic.getDatasets().add(new Statistic.Dataset(label, new ArrayList<>()));
+        repository.save(statistic);
+    }
+
+    public void deleteDataset(String id, String label) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().removeIf(ds -> ds.getLabel().equals(label));
+        repository.save(statistic);
+    }
+
+    public void addDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().stream()
+                .filter(ds -> ds.getLabel().equals(datasetLabel))
+                .findFirst()
+                .ifPresent(ds -> ds.getDataPoints().add(dataPoint));
+        repository.save(statistic);
+    }
+
+    public void deleteDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().stream()
+                .filter(ds -> ds.getLabel().equals(datasetLabel))
+                .findFirst()
+                .ifPresent(ds -> ds.getDataPoints().removeIf(dp ->
+                        dp.getX().equals(dataPoint.getX()) && dp.getY().equals(dataPoint.getY())
+                ));
         repository.save(statistic);
     }
 }

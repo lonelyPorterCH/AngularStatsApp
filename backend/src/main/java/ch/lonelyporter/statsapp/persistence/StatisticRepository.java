@@ -39,7 +39,7 @@ public class StatisticRepository {
         if (!Files.exists(file)) {
             throw new StatisticNotFoundException(id);
         }
-        return objectMapper.readValue(file.toFile(), Statistic.class);
+        return readFile(file);
     }
 
     public List<Statistic> findAll() {
@@ -53,7 +53,7 @@ public class StatisticRepository {
         try (Stream<Path> files = Files.list(folder)) {
             return files
                     .filter(p -> p.toString().endsWith(".json"))
-                    .map(p -> objectMapper.readValue(p.toFile(), Statistic.class))
+                    .map(this::readFile)
                     .toList();
         } catch (IOException e) {
             throw new StatisticStorageException("Failed to find statistics", e);
@@ -68,6 +68,14 @@ public class StatisticRepository {
             Files.deleteIfExists(file);
         } catch (IOException e) {
             throw new StatisticStorageException("Failed to delete statistic: " + id, e);
+        }
+    }
+
+    private Statistic readFile(Path file) {
+        try {
+            return objectMapper.readValue(file.toFile(), Statistic.class);
+        } catch (Exception e) {
+            throw new StatisticStorageException("Failed to read statistic from file: " + file, e);
         }
     }
 }

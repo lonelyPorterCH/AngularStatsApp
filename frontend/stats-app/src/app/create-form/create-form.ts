@@ -50,7 +50,7 @@ export class CreateForm implements OnInit {
       xAxisName: this.statForm.value.xAxisName,
       yAxisName: this.statForm.value.yAxisName,
       reverse: this.statForm.value.reverse,
-      dataPoints: []
+      datasets: []
     }
 
     this.statService.addStat(newStat).subscribe({

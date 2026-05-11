@@ -1,5 +1,17 @@
 <form (ngSubmit)="onAddPoint()" [formGroup]="addPointForm">
   <mat-form-field appearance="outline">
+    <mat-label>Dataset</mat-label>
+    <mat-select formControlName="dataset">
+      @for (ds of stat.datasets; track ds.label) {
+        <mat-option [value]="ds.label">{{ ds.label }}</mat-option>
+      }
+    </mat-select>
+    @if (addPointForm.get('dataset')?.errors?.['required']) {
+      <mat-error>Dataset is required</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
     <mat-label>Date</mat-label>
     <input [matDatepicker]="picker" formControlName="x" matInput/>
     <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>

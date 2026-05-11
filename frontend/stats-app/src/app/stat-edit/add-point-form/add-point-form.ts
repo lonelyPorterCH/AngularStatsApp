@@ -7,6 +7,8 @@ import {StatService} from '../../services/stat-service';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
+import {MatOption} from '@angular/material/core';
+import {MatSelect} from '@angular/material/select';
 
 @Component({
   selector: 'app-add-point-form',
@@ -22,7 +24,9 @@ import {MatButton} from '@angular/material/button';
     MatIcon,
     ReactiveFormsModule,
     MatInput,
-    MatButton
+    MatButton,
+    MatSelect,
+    MatOption
   ],
   templateUrl: './add-point-form.html',
   styleUrl: './add-point-form.css'
@@ -41,6 +45,7 @@ export class AddPointForm implements OnInit {
 
   ngOnInit(): void {
     this.addPointForm = this.formBuilder.group({
+      dataset: [null, Validators.required],
       x: ['', Validators.required],
       y: ['', Validators.required]
     }, {updateOn: 'blur'});
@@ -49,12 +54,13 @@ export class AddPointForm implements OnInit {
   onAddPoint(): void {
     if (this.addPointForm.invalid || !this.stat) return;
 
+    const datasetLabel: string = this.addPointForm.get('dataset')?.value;
     const newPoint: DataPoint = {
       x: this.addPointForm.get('x')?.value.toFormat('yyyy-MM-dd'),
       y: this.addPointForm.get('y')?.value
     };
 
-    this.statService.addDataPoint(this.stat!.id, newPoint).subscribe({
+    this.statService.addDataPoint(this.stat!.id, datasetLabel, newPoint).subscribe({
       next: () => {
         this.pointChanged.emit();
         this.addPointForm.reset();

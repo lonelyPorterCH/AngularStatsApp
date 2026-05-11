@@ -1,4 +1,4 @@
-import {Component, computed, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, computed, EventEmitter, Input, OnInit, Output, signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {MatButton} from '@angular/material/button';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
@@ -32,9 +32,15 @@ export class EditDeleteForm implements OnInit {
   @Input() stat!: Stat;
   @Output() pointChanged = new EventEmitter<void>();
   editPointForm!: FormGroup;
+
+  selectedDatasetLabel = signal<string | null>(null);
+
   sortedDataPoints = computed(() => {
-    if (!this.stat) return [];
-    return [...this.stat!.dataPoints]
+    const label = this.selectedDatasetLabel();
+    if (!this.stat || !label) return [];
+    const ds = this.stat.datasets.find(d => d.label === label);
+    if (!ds) return [];
+    return [...ds.dataPoints]
       .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime());
   });
 
@@ -47,9 +53,16 @@ export class EditDeleteForm implements OnInit {
 
   ngOnInit(): void {
     this.editPointForm = this.formBuilder.group({
+      dataset: [null, Validators.required],
       selectedPoint: [null, Validators.required],
       value: ['']
     }, {updateOn: 'blur'});
+
+    this.editPointForm.get('dataset')?.valueChanges.subscribe(label => {
+      this.selectedDatasetLabel.set(label);
+      this.editPointForm.get('selectedPoint')?.reset();
+      this.editPointForm.get('value')?.reset();
+    });
   }
 
   onPointSelected(event: any): void {
@@ -59,6 +72,7 @@ export class EditDeleteForm implements OnInit {
   onEditPoint(): void {
     if (this.editPointForm.get('selectedPoint')?.invalid || !this.stat) return;
 
+    const datasetLabel: string = this.editPointForm.get('dataset')?.value;
     const selected: DataPoint = this.editPointForm.get('selectedPoint')?.value;
     const newValue = this.editPointForm.get('value')?.value;
 
@@ -66,32 +80,34 @@ export class EditDeleteForm implements OnInit {
       const dialogRef = this.dialog.open(ConfirmDialog);
       dialogRef.afterClosed().subscribe(confirmed => {
         if (confirmed) {
-          this.deletePoint(selected);
+          this.deletePoint(datasetLabel, selected);
         }
       });
     } else {
-      this.replacePoint(selected, newValue);
+      this.replacePoint(datasetLabel, selected, newValue);
     }
   }
 
-  private deletePoint(point: DataPoint): void {
-    this.statService.deleteDataPoint(this.stat!.id, point).subscribe({
+  private deletePoint(datasetLabel: string, point: DataPoint): void {
+    this.statService.deleteDataPoint(this.stat!.id, datasetLabel, point).subscribe({
       next: () => {
         this.pointChanged.emit();
         this.editPointForm.reset();
+        this.selectedDatasetLabel.set(null);
       },
       error: err => console.error(err)
     });
   }
 
-  private replacePoint(oldPoint: DataPoint, newValue: string): void {
-    this.statService.deleteDataPoint(this.stat!.id, oldPoint).subscribe({
+  private replacePoint(datasetLabel: string, oldPoint: DataPoint, newValue: string): void {
+    this.statService.deleteDataPoint(this.stat!.id, datasetLabel, oldPoint).subscribe({
       next: () => {
         const newPoint: DataPoint = {x: oldPoint.x, y: newValue};
-        this.statService.addDataPoint(this.stat!.id, newPoint).subscribe({
+        this.statService.addDataPoint(this.stat!.id, datasetLabel, newPoint).subscribe({
           next: () => {
             this.pointChanged.emit();
             this.editPointForm.reset();
+            this.selectedDatasetLabel.set(null);
           },
           error: err => console.error(err)
         });

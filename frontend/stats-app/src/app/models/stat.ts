@@ -4,6 +4,11 @@ export interface Stat {
   xAxisName: string;
   yAxisName: string;
   reverse: boolean;
+  datasets: Dataset[];
+}
+
+export interface Dataset {
+  label: string;
   dataPoints: DataPoint[];
 }
 

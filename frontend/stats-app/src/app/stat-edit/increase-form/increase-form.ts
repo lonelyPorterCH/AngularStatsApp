@@ -7,6 +7,8 @@ import {MatFormFieldModule} from '@angular/material/form-field';
 import {DataPoint, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
 import {MatButton} from '@angular/material/button';
+import {MatOption} from '@angular/material/core';
+import {MatSelect} from '@angular/material/select';
 
 @Component({
   selector: 'app-increase-form',
@@ -22,7 +24,9 @@ import {MatButton} from '@angular/material/button';
     ReactiveFormsModule,
     MatInput,
     MatDatepickerInput,
-    MatButton
+    MatButton,
+    MatSelect,
+    MatOption
   ],
   templateUrl: './increase-form.html',
   styleUrl: './increase-form.css',
@@ -38,6 +42,7 @@ export class IncreaseForm implements OnInit {
 
   ngOnInit(): void {
     this.increaseForm = this.formBuilder.group({
+      dataset: [null, Validators.required],
       x: ['', Validators.required],
       amount: ['', Validators.required]
     }, {updateOn: 'blur'});
@@ -46,7 +51,9 @@ export class IncreaseForm implements OnInit {
   onIncrease(): void {
     if (this.increaseForm.invalid || !this.stat) return;
 
-    const latestPoint = this.stat!.dataPoints
+    const datasetLabel: string = this.increaseForm.get('dataset')?.value;
+    const dataPoints = this.stat.datasets.find(ds => ds.label === datasetLabel)?.dataPoints ?? [];
+    const latestPoint = [...dataPoints]
       .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime())
       .at(-1);
 
@@ -59,7 +66,7 @@ export class IncreaseForm implements OnInit {
       y: newValue.toString()
     };
 
-    this.statService.addDataPoint(this.stat!.id, newPoint).subscribe({
+    this.statService.addDataPoint(this.stat!.id, datasetLabel, newPoint).subscribe({
       next: () => {
         this.pointChanged.emit();
         this.increaseForm.reset();

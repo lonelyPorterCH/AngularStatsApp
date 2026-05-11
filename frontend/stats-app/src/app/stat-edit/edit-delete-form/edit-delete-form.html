@@ -1,5 +1,14 @@
 <form (ngSubmit)="onEditPoint()" [formGroup]="editPointForm" class="edit-form">
   <mat-form-field appearance="outline">
+    <mat-label>Dataset</mat-label>
+    <mat-select formControlName="dataset">
+      @for (ds of stat.datasets; track ds.label) {
+        <mat-option [value]="ds.label">{{ ds.label }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
     <mat-label>Select Data Point</mat-label>
     <mat-select (selectionChange)="onPointSelected($event)" formControlName="selectedPoint">
       @for (point of sortedDataPoints(); track point.x) {

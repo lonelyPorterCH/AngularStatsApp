@@ -8,7 +8,7 @@ import {catchError, map, Observable, of} from 'rxjs';
 })
 export class StatService {
 
-  private baseUrl = '/api/stats';
+  private baseUrl = 'http://localhost:8081/api/stats';
 
   constructor(private http: HttpClient) {
   }
@@ -36,11 +36,25 @@ export class StatService {
     return this.http.delete<Stat>(`${this.baseUrl}/${id}`);
   }
 
-  addDataPoint(id: string, dataPoint: DataPoint): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/${id}/datapoint`, dataPoint);
+  addDataset(id: string, label: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/dataset`, {label});
   }
 
-  deleteDataPoint(id: string, dataPoint: DataPoint): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}/datapoint`, {body: dataPoint});
+  deleteDataset(id: string, label: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}`);
+  }
+
+  addDataPoint(id: string, datasetLabel: string, dataPoint: DataPoint): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${id}/datapoint`, {
+      datasetLabel,
+      x: dataPoint.x,
+      y: dataPoint.y
+    });
+  }
+
+  deleteDataPoint(id: string, datasetLabel: string, dataPoint: DataPoint): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}/datapoint`, {
+      body: {datasetLabel, x: dataPoint.x, y: dataPoint.y}
+    });
   }
 }
