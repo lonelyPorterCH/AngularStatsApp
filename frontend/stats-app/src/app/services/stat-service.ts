@@ -8,7 +8,7 @@ import {catchError, map, Observable, of} from 'rxjs';
 })
 export class StatService {
 
-  private baseUrl = 'http://localhost:8081/api/stats';
+  private baseUrl = '/api/stats';
 
   constructor(private http: HttpClient) {
   }
