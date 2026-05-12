@@ -4,6 +4,7 @@
   min-width: 300px;
   max-width: 600px;
   min-height: 400px;
+  box-sizing: border-box;
 }
 
 .stats-card {
@@ -11,6 +12,7 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
   height: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 
   display: flex;
   flex-direction: column;
@@ -19,4 +21,22 @@
 .chart-wrapper {
   flex: 1; // takes up all remaining space between title and button
   min-height: 0; // important, prevents flex children from overflowing
+  overflow: hidden;
 }
+
+@media (max-width: 600px) {
+  :host {
+    min-width: 0;
+    max-width: 100%;
+    flex: 1 1 100%;
+    min-height: 300px;
+  }
+
+  .stats-card {
+    padding: 16px 0;
+    box-shadow: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 0;
+  }
+}
+
