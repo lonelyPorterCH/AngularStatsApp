@@ -1,4 +1,4 @@
-import {Component, computed, EventEmitter, Input, OnInit, Output, signal} from '@angular/core';
+import {Component, computed, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {MatButton} from '@angular/material/button';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
@@ -27,7 +27,7 @@ import {ConfirmDialog} from '../../confirm-dialog/confirm-dialog';
   templateUrl: './edit-delete-form.html',
   styleUrl: './edit-delete-form.css',
 })
-export class EditDeleteForm implements OnInit {
+export class EditDeleteForm implements OnInit, OnChanges {
 
   @Input() stat!: Stat;
   @Output() pointChanged = new EventEmitter<void>();
@@ -63,6 +63,14 @@ export class EditDeleteForm implements OnInit {
       this.editPointForm.get('selectedPoint')?.reset();
       this.editPointForm.get('value')?.reset();
     });
+
+    this.preselectDatasetIfSingle();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['stat']) {
+      this.preselectDatasetIfSingle();
+    }
   }
 
   onPointSelected(event: any): void {
@@ -94,6 +102,7 @@ export class EditDeleteForm implements OnInit {
         this.pointChanged.emit();
         this.editPointForm.reset();
         this.selectedDatasetLabel.set(null);
+        this.preselectDatasetIfSingle();
       },
       error: err => console.error(err)
     });
@@ -108,11 +117,21 @@ export class EditDeleteForm implements OnInit {
             this.pointChanged.emit();
             this.editPointForm.reset();
             this.selectedDatasetLabel.set(null);
+            this.preselectDatasetIfSingle();
           },
           error: err => console.error(err)
         });
       },
       error: err => console.error(err)
     });
+  }
+
+  private preselectDatasetIfSingle(): void {
+    if (!this.editPointForm || !this.stat) return;
+    if (this.stat.datasets.length === 1) {
+      const label = this.stat.datasets[0].label;
+      this.editPointForm.patchValue({dataset: label});
+      this.selectedDatasetLabel.set(label);
+    }
   }
 }

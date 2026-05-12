@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import {MatError, MatFormField, MatInput, MatInputModule, MatLabel} from '@angular/material/input';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
 import {MatIcon} from '@angular/material/icon';
@@ -31,7 +31,7 @@ import {MatSelect} from '@angular/material/select';
   templateUrl: './increase-form.html',
   styleUrl: './increase-form.css',
 })
-export class IncreaseForm implements OnInit {
+export class IncreaseForm implements OnInit, OnChanges {
 
   @Input() stat!: Stat;
   @Output() pointChanged = new EventEmitter<void>();
@@ -46,6 +46,13 @@ export class IncreaseForm implements OnInit {
       x: ['', Validators.required],
       amount: ['', Validators.required]
     }, {updateOn: 'blur'});
+    this.preselectDatasetIfSingle();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['stat']) {
+      this.preselectDatasetIfSingle();
+    }
   }
 
   onIncrease(): void {
@@ -70,8 +77,16 @@ export class IncreaseForm implements OnInit {
       next: () => {
         this.pointChanged.emit();
         this.increaseForm.reset();
+        this.preselectDatasetIfSingle();
       },
       error: err => console.error(err)
     });
+  }
+
+  private preselectDatasetIfSingle(): void {
+    if (!this.increaseForm || !this.stat) return;
+    if (this.stat.datasets.length === 1) {
+      this.increaseForm.patchValue({dataset: this.stat.datasets[0].label});
+    }
   }
 }

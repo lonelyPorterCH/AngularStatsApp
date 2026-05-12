@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatError, MatFormField, MatInput, MatInputModule, MatLabel} from '@angular/material/input';
 import {DataPoint, Stat} from '../../models/stat';
@@ -31,7 +31,7 @@ import {MatSelect} from '@angular/material/select';
   templateUrl: './add-point-form.html',
   styleUrl: './add-point-form.css'
 })
-export class AddPointForm implements OnInit {
+export class AddPointForm implements OnInit, OnChanges {
 
   @Input() stat!: Stat;
   @Output() pointChanged = new EventEmitter<void>();
@@ -49,6 +49,13 @@ export class AddPointForm implements OnInit {
       x: ['', Validators.required],
       y: ['', Validators.required]
     }, {updateOn: 'blur'});
+    this.preselectDatasetIfSingle();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['stat']) {
+      this.preselectDatasetIfSingle();
+    }
   }
 
   onAddPoint(): void {
@@ -64,8 +71,16 @@ export class AddPointForm implements OnInit {
       next: () => {
         this.pointChanged.emit();
         this.addPointForm.reset();
+        this.preselectDatasetIfSingle();
       },
       error: err => console.error(err)
     });
+  }
+
+  private preselectDatasetIfSingle(): void {
+    if (!this.addPointForm || !this.stat) return;
+    if (this.stat.datasets.length === 1) {
+      this.addPointForm.patchValue({dataset: this.stat.datasets[0].label});
+    }
   }
 }
