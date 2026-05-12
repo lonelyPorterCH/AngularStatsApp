@@ -60,6 +60,21 @@ public class StatsApiController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/{id}/dataset/{label}")
+    public ResponseEntity<Void> renameDataset(@PathVariable String id, @PathVariable String label,
+                                              @RequestBody Map<String, String> body) {
+        log.debug("PATCH /api/stats/{}/dataset/{} -> {}", id, label, body.get("label"));
+        statisticService.renameDataset(id, label, body.get("label"));
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/axes")
+    public ResponseEntity<Void> renameAxes(@PathVariable String id, @RequestBody Map<String, String> body) {
+        log.debug("PATCH /api/stats/{}/axes", id);
+        statisticService.renameAxes(id, body.get("xAxisName"), body.get("yAxisName"));
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{id}/datapoint")
     public ResponseEntity<Void> addDataPoint(@PathVariable String id, @RequestBody DataPointRequest request) {
         log.debug("POST /api/stats/{}/datapoint. Dataset: {}, Point ({}, {})", id, request.datasetLabel(), request.x(), request.y());

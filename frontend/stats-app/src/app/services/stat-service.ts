@@ -45,6 +45,14 @@ export class StatService {
     return this.http.delete<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}`);
   }
 
+  renameDataset(id: string, oldLabel: string, newLabel: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(oldLabel)}`, {label: newLabel});
+  }
+
+  renameAxes(id: string, xAxisName: string, yAxisName: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/axes`, {xAxisName, yAxisName});
+  }
+
   addDataPoint(id: string, datasetLabel: string, dataPoint: DataPoint): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/datapoint`, {
       datasetLabel,

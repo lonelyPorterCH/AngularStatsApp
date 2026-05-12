@@ -42,6 +42,22 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void renameDataset(String id, String oldLabel, String newLabel) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().stream()
+                .filter(ds -> ds.getLabel().equals(oldLabel))
+                .findFirst()
+                .ifPresent(ds -> ds.setLabel(newLabel));
+        repository.save(statistic);
+    }
+
+    public void renameAxes(String id, String xAxisName, String yAxisName) {
+        Statistic statistic = repository.findById(id);
+        if (xAxisName != null) statistic.setXAxisName(xAxisName);
+        if (yAxisName != null) statistic.setYAxisName(yAxisName);
+        repository.save(statistic);
+    }
+
     public void addDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
         Statistic statistic = repository.findById(id);
         statistic.getDatasets().stream()

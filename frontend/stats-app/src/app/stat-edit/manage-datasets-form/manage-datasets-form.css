@@ -2,6 +2,14 @@
   padding: 16px 0;
 }
 
+.axes-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
 .add-dataset-form {
   display: flex;
   align-items: center;
@@ -16,3 +24,11 @@ mat-list-item {
   align-items: center;
 }
 
+.rename-input {
+  border: none;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  font-size: inherit;
+  outline: none;
+  width: 160px;
+}

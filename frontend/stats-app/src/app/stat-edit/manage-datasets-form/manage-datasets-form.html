@@ -1,25 +1,64 @@
 <div class="datasets-container">
-  <h3>Datasets</h3>
 
+  <!-- Axis rename section -->
+  <h3>Rename Axes</h3>
+  <form (ngSubmit)="onRenameAxes()" [formGroup]="axesForm" class="axes-form">
+    <mat-form-field appearance="outline">
+      <mat-label>X-Axis Name</mat-label>
+      <input formControlName="xAxisName" matInput/>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Y-Axis Name</mat-label>
+      <input formControlName="yAxisName" matInput/>
+    </mat-form-field>
+    <button mat-flat-button type="submit" [disabled]="axesForm.invalid || axesForm.pristine">
+      <mat-icon>save</mat-icon>
+      Save Axes
+    </button>
+  </form>
+
+  <!-- Dataset list -->
+  <h3>Datasets</h3>
   <mat-list>
     @for (ds of stat.datasets; track ds.label) {
       <mat-list-item>
-        <span>{{ ds.label }}</span>
-        <button mat-icon-button (click)="onDeleteDataset(ds.label)" aria-label="Delete dataset">
-          <mat-icon>delete</mat-icon>
-        </button>
+        @if (editingDataset[ds.label] !== undefined) {
+          <input
+            [(ngModel)]="editingDataset[ds.label]"
+            [ngModelOptions]="{standalone: true}"
+            matInput
+            class="rename-input"
+            (keyup.enter)="onRenameDataset(ds.label)"
+            (keyup.escape)="cancelRenameDataset(ds.label)"
+          />
+          <button mat-icon-button (click)="onRenameDataset(ds.label)" aria-label="Confirm rename">
+            <mat-icon>check</mat-icon>
+          </button>
+          <button mat-icon-button (click)="cancelRenameDataset(ds.label)" aria-label="Cancel rename">
+            <mat-icon>close</mat-icon>
+          </button>
+        } @else {
+          <span>{{ ds.label }}</span>
+          <button mat-icon-button (click)="startRenameDataset(ds.label)" aria-label="Rename dataset">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="onDeleteDataset(ds.label)" aria-label="Delete dataset">
+            <mat-icon>delete</mat-icon>
+          </button>
+        }
       </mat-list-item>
     } @empty {
       <mat-list-item>No datasets yet.</mat-list-item>
     }
   </mat-list>
 
+  <!-- Add dataset form -->
   <form (ngSubmit)="onAddDataset()" [formGroup]="addDatasetForm" class="add-dataset-form">
     <mat-form-field appearance="outline">
       <mat-label>New Dataset Label</mat-label>
       <input formControlName="label" matInput/>
     </mat-form-field>
-    <button mat-flat-button type="submit">
+    <button mat-flat-button type="submit" [disabled]="addDatasetForm.invalid">
       <mat-icon>add</mat-icon>
       Add Dataset
     </button>
