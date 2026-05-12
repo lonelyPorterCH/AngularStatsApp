@@ -1,8 +1,5 @@
 :host {
   display: block;
-  flex: 1 1 600px;
-  min-width: 300px;
-  max-width: 600px;
   min-height: 400px;
   box-sizing: border-box;
 }
@@ -26,9 +23,6 @@
 
 @media (max-width: 600px) {
   :host {
-    min-width: 0;
-    max-width: 100%;
-    flex: 1 1 100%;
     min-height: 300px;
   }
 
