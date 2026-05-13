@@ -11,7 +11,6 @@ All notable changes to this project are documented in this file.
 - Removed card box shadows on mobile; cards now use a subtle bottom border for separation.
 - Fixed horizontal scrollbar on mobile by constraining card widths and preventing overflow.
 - Switched stats overview layout from flexbox to CSS Grid so cards fill available space equally on desktop.
-- Fixed SPA Routing problem
 - Fixed `TypeError: can't access property "id", ctx.stat() is undefined` logged on every page load
   by guarding the Edit and Delete buttons in `stat-details.html` with `@if (stat())`.
 
