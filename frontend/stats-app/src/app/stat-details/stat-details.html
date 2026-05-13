@@ -1,13 +1,8 @@
 @if (stat()) {
-  <h2>{{ stat()!.title }}</h2>
-  <div class="chart-container">
-    <app-chart [stat]="stat()!"></app-chart>
-  </div>
-} @else if (notFound()) {
-  <p>Statistic not found.</p>
-} @else {
-  <p>Loading...</p>
-}
+<h2>{{ stat()!.title }}</h2>
+<div class="chart-container">
+  <app-chart [stat]="stat()!"></app-chart>
+</div>
 <button [routerLink]="['/stats']" matButton="outlined">Back</button>
 <button [routerLink]="['/stats', stat()!.id, 'edit']" mat-flat-button>
   <mat-icon>edit</mat-icon>
@@ -17,3 +12,9 @@
   <mat-icon>delete</mat-icon>
   Delete
 </button>
+} @else if (notFound()) {
+<p>Statistic not found.</p>
+} @else {
+<p>Loading...</p>
+}
+
