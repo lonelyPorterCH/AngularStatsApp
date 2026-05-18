@@ -53,6 +53,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/axes`, {xAxisName, yAxisName});
   }
 
+  reorderDatasets(id: string, orderedLabels: string[]): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/${id}/datasets/reorder`, orderedLabels);
+  }
+
   addDataPoint(id: string, datasetLabel: string, dataPoint: DataPoint): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/datapoint`, {
       datasetLabel,

@@ -9,6 +9,7 @@ export interface Stat {
 
 export interface Dataset {
   label: string;
+  index: number;
   dataPoints: DataPoint[];
 }
 

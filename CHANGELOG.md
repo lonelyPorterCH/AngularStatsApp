@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.0] - 2026-05-18
+
+### Added
+
+- Dataset ordering via an `index` field. Datasets are now displayed sorted by index.
+- Up/down reorder buttons in the dataset management UI to change dataset display order.
+- New backend endpoint `PUT /api/stats/{id}/datasets/reorder` to persist dataset order.
+
+### Changed
+
+- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.0`.
+- Backend project version in `backend/build.gradle` updated to `2.1.0-SNAPSHOT`.
+
 ### Fixed
 
 - Page refresh on production no longer returns a Spring Boot 404 "Whitelabel Error Page".

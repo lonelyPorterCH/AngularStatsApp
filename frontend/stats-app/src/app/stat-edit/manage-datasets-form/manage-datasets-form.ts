@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
-import {Stat} from '../../models/stat';
+import {Dataset, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatButton, MatIconButton} from '@angular/material/button';
@@ -108,6 +108,36 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     if (this.axesForm.invalid) return;
     const {xAxisName, yAxisName} = this.axesForm.value;
     this.statService.renameAxes(this.stat.id, xAxisName, yAxisName).subscribe({
+      next: () => this.datasetsChanged.emit(),
+      error: err => console.error(err)
+    });
+  }
+
+  get sortedDatasets(): Dataset[] {
+    return [...this.stat.datasets].sort((a, b) => a.index - b.index);
+  }
+
+  moveDatasetUp(label: string): void {
+    const sorted = this.sortedDatasets;
+    const idx = sorted.findIndex(ds => ds.label === label);
+    if (idx <= 0) return;
+    // Swap with the one above
+    const newOrder = sorted.map(ds => ds.label);
+    [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
+    this.statService.reorderDatasets(this.stat.id, newOrder).subscribe({
+      next: () => this.datasetsChanged.emit(),
+      error: err => console.error(err)
+    });
+  }
+
+  moveDatasetDown(label: string): void {
+    const sorted = this.sortedDatasets;
+    const idx = sorted.findIndex(ds => ds.label === label);
+    if (idx < 0 || idx >= sorted.length - 1) return;
+    // Swap with the one below
+    const newOrder = sorted.map(ds => ds.label);
+    [newOrder[idx], newOrder[idx + 1]] = [newOrder[idx + 1], newOrder[idx]];
+    this.statService.reorderDatasets(this.stat.id, newOrder).subscribe({
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
     });

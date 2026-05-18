@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -15,7 +16,9 @@ public class StatisticService {
     private final StatisticRepository repository;
 
     public List<Statistic> getStatistics() {
-        return repository.findAll();
+        List<Statistic> stats = repository.findAll();
+        stats.forEach(s -> s.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex)));
+        return stats;
     }
 
     public void createStatistic(Statistic statistic) {
@@ -23,7 +26,9 @@ public class StatisticService {
     }
 
     public Statistic getStatisticById(String id) {
-        return repository.findById(id);
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex));
+        return statistic;
     }
 
     public void deleteStatisticById(String id) {
@@ -32,7 +37,13 @@ public class StatisticService {
 
     public void addDataset(String id, String label) {
         Statistic statistic = repository.findById(id);
-        statistic.getDatasets().add(new Statistic.Dataset(label, new ArrayList<>()));
+        int nextIndex = statistic.getDatasets().stream()
+                .mapToInt(Statistic.Dataset::getIndex)
+                .max()
+                .orElse(-1) + 1;
+        Statistic.Dataset ds = new Statistic.Dataset(label, new ArrayList<>());
+        ds.setIndex(nextIndex);
+        statistic.getDatasets().add(ds);
         repository.save(statistic);
     }
 
@@ -75,6 +86,19 @@ public class StatisticService {
                 .ifPresent(ds -> ds.getDataPoints().removeIf(dp ->
                         dp.getX().equals(dataPoint.getX()) && dp.getY().equals(dataPoint.getY())
                 ));
+        repository.save(statistic);
+    }
+
+    public void reorderDatasets(String id, List<String> orderedLabels) {
+        Statistic statistic = repository.findById(id);
+        for (int i = 0; i < orderedLabels.size(); i++) {
+            final int index = i;
+            final String label = orderedLabels.get(i);
+            statistic.getDatasets().stream()
+                    .filter(ds -> ds.getLabel().equals(label))
+                    .findFirst()
+                    .ifPresent(ds -> ds.setIndex(index));
+        }
         repository.save(statistic);
     }
 }

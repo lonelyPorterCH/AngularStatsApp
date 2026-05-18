@@ -87,4 +87,11 @@ public class StatsApiController {
         statisticService.deleteDataPoint(id, request.datasetLabel(), new Statistic.DataPoint(request.x(), request.y()));
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/{id}/datasets/reorder")
+    public ResponseEntity<Void> reorderDatasets(@PathVariable String id, @RequestBody List<String> orderedLabels) {
+        log.debug("PUT /api/stats/{}/datasets/reorder", id);
+        statisticService.reorderDatasets(id, orderedLabels);
+        return ResponseEntity.ok().build();
+    }
 }

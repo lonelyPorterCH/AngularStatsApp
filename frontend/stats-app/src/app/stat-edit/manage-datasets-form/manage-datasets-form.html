@@ -20,7 +20,7 @@
   <!-- Dataset list -->
   <h3>Datasets</h3>
   <mat-list>
-    @for (ds of stat.datasets; track ds.label) {
+    @for (ds of sortedDatasets; track ds.label) {
       <mat-list-item>
         @if (editingDataset[ds.label] !== undefined) {
           <input
@@ -39,6 +39,14 @@
           </button>
         } @else {
           <span>{{ ds.label }}</span>
+          <button mat-icon-button (click)="moveDatasetUp(ds.label)" aria-label="Move dataset up"
+                  [disabled]="sortedDatasets.indexOf(ds) === 0">
+            <mat-icon>arrow_upward</mat-icon>
+          </button>
+          <button mat-icon-button (click)="moveDatasetDown(ds.label)" aria-label="Move dataset down"
+                  [disabled]="sortedDatasets.indexOf(ds) === sortedDatasets.length - 1">
+            <mat-icon>arrow_downward</mat-icon>
+          </button>
           <button mat-icon-button (click)="startRenameDataset(ds.label)" aria-label="Rename dataset">
             <mat-icon>edit</mat-icon>
           </button>
