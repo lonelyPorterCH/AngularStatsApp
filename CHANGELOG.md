@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.1] - 2026-06-02
+
+### Added
+
+- Clicking a data point on the chart in the edit view now switches to the "Edit / Delete Point" tab and prefills the form with the selected point's dataset, date, and value.
+
+### Changed
+
+- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.1`.
+- Backend project version in `backend/build.gradle` updated to `2.1.1-SNAPSHOT`.
+
 ## [2.1.0] - 2026-05-18
 
 ### Added

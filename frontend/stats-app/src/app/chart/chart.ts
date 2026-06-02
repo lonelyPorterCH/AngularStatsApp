@@ -1,9 +1,14 @@
-import {AfterViewInit, Component, ElementRef, Input, OnChanges, viewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, Output, viewChild} from '@angular/core';
 import {Chart, registerables} from 'chart.js';
 import 'chartjs-adapter-luxon';
-import {Stat} from '../models/stat';
+import {DataPoint, Stat} from '../models/stat';
 
 Chart.register(...registerables);
+
+export interface ChartPointClickEvent {
+  datasetLabel: string;
+  point: DataPoint;
+}
 
 @Component({
   selector: 'app-chart',
@@ -13,6 +18,7 @@ Chart.register(...registerables);
 export class ChartComponent implements OnChanges, AfterViewInit {
 
   @Input() stat!: Stat;
+  @Output() pointClick = new EventEmitter<ChartPointClickEvent>();
   canvas = viewChild.required<ElementRef>('canvas');
   private chart?: Chart;
   private viewInitialized = false;
@@ -62,6 +68,17 @@ export class ChartComponent implements OnChanges, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        onClick: (_event, elements) => {
+          if (elements.length > 0) {
+            const el = elements[0];
+            const ds = this.stat.datasets[el.datasetIndex];
+            const sorted = [...ds.dataPoints].sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime());
+            const point = sorted[el.index];
+            if (ds && point) {
+              this.pointClick.emit({datasetLabel: ds.label, point});
+            }
+          }
+        },
         scales: {
           x: {
             type: 'time',

@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, OnInit, signal, viewChild} from '@angular/core';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
@@ -8,7 +8,7 @@ import {Stat} from '../models/stat';
 import {StatService} from '../services/stat-service';
 import {ActivatedRoute} from '@angular/router';
 import {Title} from '@angular/platform-browser';
-import {ChartComponent} from '../chart/chart';
+import {ChartComponent, ChartPointClickEvent} from '../chart/chart';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {AddPointForm} from './add-point-form/add-point-form';
 import {IncreaseForm} from './increase-form/increase-form';
@@ -24,6 +24,8 @@ import {ManageDatasetsForm} from './manage-datasets-form/manage-datasets-form';
 export class StatEdit implements OnInit {
 
   stat = signal<Stat | undefined>(undefined);
+  tabGroup = viewChild<MatTabGroup>('tabGroup');
+  editDeleteForm = viewChild<EditDeleteForm>('editDeleteForm');
 
 
   constructor(
@@ -52,6 +54,16 @@ export class StatEdit implements OnInit {
       next: data => {
         this.stat.set(data);
       }
+    });
+  }
+
+  protected onChartPointClick(event: ChartPointClickEvent): void {
+    const tabGroup = this.tabGroup();
+    if (tabGroup) {
+      tabGroup.selectedIndex = 3; // "Edit / Delete Point" tab
+    }
+    setTimeout(() => {
+      this.editDeleteForm()?.prefillPoint(event.datasetLabel, event.point);
     });
   }
 }

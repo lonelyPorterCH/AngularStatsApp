@@ -73,6 +73,17 @@ export class EditDeleteForm implements OnInit, OnChanges {
     }
   }
 
+  prefillPoint(datasetLabel: string, point: DataPoint): void {
+    this.editPointForm.patchValue({dataset: datasetLabel});
+    this.selectedDatasetLabel.set(datasetLabel);
+
+    const sorted = this.sortedDataPoints();
+    const match = sorted.find(p => p.x === point.x && p.y === point.y);
+    if (match) {
+      this.editPointForm.patchValue({selectedPoint: match, value: match.y});
+    }
+  }
+
   onPointSelected(event: any): void {
     this.editPointForm.get('value')?.setValue(event.value.y);
   }

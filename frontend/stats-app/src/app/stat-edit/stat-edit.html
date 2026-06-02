@@ -2,10 +2,10 @@
   <h2>Edit - {{ stat()!.title }}</h2>
 
   <div class="chart-container">
-    <app-chart [stat]="stat()!"></app-chart>
+    <app-chart [stat]="stat()!" (pointClick)="onChartPointClick($event)"></app-chart>
   </div>
 
-  <mat-tab-group>
+  <mat-tab-group #tabGroup>
     <mat-tab label="Manage Datasets">
       <app-manage-datasets-form (datasetsChanged)="reloadStat()" [stat]="stat()!"></app-manage-datasets-form>
     </mat-tab>
@@ -19,7 +19,7 @@
     </mat-tab>
 
     <mat-tab label="Edit / Delete Point">
-      <app-edit-delete-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-edit-delete-form>
+      <app-edit-delete-form #editDeleteForm (pointChanged)="reloadStat()" [stat]="stat()!"></app-edit-delete-form>
     </mat-tab>
   </mat-tab-group>
 } @else {
