@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.2] - 2026-06-10
+
+### Added
+
+- Datapoints are now persisted sorted by date (oldest first, newest last) to keep chart line connections correct after point edits.
+
+### Changed
+
+- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.2`.
+- Backend project version in `backend/build.gradle` updated to `2.1.2-SNAPSHOT`.
+
 ## [2.1.1] - 2026-06-02
 
 ### Added

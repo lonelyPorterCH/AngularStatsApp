@@ -100,4 +100,29 @@ class StatisticRepositoryTest {
 
         assertThat(all).isEmpty();
     }
+
+    @Test
+    void save_sortsDataPointsByDateAscending() {
+        Statistic statistic = new Statistic();
+        statistic.setId("sorted-chart");
+        statistic.setTitle("Sorted Chart");
+        statistic.setXAxisName("Date");
+        statistic.setYAxisName("Price");
+        statistic.setDatasets(new ArrayList<>(List.of(
+                new Statistic.Dataset("Price", new ArrayList<>(List.of(
+                        new Statistic.DataPoint("2024-02-01", "130"),
+                        new Statistic.DataPoint("2024-01-01", "100"),
+                        new Statistic.DataPoint("2024-01-15", "150")
+                )))
+        )));
+
+        repository.save(statistic);
+        Statistic loaded = repository.findById("sorted-chart");
+
+        assertThat(loaded.getDatasets().get(0).getDataPoints()).containsExactly(
+                new Statistic.DataPoint("2024-01-01", "100"),
+                new Statistic.DataPoint("2024-01-15", "150"),
+                new Statistic.DataPoint("2024-02-01", "130")
+        );
+    }
 }

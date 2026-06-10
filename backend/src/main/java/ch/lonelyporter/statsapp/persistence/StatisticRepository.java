@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -27,6 +28,7 @@ public class StatisticRepository {
             Path folder = Paths.get(storageProperties.getStoragePath());
             Files.createDirectories(folder);
 
+            sortDataPointsByDate(statistic);
             Path file = folder.resolve(statistic.getId() + ".json");
             objectMapper.writeValue(file.toFile(), statistic);
         } catch (IOException e) {
@@ -77,5 +79,18 @@ public class StatisticRepository {
         } catch (Exception e) {
             throw new StatisticStorageException("Failed to read statistic from file: " + file, e);
         }
+    }
+
+    private void sortDataPointsByDate(Statistic statistic) {
+        if (statistic.getDatasets() == null) {
+            return;
+        }
+        statistic.getDatasets().forEach(dataset -> {
+            if (dataset.getDataPoints() != null) {
+                dataset.getDataPoints().sort(
+                        Comparator.comparing(Statistic.DataPoint::getX, Comparator.nullsLast(String::compareTo))
+                );
+            }
+        });
     }
 }
