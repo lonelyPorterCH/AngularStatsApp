@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.4] - 2026-06-11
+
+### Added
+
+- Support for increment syntax in "Add Data Point" form: entering `+<number>` (e.g., `+10`) now increments the latest
+  value
+  by that amount instead of adding an exact value.
+
+### Changed
+
+- Removed separate "Increase Latest Value" tab; functionality is now integrated into "Add Data Point" form.
+
+### UI Improvements
+
+- Consolidated "Add Data Point" and "Increase Latest Value" tabs, reducing visual clutter in the Edit View (now 3 tabs
+  instead of 4).
+- Added tooltip to value input field explaining the `+<number>` syntax.
+
 ## [2.1.3] - 2026-06-11
 
 ### Added
@@ -11,35 +29,29 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
-- Added persistence for dataset `filled` in backend/frontend models with backward compatibility for existing JSON files where the field is absent (defaults to `false`).
+- Added persistence for dataset `filled` in backend/frontend models with backward compatibility for existing JSON files
+  where the field is absent (defaults to `false`).
 - Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.3`.
 - Backend project version in `backend/build.gradle` updated to `2.1.3-SNAPSHOT`.
 
 ### UI Improvements
 
-- Dataset action buttons (move, rename, delete) are now hidden by default and only appear on hover, reducing visual clutter in the dataset list.
+- Dataset action buttons (move, rename, delete) are now hidden by default and only appear on hover, reducing visual
+  clutter in the dataset list.
 
 ## [2.1.2] - 2026-06-10
 
 ### Added
 
-- Datapoints are now persisted sorted by date (oldest first, newest last) to keep chart line connections correct after point edits.
-
-### Changed
-
-- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.2`.
-- Backend project version in `backend/build.gradle` updated to `2.1.2-SNAPSHOT`.
+- Datapoints are now persisted sorted by date (oldest first, newest last) to keep chart line connections correct after
+  point edits.
 
 ## [2.1.1] - 2026-06-02
 
 ### Added
 
-- Clicking a data point on the chart in the edit view now switches to the "Edit / Delete Point" tab and prefills the form with the selected point's dataset, date, and value.
-
-### Changed
-
-- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.1`.
-- Backend project version in `backend/build.gradle` updated to `2.1.1-SNAPSHOT`.
+- Clicking a data point on the chart in the edit view now switches to the "Edit / Delete Point" tab and prefills the
+  form with the selected point's dataset, date, and value.
 
 ## [2.1.0] - 2026-05-18
 
@@ -48,11 +60,6 @@ All notable changes to this project are documented in this file.
 - Dataset ordering via an `index` field. Datasets are now displayed sorted by index.
 - Up/down reorder buttons in the dataset management UI to change dataset display order.
 - New backend endpoint `PUT /api/stats/{id}/datasets/reorder` to persist dataset order.
-
-### Changed
-
-- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.0`.
-- Backend project version in `backend/build.gradle` updated to `2.1.0-SNAPSHOT`.
 
 ### Fixed
 
@@ -66,21 +73,11 @@ All notable changes to this project are documented in this file.
 - Fixed `TypeError: can't access property "id", ctx.stat() is undefined` logged on every page load
   by guarding the Edit and Delete buttons in `stat-details.html` with `@if (stat())`.
 
-### Changed
-
-- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.0.3`.
-- Backend project version in `backend/build.gradle` updated to `2.0.3-SNAPSHOT`.
-
 ## [2.0.2] - 2026-05-12
 
 ### Added
 
 - Editing forms now preselect the dataset automatically when a statistic has exactly one dataset.
-
-### Changed
-
-- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.0.2`.
-- Backend project version in `backend/build.gradle` updated to `2.0.2-SNAPSHOT`.
 
 ## [2.0.1] - 2026-05-12
 
@@ -88,11 +85,6 @@ All notable changes to this project are documented in this file.
 
 - Rename support for dataset labels.
 - Rename support for X-axis and Y-axis names.
-
-### Changed
-
-- Frontend app version was incremented to `v2.0.1`.
-- Backend project version was incremented to `2.0.1-SNAPSHOT`.
 
 ## [2.0.0] - 2026-05-11
 

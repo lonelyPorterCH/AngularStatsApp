@@ -6,7 +6,8 @@ These instructions apply to every Copilot session in this repository.
 
 - **Frontend**: Angular (standalone components, Angular Material, Chart.js) under `frontend/stats-app/`
 - **Backend**: Spring Boot (Java 21, Lombok, Jackson) under `backend/`
-- **Data model**: `Statistic` has a `datasets: List<Dataset>` field; each `Dataset` has a `label` and `dataPoints: List<DataPoint>`.
+- **Data model**: `Statistic` has a `datasets: List<Dataset>` field; each `Dataset` has a `label` and
+  `dataPoints: List<DataPoint>`.
 - **Storage**: JSON files on disk, managed by `StatisticRepository`.
 
 ## Versioning Rule — ALWAYS apply when implementing a new feature
@@ -31,7 +32,7 @@ Whenever a new feature is implemented, **all three of the following must be done
    - Description of the feature.
 
    ### Changed
-   - Any related changes to version strings or configuration.
+   - Any related changes.
    ```
 
 > Bug fixes do not require a version bump unless they change observable behaviour.

@@ -23,7 +23,7 @@
 
   <mat-form-field appearance="outline">
     <mat-label>{{ stat!.yAxisName }}</mat-label>
-    <input formControlName="y" matInput type="number"/>
+    <input formControlName="y" matInput type="text" matTooltip="Enter a number (e.g., 100) or +number to increment the latest value (e.g., +10)"/>
     @if (addPointForm.get('y')?.errors?.['required']) {
       <mat-error>Value is required</mat-error>
     }

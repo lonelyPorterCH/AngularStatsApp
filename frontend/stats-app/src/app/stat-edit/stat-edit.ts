@@ -11,13 +11,12 @@ import {Title} from '@angular/platform-browser';
 import {ChartComponent, ChartPointClickEvent} from '../chart/chart';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {AddPointForm} from './add-point-form/add-point-form';
-import {IncreaseForm} from './increase-form/increase-form';
 import {EditDeleteForm} from './edit-delete-form/edit-delete-form';
 import {ManageDatasetsForm} from './manage-datasets-form/manage-datasets-form';
 
 @Component({
   selector: 'app-stat-edit',
-  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatTabGroup, MatTab, AddPointForm, IncreaseForm, EditDeleteForm, ManageDatasetsForm],
+  imports: [MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, ReactiveFormsModule, ChartComponent, MatTabGroup, MatTab, AddPointForm, EditDeleteForm, ManageDatasetsForm],
   templateUrl: './stat-edit.html',
   styleUrl: './stat-edit.css'
 })
@@ -60,7 +59,7 @@ export class StatEdit implements OnInit {
   protected onChartPointClick(event: ChartPointClickEvent): void {
     const tabGroup = this.tabGroup();
     if (tabGroup) {
-      tabGroup.selectedIndex = 3; // "Edit / Delete Point" tab
+      tabGroup.selectedIndex = 2; // "Edit / Delete Point" tab
     }
     setTimeout(() => {
       this.editDeleteForm()?.prefillPoint(event.datasetLabel, event.point);

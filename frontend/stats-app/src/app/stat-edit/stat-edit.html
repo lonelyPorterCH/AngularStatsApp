@@ -14,10 +14,6 @@
       <app-add-point-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-add-point-form>
     </mat-tab>
 
-    <mat-tab label="Increase Latest Value">
-      <app-increase-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-increase-form>
-    </mat-tab>
-
     <mat-tab label="Edit / Delete Point">
       <app-edit-delete-form #editDeleteForm (pointChanged)="reloadStat()" [stat]="stat()!"></app-edit-delete-form>
     </mat-tab>

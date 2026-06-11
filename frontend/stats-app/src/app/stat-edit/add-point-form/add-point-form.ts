@@ -9,6 +9,7 @@ import {MatIcon} from '@angular/material/icon';
 import {MatButton} from '@angular/material/button';
 import {MatOption} from '@angular/material/core';
 import {MatSelect} from '@angular/material/select';
+import {MatTooltip} from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-add-point-form',
@@ -26,7 +27,8 @@ import {MatSelect} from '@angular/material/select';
     MatInput,
     MatButton,
     MatSelect,
-    MatOption
+    MatOption,
+    MatTooltip
   ],
   templateUrl: './add-point-form.html',
   styleUrl: './add-point-form.css'
@@ -62,11 +64,45 @@ export class AddPointForm implements OnInit, OnChanges {
     if (this.addPointForm.invalid || !this.stat) return;
 
     const datasetLabel: string = this.addPointForm.get('dataset')?.value;
+    const yInput: string = this.addPointForm.get('y')?.value;
+    const date = this.addPointForm.get('x')?.value.toFormat('yyyy-MM-dd');
+
+    if (yInput.startsWith('+')) {
+      // Increment mode: add the amount to the latest value
+      this.handleIncrement(datasetLabel, date, yInput);
+    } else {
+      // Regular mode: add point with exact value
+      const newPoint: DataPoint = {
+        x: date,
+        y: yInput
+      };
+      this.addDataPointAndReset(datasetLabel, newPoint);
+    }
+  }
+
+  private handleIncrement(datasetLabel: string, date: string, amountStr: string): void {
+    const dataPoints = this.stat!.datasets.find(ds => ds.label === datasetLabel)?.dataPoints ?? [];
+    const latestPoint = [...dataPoints]
+      .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime())
+      .at(-1);
+
+    if (!latestPoint) {
+      console.error('No latest point found for increment operation');
+      return;
+    }
+
+    const amount = parseFloat(amountStr.substring(1));
+    const newValue = parseFloat(latestPoint.y) + amount;
+
     const newPoint: DataPoint = {
-      x: this.addPointForm.get('x')?.value.toFormat('yyyy-MM-dd'),
-      y: this.addPointForm.get('y')?.value
+      x: date,
+      y: newValue.toString()
     };
 
+    this.addDataPointAndReset(datasetLabel, newPoint);
+  }
+
+  private addDataPointAndReset(datasetLabel: string, newPoint: DataPoint): void {
     this.statService.addDataPoint(this.stat!.id, datasetLabel, newPoint).subscribe({
       next: () => {
         this.pointChanged.emit();

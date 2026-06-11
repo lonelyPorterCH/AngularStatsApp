@@ -12,7 +12,7 @@ const MOCK_STAT: Stat = {
   xAxisName: 'Date',
   yAxisName: 'Value',
   reverse: false,
-  dataPoints: []
+  datasets: []
 };
 
 describe('AddPointForm', () => {
