@@ -38,28 +38,34 @@
             <mat-icon>close</mat-icon>
           </button>
         } @else {
-          <span>{{ ds.label }}</span>
-          <mat-checkbox
-            [ngModel]="ds.filled ?? false"
-            [ngModelOptions]="{standalone: true}"
-            (ngModelChange)="onSetDatasetFilled(ds.label, $event)"
-          >
-            Filled
-          </mat-checkbox>
-          <button mat-icon-button (click)="moveDatasetUp(ds.label)" aria-label="Move dataset up"
-                  [disabled]="sortedDatasets.indexOf(ds) === 0">
-            <mat-icon>arrow_upward</mat-icon>
-          </button>
-          <button mat-icon-button (click)="moveDatasetDown(ds.label)" aria-label="Move dataset down"
-                  [disabled]="sortedDatasets.indexOf(ds) === sortedDatasets.length - 1">
-            <mat-icon>arrow_downward</mat-icon>
-          </button>
-          <button mat-icon-button (click)="startRenameDataset(ds.label)" aria-label="Rename dataset">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button mat-icon-button (click)="onDeleteDataset(ds.label)" aria-label="Delete dataset">
-            <mat-icon>delete</mat-icon>
-          </button>
+          <div class="dataset-row">
+            <div class="dataset-label-section">
+              <span>{{ ds.label }}</span>
+              <mat-checkbox
+                [ngModel]="ds.filled ?? false"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onSetDatasetFilled(ds.label, $event)"
+              >
+                Filled
+              </mat-checkbox>
+            </div>
+            <div class="dataset-actions">
+              <button mat-icon-button (click)="moveDatasetUp(ds.label)" aria-label="Move dataset up"
+                      [disabled]="sortedDatasets.indexOf(ds) === 0">
+                <mat-icon>arrow_upward</mat-icon>
+              </button>
+              <button mat-icon-button (click)="moveDatasetDown(ds.label)" aria-label="Move dataset down"
+                      [disabled]="sortedDatasets.indexOf(ds) === sortedDatasets.length - 1">
+                <mat-icon>arrow_downward</mat-icon>
+              </button>
+              <button mat-icon-button (click)="startRenameDataset(ds.label)" aria-label="Rename dataset">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button (click)="onDeleteDataset(ds.label)" aria-label="Delete dataset">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
         }
       </mat-list-item>
     } @empty {

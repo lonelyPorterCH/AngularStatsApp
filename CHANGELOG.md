@@ -15,6 +15,10 @@ All notable changes to this project are documented in this file.
 - Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.3`.
 - Backend project version in `backend/build.gradle` updated to `2.1.3-SNAPSHOT`.
 
+### UI Improvements
+
+- Dataset action buttons (move, rename, delete) are now hidden by default and only appear on hover, reducing visual clutter in the dataset list.
+
 ## [2.1.2] - 2026-06-10
 
 ### Added
