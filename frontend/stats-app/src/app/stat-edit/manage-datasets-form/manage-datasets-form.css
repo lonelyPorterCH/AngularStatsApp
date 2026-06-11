@@ -46,6 +46,8 @@ mat-list-item {
   gap: 12px;
 }
 
+/* TODO: Replace with Material Design CSS variables/tokens instead of ::ng-deep piercing.
+   This is a temporary workaround to style Material checkbox internals. */
 .dataset-label-section ::ng-deep .mdc-checkbox {
   padding-right: 4px;
 }
