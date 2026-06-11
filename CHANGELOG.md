@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.3] - 2026-06-11
+
+### Added
+
+- Per-dataset `filled` flag to control whether the chart area under a dataset line is rendered.
+- Dataset management UI checkbox to toggle fill on/off per dataset.
+
+### Changed
+
+- Added persistence for dataset `filled` in backend/frontend models with backward compatibility for existing JSON files where the field is absent (defaults to `false`).
+- Frontend app version in `frontend/stats-app/src/app/app.html` updated to `v2.1.3`.
+- Backend project version in `backend/build.gradle` updated to `2.1.3-SNAPSHOT`.
+
 ## [2.1.2] - 2026-06-10
 
 ### Added

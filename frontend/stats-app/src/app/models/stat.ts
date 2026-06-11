@@ -10,6 +10,7 @@ export interface Stat {
 export interface Dataset {
   label: string;
   index: number;
+  filled?: boolean;
   dataPoints: DataPoint[];
 }
 

@@ -6,6 +6,7 @@ import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {MatList, MatListItem} from '@angular/material/list';
+import {MatCheckbox} from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-manage-datasets-form',
@@ -19,7 +20,8 @@ import {MatList, MatListItem} from '@angular/material/list';
     MatIconButton,
     MatIcon,
     MatList,
-    MatListItem
+    MatListItem,
+    MatCheckbox
   ],
   templateUrl: './manage-datasets-form.html',
   styleUrl: './manage-datasets-form.css'
@@ -138,6 +140,13 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     const newOrder = sorted.map(ds => ds.label);
     [newOrder[idx], newOrder[idx + 1]] = [newOrder[idx + 1], newOrder[idx]];
     this.statService.reorderDatasets(this.stat.id, newOrder).subscribe({
+      next: () => this.datasetsChanged.emit(),
+      error: err => console.error(err)
+    });
+  }
+
+  onSetDatasetFilled(label: string, filled: boolean): void {
+    this.statService.setDatasetFilled(this.stat.id, label, filled).subscribe({
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
     });

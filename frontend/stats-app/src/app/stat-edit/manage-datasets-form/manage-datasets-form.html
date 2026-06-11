@@ -39,6 +39,13 @@
           </button>
         } @else {
           <span>{{ ds.label }}</span>
+          <mat-checkbox
+            [ngModel]="ds.filled ?? false"
+            [ngModelOptions]="{standalone: true}"
+            (ngModelChange)="onSetDatasetFilled(ds.label, $event)"
+          >
+            Filled
+          </mat-checkbox>
           <button mat-icon-button (click)="moveDatasetUp(ds.label)" aria-label="Move dataset up"
                   [disabled]="sortedDatasets.indexOf(ds) === 0">
             <mat-icon>arrow_upward</mat-icon>

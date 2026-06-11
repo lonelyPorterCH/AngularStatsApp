@@ -62,6 +62,15 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void setDatasetFilled(String id, String label, boolean filled) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().stream()
+                .filter(ds -> ds.getLabel().equals(label))
+                .findFirst()
+                .ifPresent(ds -> ds.setFilled(filled));
+        repository.save(statistic);
+    }
+
     public void renameAxes(String id, String xAxisName, String yAxisName) {
         Statistic statistic = repository.findById(id);
         if (xAxisName != null) statistic.setXAxisName(xAxisName);

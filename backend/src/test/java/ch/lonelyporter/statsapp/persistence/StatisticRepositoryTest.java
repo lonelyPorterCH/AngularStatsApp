@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.ObjectMapper;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -124,5 +125,33 @@ class StatisticRepositoryTest {
                 new Statistic.DataPoint("2024-01-15", "150"),
                 new Statistic.DataPoint("2024-02-01", "130")
         );
+    }
+
+    @Test
+    void findById_whenFilledMissing_defaultsToFalse() throws Exception {
+        String json = """
+                {
+                  "id": "legacy-chart",
+                  "title": "Legacy Chart",
+                  "reverse": false,
+                  "xAxisName": "Date",
+                  "yAxisName": "Price",
+                  "datasets": [
+                    {
+                      "label": "Price",
+                      "index": 0,
+                      "dataPoints": [
+                        {"x": "2024-01-01", "y": "100"}
+                      ]
+                    }
+                  ]
+                }
+                """;
+        Files.writeString(tempDir.resolve("legacy-chart.json"), json);
+
+        Statistic loaded = repository.findById("legacy-chart");
+
+        assertThat(loaded.getDatasets()).hasSize(1);
+        assertThat(loaded.getDatasets().get(0).isFilled()).isFalse();
     }
 }

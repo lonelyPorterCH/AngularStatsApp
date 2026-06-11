@@ -21,6 +21,9 @@ public class StatsApiController {
     record DataPointRequest(String datasetLabel, String x, String y) {
     }
 
+    record FilledRequest(Boolean filled) {
+    }
+
     @GetMapping
     public ResponseEntity<List<Statistic>> getStatistics() {
         log.debug("GET /api/stats");
@@ -65,6 +68,14 @@ public class StatsApiController {
                                               @RequestBody Map<String, String> body) {
         log.debug("PATCH /api/stats/{}/dataset/{} -> {}", id, label, body.get("label"));
         statisticService.renameDataset(id, label, body.get("label"));
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/dataset/{label}/filled")
+    public ResponseEntity<Void> setDatasetFilled(@PathVariable String id, @PathVariable String label,
+                                                 @RequestBody FilledRequest request) {
+        log.debug("PATCH /api/stats/{}/dataset/{}/filled -> {}", id, label, request.filled());
+        statisticService.setDatasetFilled(id, label, Boolean.TRUE.equals(request.filled()));
         return ResponseEntity.ok().build();
     }
 

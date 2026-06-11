@@ -24,11 +24,13 @@ public class Statistic {
     public static class Dataset {
         private String label;
         private int index;
+        private boolean filled;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
         public Dataset(String label, List<DataPoint> dataPoints) {
             this.label = label;
             this.dataPoints = dataPoints;
+            this.filled = false;
         }
     }
 

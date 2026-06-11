@@ -56,7 +56,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
               x: dp.x as any,
               y: parseFloat(dp.y)
             })),
-            fill: false,
+            fill: ds.filled ?? false,
             tension: 0,
             borderWidth: 1,
             pointRadius: 2,
