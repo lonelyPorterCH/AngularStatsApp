@@ -18,13 +18,13 @@ public class StatsApiController {
 
     private final StatisticService statisticService;
 
-    private record DataPointRequest(String datasetLabel, String x, String y) {
+    public record DataPointRequest(String datasetLabel, String x, String y) {
     }
 
-    private record FilledRequest(Boolean filled) {
+    public record FilledRequest(Boolean filled) {
     }
 
-    private record ColorRequest(String color) {
+    public record ColorRequest(String color) {
     }
 
     @GetMapping
