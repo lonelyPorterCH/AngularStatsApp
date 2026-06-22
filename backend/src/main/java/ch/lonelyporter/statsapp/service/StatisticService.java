@@ -25,6 +25,9 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    /**
+     * Gets statistic for given Id, datasets are ordered by their index
+     */
     public Statistic getStatisticById(String id) {
         Statistic statistic = repository.findById(id);
         statistic.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex));
@@ -35,6 +38,12 @@ public class StatisticService {
         repository.deleteById(id);
     }
 
+    /**
+     * Add a dataset with a given label to an existing statistic. The dataset will automatically get an index.
+     *
+     * @param id    of the statistic
+     * @param label of the dataset
+     */
     public void addDataset(String id, String label) {
         Statistic statistic = repository.findById(id);
         int nextIndex = statistic.getDatasets().stream()

@@ -54,12 +54,16 @@ public class StatisticRepository {
 
         try (Stream<Path> files = Files.list(folder)) {
             return files
-                    .filter(p -> p.toString().endsWith(".json"))
+                    .filter(this::isJsonFile)
                     .map(this::readFile)
                     .toList();
         } catch (IOException e) {
             throw new StatisticStorageException("Failed to find statistics", e);
         }
+    }
+
+    private boolean isJsonFile(Path path) {
+        return path.toString().endsWith(".json");
     }
 
     public void deleteById(String id) {
