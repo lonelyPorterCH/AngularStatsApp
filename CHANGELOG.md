@@ -2,13 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.6] - 2026-06-22
+
+### Added
+
+- Color picker in the "Manage Datasets" form, allowing users to set a custom color for each dataset.
+
 ## [2.1.4] - 2026-06-11
 
 ### Added
 
 - Support for increment syntax in "Add Data Point" form: entering `+<number>` (e.g., `+10`) now increments the latest
-  value
-  by that amount instead of adding an exact value.
+  value by that amount instead of adding an exact value.
 
 ### Changed
 

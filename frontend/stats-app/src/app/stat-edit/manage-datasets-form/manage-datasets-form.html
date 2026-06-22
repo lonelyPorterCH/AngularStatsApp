@@ -41,14 +41,21 @@
           <div class="dataset-row">
             <div class="dataset-label-section">
               <span>{{ ds.label }}</span>
-              <mat-checkbox
-                [ngModel]="ds.filled ?? false"
-                [ngModelOptions]="{standalone: true}"
-                (ngModelChange)="onSetDatasetFilled(ds.label, $event)"
-              >
-                Filled
-              </mat-checkbox>
-            </div>
+                <input
+                  type="color"
+                  class="color-picker"
+                  [value]="rgbToHex(ds.color)"
+                  (change)="onSetDatasetColor(ds.label, $event)"
+                  [title]="'Dataset color'"
+                />
+                <mat-checkbox
+                  [ngModel]="ds.filled ?? false"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onSetDatasetFilled(ds.label, $event)"
+                >
+                  Filled
+                </mat-checkbox>
+              </div>
             <div class="dataset-actions">
               <button mat-icon-button (click)="moveDatasetUp(ds.label)" aria-label="Move dataset up"
                       [disabled]="sortedDatasets.indexOf(ds) === 0">

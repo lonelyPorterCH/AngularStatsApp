@@ -65,4 +65,14 @@ mat-list-item:hover .dataset-actions {
   opacity: 1;
 }
 
+.color-picker {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+}
+
 

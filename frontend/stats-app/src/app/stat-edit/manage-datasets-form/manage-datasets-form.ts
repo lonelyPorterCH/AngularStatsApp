@@ -151,5 +151,27 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
       error: err => console.error(err)
     });
   }
+
+  onSetDatasetColor(label: string, event: Event): void {
+    const hex = (event.target as HTMLInputElement).value;
+    const color = this.hexToRgb(hex);
+    this.statService.setDatasetColor(this.stat.id, label, color).subscribe({
+      next: () => this.datasetsChanged.emit(),
+      error: err => console.error(err)
+    });
+  }
+
+  rgbToHex(color?: string): string {
+    if (!color) return '#0077ff';
+    const parts = color.split(' ').map(Number);
+    return '#' + parts.map(p => p.toString(16).padStart(2, '0')).join('');
+  }
+
+  private hexToRgb(hex: string): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r} ${g} ${b}`;
+  }
 }
 
