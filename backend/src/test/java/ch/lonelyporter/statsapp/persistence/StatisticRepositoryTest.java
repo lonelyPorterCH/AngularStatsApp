@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tools.jackson.databind.ObjectMapper;
 
-import java.nio.file.Path;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,25 +28,26 @@ class StatisticRepositoryTest {
         repository = new StatisticRepository(props, new ObjectMapper());
     }
 
-    private Statistic createStatisticWithDataset(String id, String title, String xAxis, String yAxis) {
+    private static Statistic createStatisticWithUnsortedDataset() {
         Statistic statistic = new Statistic();
-        statistic.setId(id);
-        statistic.setTitle(title);
+        statistic.setId("test-chart");
+        statistic.setTitle("My Chart");
         statistic.setReverse(false);
-        statistic.setXAxisName(xAxis);
-        statistic.setYAxisName(yAxis);
-        Statistic.Dataset ds = new Statistic.Dataset(yAxis, new ArrayList<>(List.of(
-                new Statistic.DataPoint("2024-01-01", "100"),
-                new Statistic.DataPoint("2024-01-15", "150"),
-                new Statistic.DataPoint("2024-02-01", "130")
+        statistic.setXAxisName("Date");
+        statistic.setYAxisName("Price");
+        statistic.setDatasets(new ArrayList<>(List.of(
+                new Statistic.Dataset("Price", new ArrayList<>(List.of(
+                        new Statistic.DataPoint("2024-02-01", "130"),
+                        new Statistic.DataPoint("2024-01-01", "100"),
+                        new Statistic.DataPoint("2024-01-15", "150")
+                )))
         )));
-        statistic.setDatasets(new ArrayList<>(List.of(ds)));
         return statistic;
     }
 
     @Test
     void save_writesJsonFile() {
-        Statistic statistic = createStatisticWithDataset("test-chart", "My Chart", "Date", "Price");
+        Statistic statistic = createStatisticWithUnsortedDataset();
 
         repository.save(statistic);
 
@@ -56,7 +57,7 @@ class StatisticRepositoryTest {
 
     @Test
     void save_thenFindById_returnsEquivalentStatistic() {
-        Statistic original = createStatisticWithDataset("test-chart", "My Chart", "Date", "Price");
+        Statistic original = createStatisticWithUnsortedDataset();
 
         repository.save(original);
         Statistic loaded = repository.findById("test-chart");
@@ -65,7 +66,7 @@ class StatisticRepositoryTest {
         assertThat(loaded.getXAxisName()).isEqualTo("Date");
         assertThat(loaded.getYAxisName()).isEqualTo("Price");
         assertThat(loaded.getDatasets()).hasSize(1);
-        assertThat(loaded.getDatasets().get(0).getDataPoints()).containsExactly(
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(
                 new Statistic.DataPoint("2024-01-01", "100"),
                 new Statistic.DataPoint("2024-01-15", "150"),
                 new Statistic.DataPoint("2024-02-01", "130"));
@@ -104,23 +105,12 @@ class StatisticRepositoryTest {
 
     @Test
     void save_sortsDataPointsByDateAscending() {
-        Statistic statistic = new Statistic();
-        statistic.setId("sorted-chart");
-        statistic.setTitle("Sorted Chart");
-        statistic.setXAxisName("Date");
-        statistic.setYAxisName("Price");
-        statistic.setDatasets(new ArrayList<>(List.of(
-                new Statistic.Dataset("Price", new ArrayList<>(List.of(
-                        new Statistic.DataPoint("2024-02-01", "130"),
-                        new Statistic.DataPoint("2024-01-01", "100"),
-                        new Statistic.DataPoint("2024-01-15", "150")
-                )))
-        )));
+        Statistic statistic = createStatisticWithUnsortedDataset();
 
         repository.save(statistic);
-        Statistic loaded = repository.findById("sorted-chart");
+        Statistic loaded = repository.findById("test-chart");
 
-        assertThat(loaded.getDatasets().get(0).getDataPoints()).containsExactly(
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(
                 new Statistic.DataPoint("2024-01-01", "100"),
                 new Statistic.DataPoint("2024-01-15", "150"),
                 new Statistic.DataPoint("2024-02-01", "130")
@@ -152,6 +142,6 @@ class StatisticRepositoryTest {
         Statistic loaded = repository.findById("legacy-chart");
 
         assertThat(loaded.getDatasets()).hasSize(1);
-        assertThat(loaded.getDatasets().get(0).isFilled()).isFalse();
+        assertThat(loaded.getDatasets().getFirst().isFilled()).isFalse();
     }
 }

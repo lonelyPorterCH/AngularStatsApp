@@ -12,6 +12,7 @@ export interface Dataset {
   index: number;
   filled?: boolean;
   dataPoints: DataPoint[];
+  color?: string;
 }
 
 export interface DataPoint {

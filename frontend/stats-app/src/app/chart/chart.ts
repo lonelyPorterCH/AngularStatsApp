@@ -49,7 +49,11 @@ export class ChartComponent implements OnChanges, AfterViewInit {
       type: 'line',
       data: {
         datasets: this.stat.datasets.map((ds, i) => {
-          const color = this.COLORS[i % this.COLORS.length];
+          //Use Dataset Color if present, use predefined color if not
+          const color = ds.color ? {
+            border: `rgb(${ds.color} / 0.85)`,
+            background: `rgb(${ds.color} / 0.2)`
+          } : this.COLORS[i % this.COLORS.length];
           return {
             label: ds.label,
             data: ds.dataPoints.map(dp => ({

@@ -25,6 +25,7 @@ public class Statistic {
         private String label;
         private int index;
         private boolean filled;
+        private String color;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
         public Dataset(String label, List<DataPoint> dataPoints) {
