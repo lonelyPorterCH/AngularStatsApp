@@ -18,10 +18,13 @@ public class StatsApiController {
 
     private final StatisticService statisticService;
 
-    record DataPointRequest(String datasetLabel, String x, String y) {
+    private record DataPointRequest(String datasetLabel, String x, String y) {
     }
 
-    record FilledRequest(Boolean filled) {
+    private record FilledRequest(Boolean filled) {
+    }
+
+    private record ColorRequest(String color) {
     }
 
     @GetMapping
@@ -69,6 +72,13 @@ public class StatsApiController {
     public ResponseEntity<Void> setDatasetFilled(@PathVariable String id, @PathVariable String label,
                                                  @RequestBody FilledRequest request) {
         statisticService.setDatasetFilled(id, label, Boolean.TRUE.equals(request.filled()));
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/dataset/{label}/color")
+    public ResponseEntity<Void> setDatasetColor(@PathVariable String id, @PathVariable String label,
+                                                @RequestBody ColorRequest request) {
+        statisticService.setDatasetColor(id, label, request.color());
         return ResponseEntity.ok().build();
     }
 

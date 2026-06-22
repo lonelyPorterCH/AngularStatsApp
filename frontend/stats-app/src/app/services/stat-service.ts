@@ -53,6 +53,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/filled`, {filled});
   }
 
+  setDatasetColor(id: string, label: string, color: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/color`, {color});
+  }
+
   renameAxes(id: string, xAxisName: string, yAxisName: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/axes`, {xAxisName, yAxisName});
   }

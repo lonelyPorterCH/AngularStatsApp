@@ -80,6 +80,15 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void setDatasetColor(String id, String label, String color) {
+        Statistic statistic = repository.findById(id);
+        statistic.getDatasets().stream()
+                .filter(ds -> ds.getLabel().equals(label))
+                .findFirst()
+                .ifPresent(ds -> ds.setColor(color));
+        repository.save(statistic);
+    }
+
     public void renameAxes(String id, String xAxisName, String yAxisName) {
         Statistic statistic = repository.findById(id);
         if (xAxisName != null) statistic.setXAxisName(xAxisName);
