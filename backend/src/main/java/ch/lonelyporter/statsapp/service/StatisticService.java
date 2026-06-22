@@ -26,7 +26,7 @@ public class StatisticService {
     }
 
     /**
-     * Gets statistic for given Id, datasets are ordered by their index
+     * Gets statistic for given id, datasets are ordered by their index
      */
     public Statistic getStatisticById(String id) {
         Statistic statistic = repository.findById(id);
