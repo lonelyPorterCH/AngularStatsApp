@@ -8,6 +8,7 @@ import {MatIcon} from '@angular/material/icon';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
 import {Title} from '@angular/platform-browser';
+import {forkJoin} from 'rxjs';
 
 @Component({
   selector: 'app-stat-details',
@@ -22,6 +23,7 @@ import {Title} from '@angular/platform-browser';
 })
 export class StatDetails implements OnInit {
   stat = signal<Stat | undefined>(undefined);
+  archived = signal<boolean>(false);
   loading = signal<boolean>(true);
   notFound = signal<boolean>(false);
 
@@ -43,22 +45,41 @@ export class StatDetails implements OnInit {
   }
 
   loadStatById(id: string) {
-    this.statService.getStatById(id).subscribe({
-      next: data => {
-        this.stat.set(data);
+    this.loading.set(true);
+    this.notFound.set(false);
+
+    forkJoin({
+      stat: this.statService.getStatById(id),
+      archived: this.statService.isArchived(id)
+    }).subscribe({
+      next: result => {
+        this.stat.set(result.stat);
+        this.archived.set(result.archived);
         this.loading.set(false);
-        this.title.setTitle(`StatsApp - ${data.title}`);
+        this.title.setTitle(`StatsApp - ${result.stat.title}`);
       },
       error: err => {
         this.loading.set(false);
 
         if (err.status === 404) {
-          this.notFound.set(true)
+          this.notFound.set(true);
         } else {
           console.error(err);
         }
       }
-    })
+    });
+  }
+
+  onArchiveToggle(): void {
+    const stat = this.stat();
+    if (!stat) {
+      return;
+    }
+
+    this.statService.toggleArchive(stat.id).subscribe({
+      next: () => this.loadStatById(stat.id),
+      error: err => console.error(err)
+    });
   }
 
   onDelete(): void {

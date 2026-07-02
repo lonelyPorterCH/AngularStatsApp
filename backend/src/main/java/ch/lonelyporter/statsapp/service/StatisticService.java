@@ -18,12 +18,13 @@ public class StatisticService {
 
     public List<Statistic> getStatistics() {
         List<Statistic> stats = new ArrayList<>(repository.findAll());
-        assignMissingStatisticIndices(stats);
-        stats.sort(Comparator.comparing(
-                Statistic::getIndex,
-                Comparator.nullsLast(Integer::compareTo)
-        ));
-        stats.forEach(s -> s.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex)));
+        prepareStatistics(stats, true);
+        return stats;
+    }
+
+    public List<Statistic> getArchivedStatistics() {
+        List<Statistic> stats = new ArrayList<>(repository.findAllArchived());
+        prepareStatistics(stats, false);
         return stats;
     }
 
@@ -46,8 +47,16 @@ public class StatisticService {
      */
     public Statistic getStatisticById(String id) {
         Statistic statistic = repository.findById(id);
-        statistic.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex));
+        sortDatasets(statistic);
         return statistic;
+    }
+
+    public boolean isArchived(String id) {
+        return repository.isArchived(id);
+    }
+
+    public void toggleArchive(String id) {
+        repository.toggleArchive(id);
     }
 
     public void deleteStatisticById(String id) {
@@ -157,6 +166,24 @@ public class StatisticService {
                 statistic.setIndex(++highestExistingIndex);
                 repository.save(statistic);
             }
+        }
+    }
+
+    private void prepareStatistics(List<Statistic> statistics, boolean persistMissingIndices) {
+        if (persistMissingIndices) {
+            assignMissingStatisticIndices(statistics);
+        }
+
+        statistics.sort(Comparator.comparing(
+                Statistic::getIndex,
+                Comparator.nullsLast(Integer::compareTo)
+        ));
+        statistics.forEach(this::sortDatasets);
+    }
+
+    private void sortDatasets(Statistic statistic) {
+        if (statistic.getDatasets() != null) {
+            statistic.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex));
         }
     }
 }

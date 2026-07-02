@@ -76,6 +76,28 @@ class StatisticServiceTest {
         assertThat(repository.findById("legacy-chart").getIndex()).isEqualTo(legacy.getIndex());
     }
 
+    @Test
+    void getArchivedStatistics_returnsArchivedStatistics() {
+        Statistic archived = createStatistic("archived-chart", "Archived Chart");
+        repository.save(archived);
+        repository.toggleArchive("archived-chart");
+
+        List<Statistic> archivedStats = service.getArchivedStatistics();
+
+        assertThat(archivedStats).hasSize(1);
+        assertThat(archivedStats.getFirst().getId()).isEqualTo("archived-chart");
+    }
+
+    @Test
+    void toggleArchive_movesStatisticBetweenFolders() {
+        Statistic statistic = createStatistic("chart-1", "Chart 1");
+        repository.save(statistic);
+
+        service.toggleArchive("chart-1");
+
+        assertThat(repository.isArchived("chart-1")).isTrue();
+    }
+
     private static Statistic createStatistic(String id, String title) {
         Statistic statistic = new Statistic();
         statistic.setId(id);

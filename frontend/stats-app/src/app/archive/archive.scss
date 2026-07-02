@@ -1,0 +1,19 @@
+/* Grid Container */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(450px, 100%), 1fr));
+  gap: 24px;
+  padding: 24px;
+}
+
+button {
+  margin-left: 10px;
+}
+
+@media (max-width: 600px) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 0;
+  }
+}

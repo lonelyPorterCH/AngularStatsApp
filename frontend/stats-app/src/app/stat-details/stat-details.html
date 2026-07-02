@@ -4,9 +4,13 @@
   <app-chart [stat]="stat()!"></app-chart>
 </div>
 <button [routerLink]="['/stats']" matButton="outlined">Back</button>
-<button [routerLink]="['/stats', stat()!.id, 'edit']" mat-flat-button>
+<button [routerLink]="['/stats', stat()!.id, 'edit']" [disabled]="archived()" mat-flat-button>
   <mat-icon>edit</mat-icon>
   Edit
+</button>
+<button (click)="onArchiveToggle()" mat-flat-button>
+  <mat-icon>{{ archived() ? 'unarchive' : 'archive' }}</mat-icon>
+  {{ archived() ? 'Unarchive' : 'Archive' }}
 </button>
 <button (click)="onDelete()" mat-flat-button>
   <mat-icon>delete</mat-icon>
@@ -17,4 +21,3 @@
 } @else {
 <p>Loading...</p>
 }
-

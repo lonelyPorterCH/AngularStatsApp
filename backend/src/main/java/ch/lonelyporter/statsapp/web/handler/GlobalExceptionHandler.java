@@ -1,6 +1,7 @@
 package ch.lonelyporter.statsapp.web.handler;
 
 import ch.lonelyporter.statsapp.exception.StatisticNotFoundException;
+import ch.lonelyporter.statsapp.exception.StatisticConflictException;
 import ch.lonelyporter.statsapp.exception.StatisticStorageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,12 @@ public class GlobalExceptionHandler {
         model.addAttribute("error", e.getMessage());
         model.addAttribute("cause", e.getCause().getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+    }
+
+    @ExceptionHandler(StatisticConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ResponseEntity<String> handleConflictException(StatisticConflictException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
     }
 
     @ExceptionHandler(StatisticNotFoundException.class)

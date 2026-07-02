@@ -1,0 +1,12 @@
+<h2>Archive</h2>
+
+<div class="stats-overview">
+  @for (stat of stats(); track stat.id) {
+    <app-stats-card [stat]="stat"></app-stats-card>
+  }
+</div>
+
+<button [routerLink]="['/stats']" matButton="filled">
+  <mat-icon>arrow_back</mat-icon>
+  <span>Back to Overview</span>
+</button>

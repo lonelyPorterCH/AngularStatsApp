@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StatisticRepositoryTest {
 
@@ -73,6 +74,24 @@ class StatisticRepositoryTest {
     }
 
     @Test
+    void toggleArchive_movesStatisticBetweenFolders() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+
+        repository.save(statistic);
+        repository.toggleArchive("test-chart");
+
+        assertThat(tempDir.resolve("test-chart.json")).doesNotExist();
+        assertThat(tempDir.resolve("archived/test-chart.json")).exists();
+        assertThat(repository.isArchived("test-chart")).isTrue();
+
+        repository.toggleArchive("test-chart");
+
+        assertThat(tempDir.resolve("test-chart.json")).exists();
+        assertThat(tempDir.resolve("archived/test-chart.json")).doesNotExist();
+        assertThat(repository.isArchived("test-chart")).isFalse();
+    }
+
+    @Test
     void findAll_returnsAllSavedStatistics() {
         Statistic s1 = new Statistic();
         s1.setId("chart-1");
@@ -94,6 +113,32 @@ class StatisticRepositoryTest {
         assertThat(all).hasSize(2);
         assertThat(all).extracting(Statistic::getId)
                 .containsExactlyInAnyOrder("chart-1", "chart-2");
+    }
+
+    @Test
+    void findAllArchived_returnsOnlyArchivedStatistics() {
+        Statistic active = new Statistic();
+        active.setId("chart-1");
+        active.setTitle("Chart 1");
+        active.setXAxisName("Date");
+        active.setYAxisName("Price");
+        active.setDatasets(new ArrayList<>(List.of(new Statistic.Dataset("Price", new ArrayList<>(List.of(new Statistic.DataPoint("2024-01-01", "100")))))));
+
+        Statistic archived = new Statistic();
+        archived.setId("chart-2");
+        archived.setTitle("Chart 2");
+        archived.setXAxisName("Date");
+        archived.setYAxisName("Volume");
+        archived.setDatasets(new ArrayList<>(List.of(new Statistic.Dataset("Volume", new ArrayList<>(List.of(new Statistic.DataPoint("2024-01-01", "200")))))));
+
+        repository.save(active);
+        repository.save(archived);
+        repository.toggleArchive("chart-2");
+
+        List<Statistic> archivedStats = repository.findAllArchived();
+
+        assertThat(archivedStats).hasSize(1);
+        assertThat(archivedStats.getFirst().getId()).isEqualTo("chart-2");
     }
 
     @Test
@@ -143,5 +188,14 @@ class StatisticRepositoryTest {
 
         assertThat(loaded.getDatasets()).hasSize(1);
         assertThat(loaded.getDatasets().getFirst().isFilled()).isFalse();
+    }
+
+    @Test
+    void save_whenIdIsReserved_throwsConflict() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+        statistic.setId("archived");
+
+        assertThatThrownBy(() -> repository.save(statistic))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
     }
 }

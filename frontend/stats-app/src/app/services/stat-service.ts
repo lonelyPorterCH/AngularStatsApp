@@ -18,15 +18,26 @@ export class StatService {
     return this.http.get<Stat[]>(this.baseUrl);
   }
 
+  getArchivedStats(): Observable<Stat[]> {
+    return this.http.get<Stat[]>(`${this.baseUrl}/archived`);
+  }
+
   getStatById(id: string): Observable<Stat> {
     return this.http.get<Stat>(`${this.baseUrl}/${id}`);
   }
 
   existsById(id: string): Observable<boolean> {
+    if (id === 'archived') {
+      return of(true);
+    }
     return this.http.get<Stat>(`${this.baseUrl}/${id}`).pipe(
       map(() => true),
       catchError(() => of(false))
     );
+  }
+
+  isArchived(id: string): Observable<boolean> {
+    return this.http.get<boolean>(`${this.baseUrl}/${id}/archived`);
   }
 
   addStat(stat: Stat) {
@@ -35,6 +46,10 @@ export class StatService {
 
   deleteStat(id: string) {
     return this.http.delete<Stat>(`${this.baseUrl}/${id}`);
+  }
+
+  toggleArchive(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/archived`, {});
   }
 
   addDataset(id: string, label: string): Observable<void> {

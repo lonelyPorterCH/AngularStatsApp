@@ -6,13 +6,14 @@ import {MatIconModule} from '@angular/material/icon';
 import {ReactiveFormsModule} from '@angular/forms';
 import {Stat} from '../models/stat';
 import {StatService} from '../services/stat-service';
-import {ActivatedRoute} from '@angular/router';
+import {ActivatedRoute, Router} from '@angular/router';
 import {Title} from '@angular/platform-browser';
 import {ChartComponent, ChartPointClickEvent} from '../chart/chart';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {AddPointForm} from './add-point-form/add-point-form';
 import {EditDeleteForm} from './edit-delete-form/edit-delete-form';
 import {ManageDatasetsForm} from './manage-datasets-form/manage-datasets-form';
+import {forkJoin} from 'rxjs';
 
 @Component({
   selector: 'app-stat-edit',
@@ -30,6 +31,7 @@ export class StatEdit implements OnInit {
   constructor(
     private statService: StatService,
     private route: ActivatedRoute,
+    private router: Router,
     private title: Title,
   ) {
   }
@@ -38,10 +40,26 @@ export class StatEdit implements OnInit {
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
-        this.statService.getStatById(id).subscribe({
-          next: data => {
-            this.stat.set(data);
-            this.title.setTitle(`StatsApp - Edit ${data.title}`);
+        forkJoin({
+          stat: this.statService.getStatById(id),
+          archived: this.statService.isArchived(id)
+        }).subscribe({
+          next: result => {
+            if (result.archived) {
+              void this.router.navigate(['/stats', id]);
+              return;
+            }
+
+            this.stat.set(result.stat);
+            this.title.setTitle(`StatsApp - Edit ${result.stat.title}`);
+          },
+          error: err => {
+            if (err.status === 404) {
+              void this.router.navigate(['/stats', id]);
+              return;
+            }
+
+            console.error(err);
           }
         });
       }

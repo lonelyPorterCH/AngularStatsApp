@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.7] - 2026-07-02
+
+### Added
+
+- Archive storage for statistics, with archived graphs moved into a separate folder next to the active JSON files.
+- A dedicated Archive page and archive/unarchive actions in the statistics UI.
+
+### Changed
+
+- Backend now exposes archive-aware APIs for listing archived statistics and checking/toggling archive state.
+- Create and edit flows now reject ids that are archived, and archived statistics can no longer be edited from the UI.
+
 ## [2.1.6] - 2026-07-02
 
 ### Added

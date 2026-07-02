@@ -32,6 +32,11 @@ public class StatsApiController {
         return ResponseEntity.ok(statisticService.getStatistics());
     }
 
+    @GetMapping("/archived")
+    public ResponseEntity<List<Statistic>> getArchivedStatistics() {
+        return ResponseEntity.ok(statisticService.getArchivedStatistics());
+    }
+
     @PostMapping
     public ResponseEntity<Void> createStatistic(@RequestBody Statistic statistic) {
         statisticService.createStatistic(statistic);
@@ -41,6 +46,17 @@ public class StatsApiController {
     @GetMapping("/{id}")
     public ResponseEntity<Statistic> getStatisticById(@PathVariable String id) {
         return ResponseEntity.ok(statisticService.getStatisticById(id));
+    }
+
+    @GetMapping("/{id}/archived")
+    public ResponseEntity<Boolean> isArchived(@PathVariable String id) {
+        return ResponseEntity.ok(statisticService.isArchived(id));
+    }
+
+    @PatchMapping("/{id}/archived")
+    public ResponseEntity<Void> toggleArchive(@PathVariable String id) {
+        statisticService.toggleArchive(id);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/{id}")
