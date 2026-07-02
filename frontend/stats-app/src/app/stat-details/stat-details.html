@@ -3,7 +3,7 @@
 <div class="chart-container">
   <app-chart [stat]="stat()!"></app-chart>
 </div>
-<button [routerLink]="['/stats']" matButton="outlined">Back</button>
+<button [routerLink]="archived() ? ['/archive'] : ['/stats']" matButton="outlined">Back</button>
 <button [routerLink]="['/stats', stat()!.id, 'edit']" [disabled]="archived()" mat-flat-button>
   <mat-icon>edit</mat-icon>
   Edit
