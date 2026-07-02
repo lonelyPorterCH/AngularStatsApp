@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -16,12 +17,27 @@ public class StatisticService {
     private final StatisticRepository repository;
 
     public List<Statistic> getStatistics() {
-        List<Statistic> stats = repository.findAll();
+        List<Statistic> stats = new ArrayList<>(repository.findAll());
+        assignMissingStatisticIndices(stats);
+        stats.sort(Comparator.comparing(
+                Statistic::getIndex,
+                Comparator.nullsLast(Integer::compareTo)
+        ));
         stats.forEach(s -> s.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex)));
         return stats;
     }
 
+    /**
+     * Saves the statistic, the given index will be 1 higher than the current highest index (or 0 if none found)
+     *
+     */
     public void createStatistic(Statistic statistic) {
+        int nextStatisticIndex = repository.findAll().stream()
+                .map(Statistic::getIndex)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(-1) + 1;
+        statistic.setIndex(nextStatisticIndex);
         repository.save(statistic);
     }
 
@@ -127,5 +143,20 @@ public class StatisticService {
                     .ifPresent(ds -> ds.setIndex(index));
         }
         repository.save(statistic);
+    }
+
+    private void assignMissingStatisticIndices(List<Statistic> statistics) {
+        int highestExistingIndex = statistics.stream()
+                .map(Statistic::getIndex)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .orElse(-1);
+
+        for (Statistic statistic : statistics) {
+            if (statistic.getIndex() == null) {
+                statistic.setIndex(++highestExistingIndex);
+                repository.save(statistic);
+            }
+        }
     }
 }

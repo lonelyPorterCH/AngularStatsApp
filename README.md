@@ -46,7 +46,7 @@ docker build -t statsapp .
 ### 2. Export the image to a tar file
 
 ```bash
-docker save statsapp -o statsapp.tar
+docker save statsapp -o statsapp-angular-2.1.x.tar
 ```
 
 ### 3. Upload to Synology

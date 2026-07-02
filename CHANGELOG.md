@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.6] - 2026-07-02
+
+### Added
+
+- Statistic-level `index` support in backend JSON so each stored statistic has an explicit presentation order.
+
+### Changed
+
+- Backend now assigns an index to newly created statistics and persists missing indices for older JSON files.
+- Statistics returned by the backend are sorted by their statistic `index` before being presented.
+
 ## [2.1.5] - 2026-06-22
 
 ### Added
@@ -102,4 +113,3 @@ All notable changes to this project are documented in this file.
 
 - Data model changed from a single `dataPoints` list to `datasets` with labeled series.
 - Backend loading was made compatible with older JSON files during the migration window.
-
