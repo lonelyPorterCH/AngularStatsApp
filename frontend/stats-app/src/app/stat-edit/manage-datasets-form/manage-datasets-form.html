@@ -11,6 +11,13 @@
       <mat-label>Y-Axis Name</mat-label>
       <input formControlName="yAxisName" matInput/>
     </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>X-Axis Scale</mat-label>
+      <mat-select formControlName="xAxisScaleType">
+        <mat-option value="time">Date / time</mat-option>
+        <mat-option value="linear">Numeric</mat-option>
+      </mat-select>
+    </mat-form-field>
     <button mat-flat-button type="submit" [disabled]="axesForm.invalid || axesForm.pristine">
       <mat-icon>save</mat-icon>
       Save Axes

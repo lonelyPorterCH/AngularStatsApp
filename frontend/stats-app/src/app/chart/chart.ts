@@ -2,6 +2,7 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, Ou
 import {Chart, registerables} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {DataPoint, Stat} from '../models/stat';
+import {compareDataPoints, isLinearXAxis, parseXAxisValue} from '../models/x-axis';
 
 Chart.register(...registerables);
 
@@ -44,7 +45,11 @@ export class ChartComponent implements OnChanges, AfterViewInit {
   }
 
   private buildChart(): void {
+    if (!this.stat) {
+      return;
+    }
     this.chart?.destroy();
+    const linearXAxis = isLinearXAxis(this.stat);
     this.chart = new Chart(this.canvas().nativeElement, {
       type: 'line',
       data: {
@@ -57,7 +62,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           return {
             label: ds.label,
             data: ds.dataPoints.map(dp => ({
-              x: dp.x as any,
+              x: parseXAxisValue(dp.x, this.stat) as any,
               y: parseFloat(dp.y)
             })),
             fill: ds.filled ?? false,
@@ -76,7 +81,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           if (elements.length > 0) {
             const el = elements[0];
             const ds = this.stat.datasets[el.datasetIndex];
-            const sorted = [...ds.dataPoints].sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime());
+            const sorted = [...ds.dataPoints].sort((a, b) => compareDataPoints(a, b, this.stat));
             const point = sorted[el.index];
             if (ds && point) {
               this.pointClick.emit({datasetLabel: ds.label, point});
@@ -85,9 +90,9 @@ export class ChartComponent implements OnChanges, AfterViewInit {
         },
         scales: {
           x: {
-            type: 'time',
+            type: linearXAxis ? 'linear' : 'time',
             ticks: {maxTicksLimit: 6},
-            time: {tooltipFormat: 'DD'},
+            ...(linearXAxis ? {} : {time: {tooltipFormat: 'DD'}}),
             title: {display: true, text: this.stat.xAxisName}
           },
           y: {

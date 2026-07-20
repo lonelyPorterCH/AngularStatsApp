@@ -161,4 +161,15 @@ describe('StatService', () => {
 
     await promise;
   });
+
+  it('should update axes and x-axis scale', async () => {
+    const promise = firstValueFrom(service.renameAxes('test-stat', 'Distance', 'Elevation', 'linear'));
+
+    const req = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/axes`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({xAxisName: 'Distance', yAxisName: 'Elevation', xAxisScaleType: 'linear'});
+    req.flush(null);
+
+    await promise;
+  });
 });

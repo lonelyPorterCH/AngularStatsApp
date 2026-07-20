@@ -23,6 +23,7 @@ public class StatisticRepository {
 
     private static final String ARCHIVED_FOLDER = "archived";
     private static final String RESERVED_ID = "archived";
+    public static final java.lang.String JSON_FILE_ENDING = ".json";
 
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
@@ -126,8 +127,8 @@ public class StatisticRepository {
 
     private void writeStatistic(Path folder, Statistic statistic) throws IOException {
         Files.createDirectories(folder);
-        sortDataPointsByDate(statistic);
-        Path file = folder.resolve(statistic.getId() + ".json");
+        sortDataPoints(statistic);
+        Path file = folder.resolve(statistic.getId() + JSON_FILE_ENDING);
         objectMapper.writeValue(file.toFile(), statistic);
     }
 
@@ -137,7 +138,7 @@ public class StatisticRepository {
     }
 
     private boolean isJsonFile(Path path) {
-        return path.toString().endsWith(".json");
+        return path.toString().endsWith(JSON_FILE_ENDING);
     }
 
     private void validateWritableId(String id) {
@@ -155,11 +156,11 @@ public class StatisticRepository {
     }
 
     private Path activeFile(String id) {
-        return activeFolder().resolve(id + ".json");
+        return activeFolder().resolve(id + JSON_FILE_ENDING);
     }
 
     private Path archivedFile(String id) {
-        return archivedFolder().resolve(id + ".json");
+        return archivedFolder().resolve(id + JSON_FILE_ENDING);
     }
 
     private Statistic readFile(Path file) {
@@ -170,16 +171,28 @@ public class StatisticRepository {
         }
     }
 
-    private void sortDataPointsByDate(Statistic statistic) {
+    private void sortDataPoints(Statistic statistic) {
         if (statistic.getDatasets() == null) {
             return;
         }
         statistic.getDatasets().forEach(dataset -> {
             if (dataset.getDataPoints() != null) {
-                dataset.getDataPoints().sort(
-                        Comparator.comparing(Statistic.DataPoint::getX, Comparator.nullsLast(String::compareTo))
-                );
+                if ("linear".equals(statistic.getXAxisScaleType())) {
+                    dataset.getDataPoints().sort(Comparator.comparing(this::numericX, Comparator.nullsLast(Double::compareTo)));
+                } else {
+                    dataset.getDataPoints().sort(
+                            Comparator.comparing(Statistic.DataPoint::getX, Comparator.nullsLast(String::compareTo))
+                    );
+                }
             }
         });
+    }
+
+    private Double numericX(Statistic.DataPoint point) {
+        try {
+            return Double.parseDouble(point.getX());
+        } catch (NumberFormatException | NullPointerException _) {
+            return null;
+        }
     }
 }

@@ -16,7 +16,12 @@ public class Statistic {
     private boolean reverse;
     private String xAxisName;
     private String yAxisName;
+    private String xAxisScaleType = "time";
     private List<Dataset> datasets = new ArrayList<>();
+
+    public String getXAxisScaleType() {
+        return xAxisScaleType == null ? "time" : xAxisScaleType;
+    }
 
     @Getter
     @Setter

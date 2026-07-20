@@ -7,6 +7,8 @@ import {MatError, MatFormField, MatInput, MatLabel} from '@angular/material/inpu
 import {MatCheckbox} from '@angular/material/checkbox';
 import {Stat} from '../models/stat';
 import {Router} from '@angular/router';
+import {MatOption} from '@angular/material/core';
+import {MatSelect} from '@angular/material/select';
 
 @Component({
   selector: 'app-create-form',
@@ -17,7 +19,9 @@ import {Router} from '@angular/router';
     MatFormField,
     MatLabel,
     MatInput,
-    MatCheckbox
+    MatCheckbox,
+    MatOption,
+    MatSelect
   ],
   templateUrl: './create-form.html',
   styleUrl: './create-form.css',
@@ -35,7 +39,8 @@ export class CreateForm implements OnInit {
       title: ['', Validators.required],
       xAxisName: ['', Validators.required],
       yAxisName: ['', Validators.required],
-      reverse: [false, Validators.required]
+      reverse: [false, Validators.required],
+      xAxisScaleType: ['time', Validators.required]
     }, {updateOn: 'blur'});
   }
 
@@ -50,6 +55,7 @@ export class CreateForm implements OnInit {
       xAxisName: this.statForm.value.xAxisName,
       yAxisName: this.statForm.value.yAxisName,
       reverse: this.statForm.value.reverse,
+      xAxisScaleType: this.statForm.value.xAxisScaleType,
       datasets: []
     }
 

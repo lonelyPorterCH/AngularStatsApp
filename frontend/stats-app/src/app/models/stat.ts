@@ -3,6 +3,7 @@ export interface Stat {
   title: string;
   xAxisName: string;
   yAxisName: string;
+  xAxisScaleType?: 'time' | 'linear';
   reverse: boolean;
   datasets: Dataset[];
 }

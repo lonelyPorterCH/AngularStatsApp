@@ -10,6 +10,7 @@ import {DataPoint, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../../confirm-dialog/confirm-dialog';
+import {compareDataPoints, isLinearXAxis} from '../../models/x-axis';
 
 @Component({
   selector: 'app-edit-delete-form',
@@ -41,8 +42,10 @@ export class EditDeleteForm implements OnInit, OnChanges {
     const ds = this.stat.datasets.find(d => d.label === label);
     if (!ds) return [];
     return [...ds.dataPoints]
-      .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime());
+      .sort((a, b) => compareDataPoints(a, b, this.stat));
   });
+
+  protected readonly isLinearXAxis = isLinearXAxis;
 
   constructor(
     private statService: StatService,

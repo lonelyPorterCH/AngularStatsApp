@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.2.0] - 2026-07-20
+
+### Added
+
+- Numeric x-axis line charts for comparing measurements such as elevation against distance.
+- Numeric x-axis selection and non-negative decimal validation for chart data points.
+
+### Changed
+
+- Existing charts remain date-based, while chart points are sorted according to their selected x-axis scale.
+
 ## [2.1.7] - 2026-07-02
 
 ### Added

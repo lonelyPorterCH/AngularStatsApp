@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class StatisticServiceTest {
 
@@ -96,6 +97,17 @@ class StatisticServiceTest {
         service.toggleArchive("chart-1");
 
         assertThat(repository.isArchived("chart-1")).isTrue();
+    }
+
+    @Test
+    void addDataPoint_rejectsNegativeLinearXAxisValue() {
+        Statistic statistic = createStatistic("linear-chart", "Linear Chart");
+        statistic.setXAxisScaleType("linear");
+        repository.save(statistic);
+
+        assertThatThrownBy(() -> service.addDataPoint(
+                "linear-chart", "Series", new Statistic.DataPoint("-1", "100")))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
     }
 
     private static Statistic createStatistic(String id, String title) {

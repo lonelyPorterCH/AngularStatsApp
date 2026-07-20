@@ -13,7 +13,11 @@
     <mat-select (selectionChange)="onPointSelected($event)" formControlName="selectedPoint">
       @for (point of sortedDataPoints(); track point.x) {
         <mat-option [value]="point">
-          {{ point.x | date:'dd.MM.yyyy' }} - {{ point.y }}
+          @if (isLinearXAxis(stat)) {
+            {{ point.x }}
+          } @else {
+            {{ point.x | date:'dd.MM.yyyy' }}
+          } - {{ point.y }}
         </mat-option>
       }
     </mat-select>

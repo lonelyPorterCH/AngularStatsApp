@@ -37,6 +37,14 @@
     }
   </mat-form-field>
 
+  <mat-form-field appearance="outline">
+    <mat-label>X Axis Scale</mat-label>
+    <mat-select formControlName="xAxisScaleType">
+      <mat-option value="time">Date / time</mat-option>
+      <mat-option value="linear">Numeric</mat-option>
+    </mat-select>
+  </mat-form-field>
+
   <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
 
   <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>

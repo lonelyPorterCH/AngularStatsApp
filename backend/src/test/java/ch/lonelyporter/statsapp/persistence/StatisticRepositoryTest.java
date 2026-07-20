@@ -166,7 +166,7 @@ class StatisticRepositoryTest {
     void findById_whenFilledMissing_defaultsToFalse() throws Exception {
         String json = """
                 {
-                  "id": "legacy-chart",
+                  "id": "legacy-scale-chart",
                   "title": "Legacy Chart",
                   "reverse": false,
                   "xAxisName": "Date",
@@ -188,6 +188,43 @@ class StatisticRepositoryTest {
 
         assertThat(loaded.getDatasets()).hasSize(1);
         assertThat(loaded.getDatasets().getFirst().isFilled()).isFalse();
+    }
+
+    @Test
+    void findById_whenXAxisScaleMissing_defaultsToTime() throws Exception {
+        String json = """
+                {
+                                    "id": "legacy-scale-chart",
+                  "title": "Legacy Chart",
+                                      "reverse": false,
+                  "xAxisName": "Date",
+                  "yAxisName": "Value",
+                  "datasets": []
+                }
+                """;
+        Files.writeString(tempDir.resolve("legacy-scale-chart.json"), json);
+
+        Statistic loaded = repository.findById("legacy-scale-chart");
+
+        assertThat(loaded.getXAxisScaleType()).isEqualTo("time");
+    }
+
+    @Test
+    void save_linearChart_sortsDataPointsNumerically() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+        statistic.setXAxisScaleType("linear");
+        statistic.getDatasets().getFirst().getDataPoints().clear();
+        statistic.getDatasets().getFirst().getDataPoints().addAll(List.of(
+                new Statistic.DataPoint("10", "1000"),
+                new Statistic.DataPoint("2", "200"),
+                new Statistic.DataPoint("0.5", "50")
+        ));
+
+        repository.save(statistic);
+
+        assertThat(repository.findById("test-chart").getDatasets().getFirst().getDataPoints())
+                .extracting(Statistic.DataPoint::getX)
+                .containsExactly("0.5", "2", "10");
     }
 
     @Test

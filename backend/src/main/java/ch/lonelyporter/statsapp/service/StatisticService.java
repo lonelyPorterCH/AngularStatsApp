@@ -1,5 +1,6 @@
 package ch.lonelyporter.statsapp.service;
 
+import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
@@ -114,20 +115,42 @@ public class StatisticService {
         repository.save(statistic);
     }
 
-    public void renameAxes(String id, String xAxisName, String yAxisName) {
+    public void renameAxes(String id, String xAxisName, String yAxisName, String xAxisScaleType) {
         Statistic statistic = repository.findById(id);
         if (xAxisName != null) statistic.setXAxisName(xAxisName);
         if (yAxisName != null) statistic.setYAxisName(yAxisName);
+        if (xAxisScaleType != null) {
+            if (!"time".equals(xAxisScaleType) && !"linear".equals(xAxisScaleType)) {
+                throw new InvalidDataPointException("Unsupported x-axis scale type: " + xAxisScaleType);
+            }
+            statistic.setXAxisScaleType(xAxisScaleType);
+        }
         repository.save(statistic);
     }
 
     public void addDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
         Statistic statistic = repository.findById(id);
+        validateDataPoint(statistic, dataPoint);
         statistic.getDatasets().stream()
                 .filter(ds -> ds.getLabel().equals(datasetLabel))
                 .findFirst()
                 .ifPresent(ds -> ds.getDataPoints().add(dataPoint));
         repository.save(statistic);
+    }
+
+    private void validateDataPoint(Statistic statistic, Statistic.DataPoint dataPoint) {
+        if (!"linear".equals(statistic.getXAxisScaleType())) {
+            return;
+        }
+
+        try {
+            double x = Double.parseDouble(dataPoint.getX());
+            if (!Double.isFinite(x) || x < 0) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException | NullPointerException _) {
+            throw new InvalidDataPointException("Linear x-axis values must be non-negative finite numbers");
+        }
     }
 
     public void deleteDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {

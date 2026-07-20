@@ -3,6 +3,7 @@ package ch.lonelyporter.statsapp.web.handler;
 import ch.lonelyporter.statsapp.exception.StatisticNotFoundException;
 import ch.lonelyporter.statsapp.exception.StatisticConflictException;
 import ch.lonelyporter.statsapp.exception.StatisticStorageException;
+import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -31,5 +32,11 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ResponseEntity<String> handleNotFoundException(StatisticNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidDataPointException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<String> handleInvalidDataPointException(InvalidDataPointException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 }

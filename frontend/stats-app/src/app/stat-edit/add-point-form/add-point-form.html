@@ -11,15 +11,28 @@
     }
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Date</mat-label>
-    <input [matDatepicker]="picker" formControlName="x" matInput/>
-    <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
-    <mat-datepicker #picker></mat-datepicker>
-    @if (addPointForm.get('x')?.errors?.['required']) {
-      <mat-error>Date is required</mat-error>
-    }
-  </mat-form-field>
+  @if (stat.xAxisScaleType === 'linear') {
+    <mat-form-field appearance="outline">
+      <mat-label>{{ stat.xAxisName }}</mat-label>
+      <input formControlName="x" matInput min="0" step="any" type="number"/>
+      @if (addPointForm.get('x')?.errors?.['required']) {
+        <mat-error>{{ stat.xAxisName }} is required</mat-error>
+      }
+      @if (addPointForm.get('x')?.errors?.['pattern']) {
+        <mat-error>Enter a non-negative number</mat-error>
+      }
+    </mat-form-field>
+  } @else {
+    <mat-form-field appearance="outline">
+      <mat-label>Date</mat-label>
+      <input [matDatepicker]="picker" formControlName="x" matInput/>
+      <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+      @if (addPointForm.get('x')?.errors?.['required']) {
+        <mat-error>Date is required</mat-error>
+      }
+    </mat-form-field>
+  }
 
   <mat-form-field appearance="outline">
     <mat-label>{{ stat!.yAxisName }}</mat-label>

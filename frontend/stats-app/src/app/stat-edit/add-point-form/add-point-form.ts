@@ -10,6 +10,7 @@ import {MatButton} from '@angular/material/button';
 import {MatOption} from '@angular/material/core';
 import {MatSelect} from '@angular/material/select';
 import {MatTooltip} from '@angular/material/tooltip';
+import {compareDataPoints, isLinearXAxis} from '../../models/x-axis';
 
 @Component({
   selector: 'app-add-point-form',
@@ -51,11 +52,13 @@ export class AddPointForm implements OnInit, OnChanges {
       x: ['', Validators.required],
       y: ['', Validators.required]
     }, {updateOn: 'blur'});
+    this.updateXAxisValidators();
     this.preselectDatasetIfSingle();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['stat']) {
+      this.updateXAxisValidators();
       this.preselectDatasetIfSingle();
     }
   }
@@ -65,25 +68,26 @@ export class AddPointForm implements OnInit, OnChanges {
 
     const datasetLabel: string = this.addPointForm.get('dataset')?.value;
     const yInput: string = this.addPointForm.get('y')?.value;
-    const date = this.addPointForm.get('x')?.value.toFormat('yyyy-MM-dd');
+    const xValue = this.addPointForm.get('x')?.value;
+    const x = isLinearXAxis(this.stat) ? String(xValue) : xValue.toFormat('yyyy-MM-dd');
 
     if (yInput.startsWith('+')) {
       // Increment mode: add the amount to the latest value
-      this.handleIncrement(datasetLabel, date, yInput);
+      this.handleIncrement(datasetLabel, x, yInput);
     } else {
       // Regular mode: add point with exact value
       const newPoint: DataPoint = {
-        x: date,
+        x,
         y: yInput
       };
       this.addDataPointAndReset(datasetLabel, newPoint);
     }
   }
 
-  private handleIncrement(datasetLabel: string, date: string, amountStr: string): void {
+  private handleIncrement(datasetLabel: string, x: string, amountStr: string): void {
     const dataPoints = this.stat!.datasets.find(ds => ds.label === datasetLabel)?.dataPoints ?? [];
     const latestPoint = [...dataPoints]
-      .sort((a, b) => new Date(a.x).getTime() - new Date(b.x).getTime())
+      .sort((a, b) => compareDataPoints(a, b, this.stat))
       .at(-1);
 
     if (!latestPoint) {
@@ -95,7 +99,7 @@ export class AddPointForm implements OnInit, OnChanges {
     const newValue = parseFloat(latestPoint.y) + amount;
 
     const newPoint: DataPoint = {
-      x: date,
+      x,
       y: newValue.toString()
     };
 
@@ -118,5 +122,16 @@ export class AddPointForm implements OnInit, OnChanges {
     if (this.stat.datasets.length === 1) {
       this.addPointForm.patchValue({dataset: this.stat.datasets[0].label});
     }
+  }
+
+  private updateXAxisValidators(): void {
+    if (!this.addPointForm || !this.stat) return;
+    const xControl = this.addPointForm.get('x');
+    if (isLinearXAxis(this.stat)) {
+      xControl?.setValidators([Validators.required, Validators.pattern(/^(?:\d+(?:\.\d+)?|\.\d+)$/)]);
+    } else {
+      xControl?.setValidators(Validators.required);
+    }
+    xControl?.updateValueAndValidity();
   }
 }
