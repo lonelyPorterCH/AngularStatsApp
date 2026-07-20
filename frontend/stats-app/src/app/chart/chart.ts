@@ -50,6 +50,8 @@ export class ChartComponent implements OnChanges, AfterViewInit {
     }
     this.chart?.destroy();
     const linearXAxis = isLinearXAxis(this.stat);
+    const xAxisUnit = linearXAxis ? this.stat.xAxisUnit?.trim() ?? '' : '';
+    const xAxisTitle = xAxisUnit ? `${this.stat.xAxisName} (${xAxisUnit})` : this.stat.xAxisName;
     this.chart = new Chart(this.canvas().nativeElement, {
       type: 'line',
       data: {
@@ -77,6 +79,13 @@ export class ChartComponent implements OnChanges, AfterViewInit {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        plugins: {
+          tooltip: linearXAxis ? {
+            callbacks: {
+              title: items => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
+            }
+          } : {}
+        },
         onClick: (_event, elements) => {
           if (elements.length > 0) {
             const el = elements[0];
@@ -91,9 +100,12 @@ export class ChartComponent implements OnChanges, AfterViewInit {
         scales: {
           x: {
             type: linearXAxis ? 'linear' : 'time',
-            ticks: {maxTicksLimit: 6},
+            ticks: {
+              maxTicksLimit: 6,
+              ...(linearXAxis ? {callback: value => `${value}${xAxisUnit ? ` ${xAxisUnit}` : ''}`} : {})
+            },
             ...(linearXAxis ? {} : {time: {tooltipFormat: 'DD'}}),
-            title: {display: true, text: this.stat.xAxisName}
+            title: {display: true, text: xAxisTitle}
           },
           y: {
             reverse: this.stat.reverse,

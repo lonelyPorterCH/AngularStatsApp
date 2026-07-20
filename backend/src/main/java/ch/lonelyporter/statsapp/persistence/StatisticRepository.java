@@ -191,7 +191,7 @@ public class StatisticRepository {
     private Double numericX(Statistic.DataPoint point) {
         try {
             return Double.parseDouble(point.getX());
-        } catch (NumberFormatException | NullPointerException _) {
+        } catch (NumberFormatException | NullPointerException e) {
             return null;
         }
     }

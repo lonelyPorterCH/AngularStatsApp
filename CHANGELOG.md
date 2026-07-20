@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.2.1] - 2026-07-20
+
+### Added
+
+- Optional units for numeric x-axis scales, shown in axis labels and tooltips.
+
 ## [2.2.0] - 2026-07-20
 
 ### Added

@@ -55,7 +55,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     this.axesForm = this.formBuilder.group({
       xAxisName: [this.stat.xAxisName, Validators.required],
       yAxisName: [this.stat.yAxisName, Validators.required],
-      xAxisScaleType: [this.stat.xAxisScaleType ?? 'time', Validators.required]
+      xAxisScaleType: [this.stat.xAxisScaleType ?? 'time', Validators.required],
+      xAxisUnit: [this.stat.xAxisUnit ?? '']
     });
   }
 
@@ -64,7 +65,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
       this.axesForm.patchValue({
         xAxisName: this.stat.xAxisName,
         yAxisName: this.stat.yAxisName,
-        xAxisScaleType: this.stat.xAxisScaleType ?? 'time'
+        xAxisScaleType: this.stat.xAxisScaleType ?? 'time',
+        xAxisUnit: this.stat.xAxisUnit ?? ''
       });
     }
   }
@@ -114,8 +116,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
 
   onRenameAxes(): void {
     if (this.axesForm.invalid) return;
-    const {xAxisName, yAxisName, xAxisScaleType} = this.axesForm.value;
-    this.statService.renameAxes(this.stat.id, xAxisName, yAxisName, xAxisScaleType).subscribe({
+    const {xAxisName, yAxisName, xAxisScaleType, xAxisUnit} = this.axesForm.value;
+    this.statService.renameAxes(this.stat.id, xAxisName, yAxisName, xAxisScaleType, xAxisUnit?.trim()).subscribe({
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
     });

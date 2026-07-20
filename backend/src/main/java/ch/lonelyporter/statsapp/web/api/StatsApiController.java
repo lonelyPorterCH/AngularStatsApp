@@ -100,7 +100,7 @@ public class StatsApiController {
 
     @PatchMapping("/{id}/axes")
     public ResponseEntity<Void> renameAxes(@PathVariable String id, @RequestBody Map<String, String> body) {
-        statisticService.renameAxes(id, body.get("xAxisName"), body.get("yAxisName"), body.get("xAxisScaleType"));
+        statisticService.renameAxes(id, body.get("xAxisName"), body.get("yAxisName"), body.get("xAxisScaleType"), body.get("xAxisUnit"));
         return ResponseEntity.ok().build();
     }
 

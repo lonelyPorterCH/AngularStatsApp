@@ -45,6 +45,11 @@
     </mat-select>
   </mat-form-field>
 
+  <mat-form-field appearance="outline">
+    <mat-label>Numeric X Axis Unit (optional)</mat-label>
+    <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
+  </mat-form-field>
+
   <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
 
   <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>

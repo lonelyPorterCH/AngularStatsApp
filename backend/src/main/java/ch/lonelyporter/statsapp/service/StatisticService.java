@@ -115,7 +115,7 @@ public class StatisticService {
         repository.save(statistic);
     }
 
-    public void renameAxes(String id, String xAxisName, String yAxisName, String xAxisScaleType) {
+    public void renameAxes(String id, String xAxisName, String yAxisName, String xAxisScaleType, String xAxisUnit) {
         Statistic statistic = repository.findById(id);
         if (xAxisName != null) statistic.setXAxisName(xAxisName);
         if (yAxisName != null) statistic.setYAxisName(yAxisName);
@@ -125,6 +125,7 @@ public class StatisticService {
             }
             statistic.setXAxisScaleType(xAxisScaleType);
         }
+        if (xAxisUnit != null) statistic.setXAxisUnit(xAxisUnit.trim());
         repository.save(statistic);
     }
 
@@ -148,7 +149,7 @@ public class StatisticService {
             if (!Double.isFinite(x) || x < 0) {
                 throw new NumberFormatException();
             }
-        } catch (NumberFormatException | NullPointerException _) {
+        } catch (NumberFormatException | NullPointerException e) {
             throw new InvalidDataPointException("Linear x-axis values must be non-negative finite numbers");
         }
     }

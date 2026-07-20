@@ -4,6 +4,7 @@ export interface Stat {
   xAxisName: string;
   yAxisName: string;
   xAxisScaleType?: 'time' | 'linear';
+  xAxisUnit?: string;
   reverse: boolean;
   datasets: Dataset[];
 }

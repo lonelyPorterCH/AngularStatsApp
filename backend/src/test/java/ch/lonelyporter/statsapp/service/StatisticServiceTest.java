@@ -110,6 +110,16 @@ class StatisticServiceTest {
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
     }
 
+    @Test
+    void renameAxes_trimsAndPersistsXAxisUnit() {
+        Statistic statistic = createStatistic("linear-chart", "Linear Chart");
+        repository.save(statistic);
+
+        service.renameAxes("linear-chart", "Distance", "Elevation", "linear", " km ");
+
+        assertThat(repository.findById("linear-chart").getXAxisUnit()).isEqualTo("km");
+    }
+
     private static Statistic createStatistic(String id, String title) {
         Statistic statistic = new Statistic();
         statistic.setId(id);

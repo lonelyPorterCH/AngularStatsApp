@@ -72,8 +72,8 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/color`, {color});
   }
 
-  renameAxes(id: string, xAxisName: string, yAxisName: string, xAxisScaleType: 'time' | 'linear' = 'time'): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/${id}/axes`, {xAxisName, yAxisName, xAxisScaleType});
+  renameAxes(id: string, xAxisName: string, yAxisName: string, xAxisScaleType: 'time' | 'linear' = 'time', xAxisUnit = ''): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/axes`, {xAxisName, yAxisName, xAxisScaleType, xAxisUnit});
   }
 
   reorderDatasets(id: string, orderedLabels: string[]): Observable<void> {

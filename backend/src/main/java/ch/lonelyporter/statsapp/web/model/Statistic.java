@@ -17,10 +17,15 @@ public class Statistic {
     private String xAxisName;
     private String yAxisName;
     private String xAxisScaleType = "time";
+    private String xAxisUnit = "";
     private List<Dataset> datasets = new ArrayList<>();
 
     public String getXAxisScaleType() {
         return xAxisScaleType == null ? "time" : xAxisScaleType;
+    }
+
+    public String getXAxisUnit() {
+        return xAxisUnit == null ? "" : xAxisUnit;
     }
 
     @Getter

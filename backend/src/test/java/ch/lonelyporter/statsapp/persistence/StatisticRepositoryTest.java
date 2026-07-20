@@ -207,6 +207,18 @@ class StatisticRepositoryTest {
         Statistic loaded = repository.findById("legacy-scale-chart");
 
         assertThat(loaded.getXAxisScaleType()).isEqualTo("time");
+        assertThat(loaded.getXAxisUnit()).isEmpty();
+    }
+
+    @Test
+    void save_persistsXAxisUnit() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+        statistic.setXAxisScaleType("linear");
+        statistic.setXAxisUnit("km");
+
+        repository.save(statistic);
+
+        assertThat(repository.findById("test-chart").getXAxisUnit()).isEqualTo("km");
     }
 
     @Test
