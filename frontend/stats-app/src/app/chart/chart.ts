@@ -3,6 +3,7 @@ import {Chart, registerables} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {DataPoint, Stat} from '../models/stat';
 import {compareDataPoints, isLinearXAxis, parseXAxisValue} from '../models/x-axis';
+import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
 
 Chart.register(...registerables);
 
@@ -23,15 +24,6 @@ export class ChartComponent implements OnChanges, AfterViewInit {
   canvas = viewChild.required<ElementRef>('canvas');
   private chart?: Chart;
   private viewInitialized = false;
-
-  private readonly COLORS = [
-    {border: 'rgb(0 119 255 / 0.85)', background: 'rgb(0 119 255 / 0.2)'},
-    {border: 'rgb(255 99 132 / 0.85)', background: 'rgb(255 99 132 / 0.2)'},
-    {border: 'rgb(75 192 192 / 0.85)', background: 'rgb(75 192 192 / 0.2)'},
-    {border: 'rgb(255 205 86 / 0.85)', background: 'rgb(255 205 86 / 0.2)'},
-    {border: 'rgb(153 102 255 / 0.85)', background: 'rgb(153 102 255 / 0.2)'},
-    {border: 'rgb(255 159 64 / 0.85)', background: 'rgb(255 159 64 / 0.2)'},
-  ];
 
   ngAfterViewInit(): void {
     this.viewInitialized = true;
@@ -60,7 +52,10 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           const color = ds.color ? {
             border: `rgb(${ds.color} / 0.85)`,
             background: `rgb(${ds.color} / 0.2)`
-          } : this.COLORS[i % this.COLORS.length];
+          } : {
+            border: `rgb(${DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]} / 0.85)`,
+            background: `rgb(${DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]} / 0.2)`
+          };
           return {
             label: ds.label,
             data: ds.dataPoints.map(dp => ({

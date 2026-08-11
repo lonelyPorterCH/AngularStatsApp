@@ -9,6 +9,7 @@ import {MatList, MatListItem} from '@angular/material/list';
 import {MatCheckbox} from '@angular/material/checkbox';
 import {MatOption} from '@angular/material/core';
 import {MatSelect} from '@angular/material/select';
+import {DEFAULT_DATASET_COLORS} from '../../models/dataset-colors';
 
 @Component({
   selector: 'app-manage-datasets-form',
@@ -169,9 +170,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     });
   }
 
-  rgbToHex(color?: string): string {
-    if (!color) return '#0077ff';
-    const parts = color.split(' ').map(Number);
+  rgbToHex(color?: string, defaultColorIndex = 0): string {
+    const parts = (color ?? DEFAULT_DATASET_COLORS[defaultColorIndex % DEFAULT_DATASET_COLORS.length]).split(' ').map(Number);
     return '#' + parts.map(p => p.toString(16).padStart(2, '0')).join('');
   }
 

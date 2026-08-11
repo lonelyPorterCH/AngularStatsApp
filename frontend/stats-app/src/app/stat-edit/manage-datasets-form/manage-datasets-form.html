@@ -31,7 +31,7 @@
   <!-- Dataset list -->
   <h3>Datasets</h3>
   <mat-list>
-    @for (ds of sortedDatasets; track ds.label) {
+    @for (ds of sortedDatasets; track ds.label; let datasetIndex = $index) {
       <mat-list-item>
         @if (editingDataset[ds.label] !== undefined) {
           <input
@@ -55,7 +55,7 @@
                 <input
                   type="color"
                   class="color-picker"
-                  [value]="rgbToHex(ds.color)"
+                  [value]="rgbToHex(ds.color, datasetIndex)"
                   (change)="onSetDatasetColor(ds.label, $event)"
                   [title]="'Dataset color'"
                 />
