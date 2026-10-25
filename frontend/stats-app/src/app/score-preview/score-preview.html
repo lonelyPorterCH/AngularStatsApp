@@ -1,0 +1,18 @@
+<div class="score-card">
+  <div class="score-card__header">
+    <div>
+      <h3>Beat Saber scores</h3>
+    </div>
+    <mat-icon>scatter_plot</mat-icon>
+  </div>
+  <div class="score-card__chart">
+    @if (loading()) {
+      <p class="muted">Loading score history...</p>
+    } @else if (!players().length) {
+      <p class="muted">No tracked players found.</p>
+    } @else {
+      <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [compact]="true"></app-score-scatter-plot>
+    }
+  </div>
+  <button [routerLink]="['/scores']" matButton="text">View Details</button>
+</div>

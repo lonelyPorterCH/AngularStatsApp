@@ -1,0 +1,45 @@
+.score-card {
+  min-height: 370px;
+  padding: 20px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.score-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+h3, p {
+  margin: 0;
+}
+
+p {
+  color: #665f59;
+}
+
+.score-card__header mat-icon {
+  color: #c44b32;
+}
+
+.score-card__chart {
+  flex: 1;
+  min-height: 240px;
+}
+
+.muted {
+  padding: 72px 16px;
+  text-align: center;
+}
+
+@media (max-width: 600px) {
+  .score-card {
+    box-shadow: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 0;
+  }
+}

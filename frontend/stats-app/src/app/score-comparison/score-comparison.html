@@ -1,0 +1,56 @@
+<section class="comparison-page">
+  <header class="comparison-page__header">
+    <div>
+      <p class="eyebrow">Additional Stats</p>
+      <h2>Beat Saber scores</h2>
+      <p>Track one player's ranked results, or compare two players when needed.</p>
+    </div>
+    <button matButton="filled" (click)="refreshScores()" [disabled]="refreshing() || !selectedPlayer">
+      <mat-icon>sync</mat-icon>
+      {{ refreshing() ? 'Updating...' : 'Update Scores' }}
+    </button>
+  </header>
+
+  <div class="comparison-controls">
+    <label>Player
+      <select [(ngModel)]="selectedPlayer" (ngModelChange)="loadComparison()">
+        @for (player of players(); track player.id) {
+          <option [value]="player.id">{{ player.name }} ({{ player.id }})</option>
+        }
+      </select>
+    </label>
+    <label class="compare-toggle">
+      <input type="checkbox" [(ngModel)]="compareMode" (ngModelChange)="onCompareModeChange()">
+      Compare scores
+    </label>
+    @if (compareMode) {
+      <label>Compare with
+        <select [(ngModel)]="selectedOtherPlayer" (ngModelChange)="loadComparison()">
+          @for (player of players(); track player.id) {
+            <option [value]="player.id">{{ player.name }} ({{ player.id }})</option>
+          }
+        </select>
+      </label>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  } @else if (loading()) {
+    <p class="status">Loading comparison...</p>
+  } @else if (!players().length) {
+    <p class="status">No tracked players found.</p>
+  } @else {
+    <div class="comparison-chart">
+      <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [maximumDate]="maximumDate"></app-score-scatter-plot>
+    </div>
+    <label class="date-slider">
+      <span>Show scores up to {{ selectedDateTimestamp | date: 'dd.MM.yyyy' }}</span>
+      <input type="range"
+             [min]="earliestScoreTimestamp"
+             [max]="latestScoreTimestamp"
+             [value]="selectedDateTimestamp"
+             (input)="onDateSliderChange($any($event.target).value)">
+    </label>
+  }
+</section>

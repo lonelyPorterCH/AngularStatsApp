@@ -4,6 +4,7 @@ import {StatDetails} from './stat-details/stat-details';
 import {CreateForm} from './create-form/create-form';
 import {StatEdit} from './stat-edit/stat-edit';
 import {Archive} from './archive/archive';
+import {ScoreComparison} from './score-comparison/score-comparison';
 
 export const routes: Routes = [
   {path: '', redirectTo: 'stats', pathMatch: 'full'},
@@ -12,4 +13,5 @@ export const routes: Routes = [
   {path: 'stats/new', component: CreateForm, title: 'StatsApp - Create new'},
   {path: 'stats/:id', component: StatDetails, title: 'StatsApp - Details'},
   {path: 'stats/:id/edit', component: StatEdit, title: 'StatsApp - Edit'},
+  {path: 'scores', component: ScoreComparison, title: 'StatsApp - Score Comparison'},
 ];

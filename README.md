@@ -61,15 +61,36 @@ docker save statsapp -o statsapp-angular-2.2.x.tar
 | Property                 | Default            | Description                           |
 |--------------------------|--------------------|---------------------------------------|
 | `app.stats.storage-path` | `/data/statistics` | Path where JSON stat files are stored |
+| `app.scores.storage-path` | `${user.home}/Documents/rankedScores` | Existing ScoreSaber `players.json` and `{playerId}.json` files; use `/data/scores` in Docker |
 | `server.port`            | `8081`             | Port the backend listens on           |
+| `scoresaber.base-url`    | `https://scoresaber.com` | ScoreSaber API base URL |
 
 Override via environment variable in `docker-compose.yml`:
 
 ```yaml
 environment:
   - APP_STATS_STORAGE_PATH=/data/statistics
+  - APP_SCORES_STORAGE_PATH=/data/scores
+  - SCORESABER_BASE_URL=https://scoresaber.com
   - SERVER_PORT=8081
 ```
+
+## ScoreSaber comparison
+
+StatsApp exposes the migrated Beat Saber feature at `/scores`. The overview contains an
+`Additional Stats` section with a scatterplot preview and a `View Details` link for the
+full player comparison workflow.
+
+The backend API is grouped under `/api/scores`:
+
+- `GET /api/scores/players/details` lists tracked players.
+- `GET /api/scores/players/{playerId}/scores` returns a player's ranked scores.
+- `GET /api/scores/players/{playerId}/scores/compare/{otherPlayerId}` returns both histories.
+- `POST /api/scores/players/{playerId}/scores/update` refreshes scores from ScoreSaber.
+
+The migrated backend reads the existing BSV file layout directly. Mount the old score
+directory at `/data/scores` (or set `APP_SCORES_STORAGE_PATH`) when creating the merged
+container. The generic statistics directory remains `/data/statistics`.
 
 ## Run local
 

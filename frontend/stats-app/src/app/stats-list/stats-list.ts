@@ -5,6 +5,7 @@ import {Stat} from '../models/stat';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {RouterLink} from '@angular/router';
+import {ScorePreview} from '../score-preview/score-preview';
 
 @Component({
   selector: 'app-stats-list',
@@ -12,7 +13,8 @@ import {RouterLink} from '@angular/router';
     StatsCard,
     MatButton,
     MatIcon,
-    RouterLink
+    RouterLink,
+    ScorePreview
   ],
   templateUrl: './stats-list.html',
   styleUrl: './stats-list.scss',

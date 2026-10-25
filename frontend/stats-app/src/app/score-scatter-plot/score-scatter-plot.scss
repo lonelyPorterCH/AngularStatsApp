@@ -1,0 +1,67 @@
+:host {
+  display: block;
+  position: relative;
+  height: 100%;
+  min-height: 260px;
+}
+
+.score-chart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.score-tooltip {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 240px;
+  height: 100px;
+  box-sizing: border-box;
+  padding: 6px;
+  color: #fff;
+  background: rgba(40, 37, 34, 0.96);
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.score-tooltip img {
+  width: 88px;
+  height: 88px;
+  flex: 0 0 88px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.score-tooltip div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.score-tooltip strong,
+.score-tooltip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score-tooltip strong {
+  font-size: 0.8rem;
+}
+
+.score-tooltip span {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.72rem;
+}

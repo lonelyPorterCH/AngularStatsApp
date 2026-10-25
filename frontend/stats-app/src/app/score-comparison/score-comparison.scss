@@ -1,0 +1,119 @@
+.comparison-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+.comparison-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #c44b32;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h2, p {
+  margin-top: 0;
+}
+
+.comparison-page__header p:last-child {
+  color: #665f59;
+}
+
+.comparison-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 18px;
+  margin-bottom: 24px;
+  background: #f4eee8;
+  border: 1px solid #e6d9cc;
+  border-radius: 8px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: #4d4742;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.compare-toggle {
+  display: flex;
+  align-items: center;
+  align-self: end;
+  min-height: 38px;
+  gap: 6px;
+}
+
+.compare-toggle input[type='checkbox'] {
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+select, input {
+  min-width: 190px;
+  padding: 9px 10px;
+  color: #282522;
+  background: white;
+  border: 1px solid #b9aaa0;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.date-slider {
+  display: grid;
+  gap: 8px;
+  margin: 20px 4px 0;
+}
+
+.date-slider input[type='range'] {
+  width: 100%;
+  min-width: 280px;
+  padding: 0;
+  accent-color: #c44b32;
+}
+
+.comparison-chart {
+  height: 560px;
+  padding: 20px;
+  background: #fffaf5;
+  border: 1px solid #e6d9cc;
+  border-radius: 8px;
+}
+
+.status, .error {
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.error {
+  color: #a83220;
+}
+
+@media (max-width: 700px) {
+  .comparison-page {
+    padding: 20px 16px 32px;
+  }
+
+  .comparison-page__header {
+    flex-direction: column;
+  }
+
+  .comparison-chart {
+    height: 420px;
+    padding: 12px;
+  }
+}
