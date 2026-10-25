@@ -1,4 +1,4 @@
-package ch.lonelyporter.statsapp.scores;
+package ch.lonelyporter.statsapp.scoresaber;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;

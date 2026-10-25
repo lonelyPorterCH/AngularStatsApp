@@ -1,8 +1,7 @@
-package ch.lonelyporter.statsapp.scores.scoresaber;
+package ch.lonelyporter.statsapp.scoresaber;
 
-import ch.lonelyporter.statsapp.scores.ScoresaberEndpoints;
-import ch.lonelyporter.statsapp.scores.domain.Player;
-import ch.lonelyporter.statsapp.scores.domain.Score;
+import ch.lonelyporter.statsapp.scores.Player;
+import ch.lonelyporter.statsapp.scores.Score;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -67,7 +66,7 @@ public class ScoresaberApiAdapter {
                     .retrieve()
                     .body(PlayerDetailsDto.class);
             return Optional.ofNullable(details).map(PlayerMapper::map);
-        } catch (HttpClientErrorException.NotFound _) {
+        } catch (HttpClientErrorException.NotFound exception) {
             log.warn("ScoreSaber player not found: {}", playerId);
             return Optional.empty();
         }

@@ -1,4 +1,4 @@
-package ch.lonelyporter.statsapp.scores;
+package ch.lonelyporter.statsapp.scoresaber;
 
 public record ScoresaberEndpoints(String scoresPath, String playerDetailsPath) {
 }

@@ -1,9 +1,9 @@
-package ch.lonelyporter.statsapp.scores.web;
+package ch.lonelyporter.statsapp.web.api;
 
-import ch.lonelyporter.statsapp.scores.domain.Player;
-import ch.lonelyporter.statsapp.scores.domain.Score;
-import ch.lonelyporter.statsapp.scores.service.PlayerService;
-import ch.lonelyporter.statsapp.scores.service.ScoreService;
+import ch.lonelyporter.statsapp.scores.Player;
+import ch.lonelyporter.statsapp.scores.Score;
+import ch.lonelyporter.statsapp.service.PlayerService;
+import ch.lonelyporter.statsapp.service.ScoreService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

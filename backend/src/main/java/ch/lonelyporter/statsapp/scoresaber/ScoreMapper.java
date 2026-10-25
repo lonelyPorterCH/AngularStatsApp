@@ -1,6 +1,6 @@
-package ch.lonelyporter.statsapp.scores.scoresaber;
+package ch.lonelyporter.statsapp.scoresaber;
 
-import ch.lonelyporter.statsapp.scores.domain.Score;
+import ch.lonelyporter.statsapp.scores.Score;
 
 import java.time.ZoneOffset;
 import java.util.List;

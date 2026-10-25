@@ -1,4 +1,4 @@
-package ch.lonelyporter.statsapp.scores.domain;
+package ch.lonelyporter.statsapp.scores;
 
 public record Player(String id, String name, String country, Integer rank) {
 

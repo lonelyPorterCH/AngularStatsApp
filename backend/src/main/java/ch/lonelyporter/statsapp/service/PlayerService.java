@@ -1,9 +1,9 @@
-package ch.lonelyporter.statsapp.scores.service;
+package ch.lonelyporter.statsapp.service;
 
-import ch.lonelyporter.statsapp.scores.domain.Player;
-import ch.lonelyporter.statsapp.scores.domain.PlayerRepository;
-import ch.lonelyporter.statsapp.scores.domain.ScoreRepository;
-import ch.lonelyporter.statsapp.scores.scoresaber.ScoresaberApiAdapter;
+import ch.lonelyporter.statsapp.scores.Player;
+import ch.lonelyporter.statsapp.scores.PlayerRepository;
+import ch.lonelyporter.statsapp.scores.ScoreRepository;
+import ch.lonelyporter.statsapp.scoresaber.ScoresaberApiAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,15 +27,12 @@ public class PlayerService {
 
     public Player getPlayer(String playerId) {
         Optional<Player> player = playerRepository.getPlayer(playerId);
-        if (player.isPresent()) {
-            return player.get();
-        }
-        return apiAdapter.getPlayerDetails(playerId)
+        return player.orElseGet(() -> apiAdapter.getPlayerDetails(playerId)
                 .map(fetchedPlayer -> {
                     playerRepository.savePlayer(fetchedPlayer);
                     return fetchedPlayer;
                 })
-                .orElseGet(() -> new Player(playerId, playerId, "", null));
+                .orElseGet(() -> new Player(playerId, playerId, "", null)));
     }
 
     public List<Player> getAllPlayers() {

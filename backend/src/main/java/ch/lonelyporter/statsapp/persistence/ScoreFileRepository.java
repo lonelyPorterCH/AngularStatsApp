@@ -1,8 +1,8 @@
-package ch.lonelyporter.statsapp.scores.persistence;
+package ch.lonelyporter.statsapp.persistence;
 
-import ch.lonelyporter.statsapp.scores.ScoresProperties;
-import ch.lonelyporter.statsapp.scores.domain.Score;
-import ch.lonelyporter.statsapp.scores.domain.ScoreRepository;
+import ch.lonelyporter.statsapp.scores.Score;
+import ch.lonelyporter.statsapp.scores.ScoreRepository;
+import ch.lonelyporter.statsapp.scoresaber.ScoresProperties;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 @Repository
 public class ScoreFileRepository implements ScoreRepository {
     private static final Logger log = LoggerFactory.getLogger(ScoreFileRepository.class);
-    public static final java.lang.String JSON = ".json";
+    public static final String JSON = ".json";
     private final Map<String, List<Score>> playerScores = new HashMap<>();
     private final ObjectMapper mapper;
     private final ScoresProperties properties;
@@ -53,7 +53,7 @@ public class ScoreFileRepository implements ScoreRepository {
         List<Score> existingScores = playerScores.computeIfAbsent(playerId, ignored -> new ArrayList<>());
         existingScores.addAll(scores);
         try {
-            mapper.writeValue(storageDirectory().resolve(playerId + ".json").toFile(), existingScores);
+            mapper.writeValue(storageDirectory().resolve(playerId + JSON).toFile(), existingScores);
         } catch (RuntimeException exception) {
             throw new IllegalStateException("Unable to save scores for player " + playerId, exception);
         }
@@ -72,7 +72,7 @@ public class ScoreFileRepository implements ScoreRepository {
     private void readPlayerScoreFile(Path file) {
         try {
             String filename = file.getFileName().toString();
-            String playerId = filename.substring(0, filename.length() - ".json".length());
+            String playerId = filename.substring(0, filename.length() - JSON.length());
             playerScores.put(playerId, mapper.readValue(file.toFile(), new TypeReference<>() {
             }));
         } catch (RuntimeException exception) {
