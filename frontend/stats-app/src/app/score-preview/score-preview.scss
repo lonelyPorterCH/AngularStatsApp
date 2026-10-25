@@ -19,11 +19,11 @@ h3, p {
 }
 
 p {
-  color: #665f59;
+  color: var(--mat-sys-on-surface-variant);
 }
 
 .score-card__header mat-icon {
-  color: #c44b32;
+  color: var(--mat-sys-primary);
 }
 
 .score-card__chart {

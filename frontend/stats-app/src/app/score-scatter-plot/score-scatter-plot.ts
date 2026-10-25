@@ -2,6 +2,7 @@ import {AfterViewInit, Component, ElementRef, Input, OnChanges, OnDestroy, Simpl
 import {Chart, registerables, TooltipModel} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {Score} from '../models/score';
+import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
 
 Chart.register(...registerables);
 
@@ -41,18 +42,19 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     this.chart = new Chart(this.canvas().nativeElement, {
       type: 'scatter',
       data: {
-        datasets: entries.map(([playerId, scores], index) => ({
-          label: this.playerNames[playerId] ?? playerId,
-          data: scores
-            .filter(score => !this.maximumDate || score.timeSet <= this.maximumDate)
-            .map(score => ({x: score.stars, y: score.accuracy})),
-          backgroundColor: this.compact
-            ? (index === 0 ? 'rgb(196 75 50 / 0.2)' : 'rgb(43 111 119 / 0.2)')
-            : (index === 0 ? '#c44b32' : '#2b6f77'),
-          borderColor: index === 0 ? '#c44b32' : '#2b6f77',
-          pointRadius: 2,
-          pointHoverRadius: 4,
-        }))
+        datasets: entries.map(([playerId, scores], index) => {
+          const color = DEFAULT_DATASET_COLORS[index % DEFAULT_DATASET_COLORS.length];
+          return {
+            label: this.playerNames[playerId] ?? playerId,
+            data: scores
+              .filter(score => !this.maximumDate || score.timeSet <= this.maximumDate)
+              .map(score => ({x: score.stars, y: score.accuracy})),
+            backgroundColor: `rgb(${color} / ${this.compact ? '0.2' : '0.85'})`,
+            borderColor: `rgb(${color} / 0.85)`,
+            pointRadius: 2,
+            pointHoverRadius: 4,
+          };
+        })
       },
       options: {
         responsive: true,
