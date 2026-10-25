@@ -46,7 +46,7 @@ docker build -t statsapp .
 ### 2. Export the image to a tar file
 
 ```bash
-docker save statsapp -o statsapp-angular-2.2.x.tar
+docker save statsapp -o statsapp-angular-2.3.x.tar
 ```
 
 ### 3. Upload to Synology
@@ -58,12 +58,12 @@ docker save statsapp -o statsapp-angular-2.2.x.tar
 
 ## Configuration
 
-| Property                 | Default            | Description                           |
-|--------------------------|--------------------|---------------------------------------|
-| `app.stats.storage-path` | `/data/statistics` | Path where JSON stat files are stored |
+| Property                  | Default                               | Description                                                                                  |
+|---------------------------|---------------------------------------|----------------------------------------------------------------------------------------------|
+| `app.stats.storage-path`  | `/data/statistics`                    | Path where JSON stat files are stored                                                        |
 | `app.scores.storage-path` | `${user.home}/Documents/rankedScores` | Existing ScoreSaber `players.json` and `{playerId}.json` files; use `/data/scores` in Docker |
-| `server.port`            | `8081`             | Port the backend listens on           |
-| `scoresaber.base-url`    | `https://scoresaber.com` | ScoreSaber API base URL |
+| `server.port`             | `8081`                                | Port the backend listens on                                                                  |
+| `scoresaber.base-url`     | `https://scoresaber.com`              | ScoreSaber API base URL                                                                      |
 
 Override via environment variable in `docker-compose.yml`:
 

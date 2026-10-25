@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.3.0] - 2026-10-25
+
+### Added
+
+- Beat Saber score tracking and player comparison in the StatsApp container.
+
+### Changed
+
+- Added ScoreSaber persistence, API integration, and chart-based score comparison.
+- Updated the Beat Saber interface to use the shared StatsApp chart palette and Material styling.
+
 ## [2.2.1] - 2026-07-20
 
 ### Added
