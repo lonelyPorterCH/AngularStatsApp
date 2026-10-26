@@ -1,4 +1,4 @@
-package ch.lonelyporter.statsapp.scoresaber;
+package ch.lonelyporter.statsapp.integration.scoresaber;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

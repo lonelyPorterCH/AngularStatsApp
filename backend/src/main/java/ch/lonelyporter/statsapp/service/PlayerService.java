@@ -1,9 +1,9 @@
 package ch.lonelyporter.statsapp.service;
 
-import ch.lonelyporter.statsapp.scores.Player;
-import ch.lonelyporter.statsapp.scores.PlayerRepository;
-import ch.lonelyporter.statsapp.scores.ScoreRepository;
-import ch.lonelyporter.statsapp.scoresaber.ScoresaberApiAdapter;
+import ch.lonelyporter.statsapp.domain.scores.Player;
+import ch.lonelyporter.statsapp.domain.scores.PlayerRepository;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
+import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

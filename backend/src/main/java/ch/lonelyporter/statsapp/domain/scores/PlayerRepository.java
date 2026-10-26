@@ -1,4 +1,4 @@
-package ch.lonelyporter.statsapp.scores;
+package ch.lonelyporter.statsapp.domain.scores;
 
 import java.util.Optional;
 

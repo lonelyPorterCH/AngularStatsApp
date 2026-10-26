@@ -1,0 +1,27 @@
+.harvest-page { max-width: 1180px; margin: 0 auto; padding-bottom: 40px; }
+.page-header { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 24px; }
+.page-header h2, .page-header p { margin: 0; }
+.page-header > div > p:last-child { color: var(--mat-sys-on-surface-variant); margin-top: 6px; }
+.eyebrow { color: var(--mat-sys-primary); text-transform: uppercase; letter-spacing: 1px; font-size: 12px; font-weight: 700; }
+.year-picker { display: grid; gap: 6px; font-weight: 600; }
+select, input { min-height: 38px; border: 1px solid var(--mat-sys-outline); border-radius: 4px; padding: 0 10px; background: var(--mat-sys-surface); color: var(--mat-sys-on-surface); font: inherit; }
+.summary-grid, .chart-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+.chart-grid { grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.5fr); }
+.summary, .panel { background: var(--mat-sys-surface-container-low); padding: 20px; }
+.summary { display: grid; gap: 8px; border-left: 4px solid var(--mat-sys-primary); }
+.summary span, .plant-heading span, .harvest-entry { color: var(--mat-sys-on-surface-variant); }
+.summary strong { font-size: 28px; }
+.panel { margin-bottom: 16px; }
+.panel-heading, .plant-heading, .harvest-entry { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.panel-heading h3, .plant-heading h4 { margin: 0; }
+.panel-heading { margin-bottom: 16px; }
+.panel-heading mat-icon { color: var(--mat-sys-primary); }
+.inline-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.inline-form input, .inline-form select { flex: 1 1 150px; }
+.plant-row { border-top: 1px solid var(--mat-sys-outline-variant); padding: 18px 0; }
+.plant-heading { align-items: start; }
+.plant-heading span { font-size: 13px; }
+.harvest-entry { border-top: 1px solid var(--mat-sys-outline-variant); padding: 8px 0 0 12px; margin-top: 8px; font-size: 14px; }
+.error { color: var(--mat-sys-error); margin: 12px 0; }
+.muted { color: var(--mat-sys-on-surface-variant); padding: 36px 0; text-align: center; }
+@media (max-width: 720px) { .page-header, .plant-heading { align-items: stretch; flex-direction: column; } .summary-grid, .chart-grid { grid-template-columns: 1fr; } .panel { padding: 16px; } .harvest-entry { align-items: flex-start; flex-direction: column; } }

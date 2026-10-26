@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.4.0] - 2026-10-26
+
+### Added
+
+- Seasonal Harvest Tracker with named plants, dated harvest quantities, cumulative charts, and year switching.
+- File-backed harvest storage under the configured statistics storage path.
+
+### Changed
+
+- Production deployment continues to use the existing storage environment variables; no Harvest-specific container variable is required.
+
 ## [2.3.0] - 2026-10-25
 
 ### Added

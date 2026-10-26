@@ -1,8 +1,8 @@
 package ch.lonelyporter.statsapp.persistence;
 
-import ch.lonelyporter.statsapp.scores.Player;
-import ch.lonelyporter.statsapp.scores.PlayerRepository;
-import ch.lonelyporter.statsapp.scoresaber.ScoresProperties;
+import ch.lonelyporter.statsapp.domain.scores.Player;
+import ch.lonelyporter.statsapp.domain.scores.PlayerRepository;
+import ch.lonelyporter.statsapp.integration.scoresaber.ScoresProperties;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;

@@ -6,6 +6,7 @@ import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {RouterLink} from '@angular/router';
 import {ScorePreview} from '../score-preview/score-preview';
+import {HarvestPreview} from '../harvest-preview/harvest-preview';
 
 @Component({
   selector: 'app-stats-list',
@@ -14,7 +15,8 @@ import {ScorePreview} from '../score-preview/score-preview';
     MatButton,
     MatIcon,
     RouterLink,
-    ScorePreview
+    ScorePreview,
+    HarvestPreview
   ],
   templateUrl: './stats-list.html',
   styleUrl: './stats-list.scss',

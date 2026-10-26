@@ -1,0 +1,19 @@
+<div class="harvest-card">
+  <div class="harvest-card__header">
+    <div>
+      <h3>Harvest Tracker</h3>
+      <p>{{ year }} season</p>
+    </div>
+    <mat-icon>local_florist</mat-icon>
+  </div>
+  <div class="harvest-card__chart">
+    @if (loading()) {
+      <p class="muted">Loading harvest totals...</p>
+    } @else if (!view()?.plantTotals?.length) {
+      <p class="muted">No plants tracked yet.</p>
+    } @else {
+      <app-harvest-donut-chart [totals]="view()!.plantTotals" [compact]="true"></app-harvest-donut-chart>
+    }
+  </div>
+  <button [routerLink]="['/harvest']" matButton="text">View Details</button>
+</div>

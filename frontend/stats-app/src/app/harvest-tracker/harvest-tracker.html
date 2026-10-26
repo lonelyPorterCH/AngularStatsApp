@@ -1,0 +1,71 @@
+<section class="harvest-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Seasonal records</p>
+      <h2>Harvest Tracker</h2>
+      <p>Track each plant and watch the season accumulate.</p>
+    </div>
+    <label class="year-picker">Season
+      <select [(ngModel)]="selectedYear" (ngModelChange)="onYearChange()">
+        @for (year of years(); track year) {
+          <option [ngValue]="year">{{ year }}</option>
+        }
+      </select>
+    </label>
+  </header>
+
+  @if (error()) { <p class="error">{{ error() }}</p> }
+  @if (loading()) {
+    <p class="muted">Loading harvest season...</p>
+  } @else {
+    <div class="summary-grid">
+      <div class="summary"><span>Total tomatoes</span><strong>{{ view()?.totalQuantity ?? 0 }}</strong></div>
+      <div class="summary"><span>Plants</span><strong>{{ view()?.plants?.length ?? 0 }}</strong></div>
+      <div class="summary"><span>Season</span><strong>{{ selectedYear }}</strong></div>
+    </div>
+
+    <div class="chart-grid">
+      <section class="panel donut-panel">
+        <div class="panel-heading"><h3>Harvest by plant</h3><mat-icon>donut_large</mat-icon></div>
+        @if (view()?.plantTotals?.length) {
+          <app-harvest-donut-chart [totals]="view()!.plantTotals"></app-harvest-donut-chart>
+        } @else { <p class="muted">Add plants to see the season breakdown.</p> }
+      </section>
+      <section class="panel">
+        <div class="panel-heading"><h3>All plants over time</h3><mat-icon>show_chart</mat-icon></div>
+        <app-harvest-line-chart [globalSeries]="view()?.globalSeries ?? []" [showGlobal]="true"></app-harvest-line-chart>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-heading"><h3>Plant progress</h3><mat-icon>timeline</mat-icon></div>
+      <app-harvest-line-chart [series]="view()?.plantSeries ?? []"></app-harvest-line-chart>
+    </section>
+
+    <section class="panel management">
+      <div class="panel-heading"><h3>Plants and harvests</h3><mat-icon>local_florist</mat-icon></div>
+      <div class="inline-form">
+        <input [(ngModel)]="newPlantName" placeholder="Plant name" aria-label="Plant name" (keyup.enter)="addPlant()">
+        <button matButton="filled" (click)="addPlant()"><mat-icon>add</mat-icon>Add plant</button>
+      </div>
+      @if (view()?.plants?.length) {
+        @for (plant of view()!.plants; track plant.id) {
+          <article class="plant-row">
+            <div class="plant-heading"><div><h4>{{ plant.name }}</h4><span>{{ plant.harvests.length }} entries, {{ view()!.plantTotals.find(total => total.plantId === plant.id)?.totalQuantity ?? 0 }} tomatoes</span></div><div><button matButton="text" (click)="togglePlantEditing(plant.id)"><mat-icon>{{ isPlantEditing(plant.id) ? 'check' : 'edit_note' }}</mat-icon>{{ isPlantEditing(plant.id) ? 'Done' : 'Edit entries' }}</button><button matButton="text" (click)="renamePlant(plant)"><mat-icon>edit</mat-icon>Rename</button><button matButton="text" (click)="deletePlant(plant)"><mat-icon>delete</mat-icon>Delete</button></div></div>
+            @if (isPlantEditing(plant.id)) {
+              <div class="inline-form harvest-form">
+                <input type="date" [(ngModel)]="harvestDates[plant.id]" [attr.min]="selectedYear + '-01-01'" [attr.max]="selectedYear + '-12-31'" aria-label="Harvest date">
+                <input type="number" min="1" [(ngModel)]="harvestQuantities[plant.id]" aria-label="Harvest quantity">
+                <button matButton="filled" (click)="saveHarvest(plant.id)">{{ editing?.plantId === plant.id ? 'Update harvest' : 'Record harvest' }}</button>
+                @if (editing?.plantId === plant.id) { <button matButton="text" (click)="cancelEdit()">Cancel</button> }
+              </div>
+              @for (entry of plant.harvests; track entry.id) {
+                <div class="harvest-entry"><span>{{ entry.date | date:'dd.MM.yyyy' }} · {{ entry.quantity }} tomatoes</span><span><button matButton="text" (click)="editHarvest(plant.id, entry)">Edit</button><button matButton="text" (click)="deleteHarvest(plant.id, entry)">Delete</button></span></div>
+              }
+            }
+          </article>
+        }
+      } @else { <p class="muted">No plants in this season yet.</p> }
+    </section>
+  }
+</section>

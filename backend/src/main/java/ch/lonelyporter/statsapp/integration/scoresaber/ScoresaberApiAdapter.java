@@ -1,7 +1,7 @@
-package ch.lonelyporter.statsapp.scoresaber;
+package ch.lonelyporter.statsapp.integration.scoresaber;
 
-import ch.lonelyporter.statsapp.scores.Player;
-import ch.lonelyporter.statsapp.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.Player;
+import ch.lonelyporter.statsapp.domain.scores.Score;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

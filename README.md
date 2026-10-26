@@ -46,7 +46,7 @@ docker build -t statsapp .
 ### 2. Export the image to a tar file
 
 ```bash
-docker save statsapp -o statsapp-angular-2.3.x.tar
+docker save statsapp -o statsapp-angular-2.4.x.tar
 ```
 
 ### 3. Upload to Synology
@@ -91,6 +91,27 @@ The backend API is grouped under `/api/scores`:
 The migrated backend reads the existing BSV file layout directly. Mount the old score
 directory at `/data/scores` (or set `APP_SCORES_STORAGE_PATH`) when creating the merged
 container. The generic statistics directory remains `/data/statistics`.
+
+## Harvest Tracker
+
+StatsApp exposes the seasonal Harvest Tracker at `/harvest`. The overview includes a
+read-only donut-chart preview with a `View Details` link. The tracker stores one season
+per calendar year, named plants, and harvest entries containing a date and positive
+tomato quantity. Plant charts and the global chart show cumulative totals over time;
+the donut chart shows each plant's total for the selected year.
+
+Harvest data is stored as JSON under the `harvest` subdirectory of the configured
+statistics storage path. Its API is grouped under `/api/harvest`:
+
+- `GET /api/harvest/years` lists years with saved harvest data.
+- `GET /api/harvest/{year}` returns the season projection and chart series.
+- `POST`, `PATCH`, and `DELETE` plant endpoints manage plants for a year.
+- `POST`, `PATCH`, and `DELETE` harvest endpoints manage dated quantity entries.
+
+Harvest Tracker does not require additional container environment variables. It uses
+`APP_STATS_STORAGE_PATH`, so preserve the mounted statistics volume during upgrades;
+season files such as `harvest/2025.json` and `harvest/2026.json` must remain under
+that path.
 
 ## Run local
 

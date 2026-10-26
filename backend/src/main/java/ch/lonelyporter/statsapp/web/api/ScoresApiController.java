@@ -1,7 +1,7 @@
 package ch.lonelyporter.statsapp.web.api;
 
-import ch.lonelyporter.statsapp.scores.Player;
-import ch.lonelyporter.statsapp.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.Player;
+import ch.lonelyporter.statsapp.domain.scores.Score;
 import ch.lonelyporter.statsapp.service.PlayerService;
 import ch.lonelyporter.statsapp.service.ScoreService;
 import org.springframework.http.ResponseEntity;

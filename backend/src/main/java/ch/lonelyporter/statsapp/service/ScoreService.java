@@ -1,8 +1,8 @@
 package ch.lonelyporter.statsapp.service;
 
-import ch.lonelyporter.statsapp.scores.Score;
-import ch.lonelyporter.statsapp.scores.ScoreRepository;
-import ch.lonelyporter.statsapp.scoresaber.ScoresaberApiAdapter;
+import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
+import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

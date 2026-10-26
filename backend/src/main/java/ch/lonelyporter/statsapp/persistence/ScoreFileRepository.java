@@ -1,8 +1,8 @@
 package ch.lonelyporter.statsapp.persistence;
 
-import ch.lonelyporter.statsapp.scores.Score;
-import ch.lonelyporter.statsapp.scores.ScoreRepository;
-import ch.lonelyporter.statsapp.scoresaber.ScoresProperties;
+import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
+import ch.lonelyporter.statsapp.integration.scoresaber.ScoresProperties;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,6 +1,6 @@
-package ch.lonelyporter.statsapp.scoresaber;
+package ch.lonelyporter.statsapp.integration.scoresaber;
 
-import ch.lonelyporter.statsapp.scores.Player;
+import ch.lonelyporter.statsapp.domain.scores.Player;
 
 import java.util.Objects;
 
