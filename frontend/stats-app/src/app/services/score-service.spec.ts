@@ -29,6 +29,16 @@ describe('ScoreService', () => {
     expect(await promise).toEqual(players);
   });
 
+  it('posts a player id to start tracking a player', async () => {
+    const player: Player = {id: '76561198000000000', name: 'New player', country: 'CH', rank: 1};
+    const promise = firstValueFrom(service.addPlayer(player.id));
+    const request = httpTesting.expectOne(`${environment.scoresApiBaseUrl}/players/${player.id}`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({});
+    request.flush(player);
+    expect(await promise).toEqual(player);
+  });
+
   it('encodes player ids when comparing scores', async () => {
     const promise = firstValueFrom(service.compareScores('player one', 'player/two'));
     const request = httpTesting.expectOne(

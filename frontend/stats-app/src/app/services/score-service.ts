@@ -15,6 +15,10 @@ export class ScoreService {
     return this.http.get<Player[]>(`${this.baseUrl}/players/details`);
   }
 
+  addPlayer(playerId: string): Observable<Player> {
+    return this.http.post<Player>(`${this.baseUrl}/players/${encodeURIComponent(playerId)}`, {});
+  }
+
   getScores(playerId: string): Observable<Score[]> {
     return this.http.get<Score[]>(`${this.baseUrl}/players/${encodeURIComponent(playerId)}/scores`);
   }

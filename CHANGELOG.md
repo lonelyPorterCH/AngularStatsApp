@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.4.1] - 2026-10-27
+
+### Added
+
+- Add tracked ScoreSaber players by their numeric player ID, importing their profile and scores.
+- Player ID validation and feedback for duplicate players and failed lookups.
+
+### Changed
+
+- Empty player lists now show the empty state instead of remaining in the loading state.
+
 ## [2.4.0] - 2026-10-26
 
 ### Added

@@ -40,6 +40,11 @@ public class ScoresApiController {
         return playerService.getPlayer(playerId);
     }
 
+    @PostMapping("/players/{playerId}")
+    public Player addPlayer(@PathVariable String playerId) {
+        return playerService.addPlayer(playerId);
+    }
+
     @GetMapping("/players/{playerId}/scores")
     public List<Score> getScores(@PathVariable String playerId) {
         return scoreService.getScores(playerId);

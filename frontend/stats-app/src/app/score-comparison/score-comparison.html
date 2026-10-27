@@ -11,6 +11,25 @@
     </button>
   </header>
 
+  <form class="add-player" [formGroup]="addPlayerForm" (ngSubmit)="addPlayer()" [attr.aria-busy]="addingPlayer()">
+    <label for="scoresaber-player-id">ScoreSaber player ID
+      <input id="scoresaber-player-id" type="text" inputmode="numeric" autocomplete="off"
+             formControlName="playerId" [readonly]="addingPlayer()" aria-describedby="add-player-feedback"
+             [attr.aria-invalid]="addPlayerForm.controls.playerId.touched && addPlayerForm.controls.playerId.invalid">
+    </label>
+    <button matButton="filled" type="submit" [disabled]="addingPlayer() || loading()">
+      <mat-icon>person_add</mat-icon>
+      {{ addingPlayer() ? 'Adding...' : 'Add player' }}
+    </button>
+    <div id="add-player-feedback" class="add-player__feedback" aria-live="polite">
+      @if (addPlayerError()) {
+        <p class="error" role="alert">{{ addPlayerError() }}</p>
+      } @else if (addPlayerForm.controls.playerId.touched && addPlayerForm.controls.playerId.invalid) {
+        <p class="error">Enter a numeric ScoreSaber player ID (up to 20 digits).</p>
+      }
+    </div>
+  </form>
+
   <div class="comparison-controls">
     <label>Player
       <select [(ngModel)]="selectedPlayer" (ngModelChange)="loadComparison()">

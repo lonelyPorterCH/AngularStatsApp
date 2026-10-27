@@ -6,8 +6,12 @@ import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,6 +41,25 @@ public class PlayerService {
 
     public List<Player> getAllPlayers() {
         return scoreRepository.getAllPlayerIds().stream().map(this::getPlayer).toList();
+    }
+
+    public Player addPlayer(String playerId) {
+        if (playerId == null || !playerId.matches("\\d{1,20}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A numeric ScoreSaber player ID is required");
+        }
+        if (scoreRepository.getAllPlayerIds().contains(playerId)) {
+            return getPlayer(playerId);
+        }
+        try {
+            Player player = apiAdapter.getPlayerDetails(playerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "ScoreSaber player not found"));
+            var scores = apiAdapter.loadScoresStarting(playerId, LocalDateTime.MIN);
+            playerRepository.savePlayer(player);
+            scoreRepository.addScores(scores, playerId);
+            return player;
+        } catch (RestClientException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Could not load player from ScoreSaber", exception);
+        }
     }
 
     public List<String> getAllPlayerIds() {

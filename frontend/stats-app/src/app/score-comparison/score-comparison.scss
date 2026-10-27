@@ -29,6 +29,29 @@ h2, p {
   color: var(--mat-sys-on-surface-variant);
 }
 
+.add-player {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) auto;
+  align-items: end;
+  justify-content: start;
+  gap: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.add-player__feedback {
+  grid-column: 1 / -1;
+}
+
+.add-player__feedback:empty {
+  display: none;
+}
+
+.add-player__feedback .error {
+  margin: 0;
+  padding: 0;
+  text-align: left;
+}
+
 .comparison-controls {
   display: grid;
   grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
@@ -127,6 +150,11 @@ input:focus-visible {
   .comparison-controls {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .add-player {
+    grid-template-columns: minmax(0, 1fr);
+    justify-content: stretch;
   }
 
   .compare-toggle {

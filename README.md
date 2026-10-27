@@ -81,9 +81,15 @@ StatsApp exposes the migrated Beat Saber feature at `/scores`. The overview cont
 `Additional Stats` section with a scatterplot preview and a `View Details` link for the
 full player comparison workflow.
 
+Enter a numeric ScoreSaber player ID in the comparison page's `ScoreSaber player ID`
+field and select `Add player` to import and persist their profile and ranked scores.
+The new player is selected automatically and remains tracked after restarting StatsApp,
+including players who do not yet have ranked scores.
+
 The backend API is grouped under `/api/scores`:
 
 - `GET /api/scores/players/details` lists tracked players.
+- `POST /api/scores/players/{playerId}` adds a player and imports their scores (400 for an invalid ID, 404 if not found, 502 if ScoreSaber is unavailable).
 - `GET /api/scores/players/{playerId}/scores` returns a player's ranked scores.
 - `GET /api/scores/players/{playerId}/scores/compare/{otherPlayerId}` returns both histories.
 - `POST /api/scores/players/{playerId}/scores/update` refreshes scores from ScoreSaber.
