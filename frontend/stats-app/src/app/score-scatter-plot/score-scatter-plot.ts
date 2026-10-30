@@ -6,6 +6,29 @@ import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
 
 Chart.register(...registerables);
 
+export function selectLatestScoresBySongHash(
+  scoresByPlayer: Record<string, Score[]>,
+  maximumDate?: string
+): Record<string, Score[]> {
+  const maximumTimestamp = maximumDate ? Date.parse(maximumDate) : Number.POSITIVE_INFINITY;
+  return Object.fromEntries(Object.entries(scoresByPlayer).map(([playerId, scores]) => {
+    const latestScores = new Map<string, Score>();
+    for (const score of scores) {
+      const timestamp = Date.parse(score.timeSet);
+      if (!Number.isFinite(timestamp) || timestamp > maximumTimestamp) {
+        continue;
+      }
+
+      const current = latestScores.get(score.songHash);
+      if (!current || timestamp > Date.parse(current.timeSet) ||
+        (timestamp === Date.parse(current.timeSet) && score.id > current.id)) {
+        latestScores.set(score.songHash, score);
+      }
+    }
+    return [playerId, [...latestScores.values()]];
+  }));
+}
+
 @Component({
   selector: 'app-score-scatter-plot',
   template: '<div class="score-chart"><canvas #canvas></canvas><div #tooltip class="score-tooltip"></div></div>',
@@ -38,7 +61,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
 
   private renderChart(): void {
     this.chart?.destroy();
-    const entries = Object.entries(this.playerScores);
+    const entries = Object.entries(selectLatestScoresBySongHash(this.playerScores, this.maximumDate));
     this.chart = new Chart(this.canvas().nativeElement, {
       type: 'scatter',
       data: {
@@ -46,9 +69,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
           const color = DEFAULT_DATASET_COLORS[index % DEFAULT_DATASET_COLORS.length];
           return {
             label: this.playerNames[playerId] ?? playerId,
-            data: scores
-              .filter(score => !this.maximumDate || score.timeSet <= this.maximumDate)
-              .map(score => ({x: score.stars, y: score.accuracy})),
+            data: scores.map(score => ({x: score.stars, y: score.accuracy})),
             backgroundColor: `rgb(${color} / ${this.compact ? '0.2' : '0.85'})`,
             borderColor: `rgb(${color} / 0.85)`,
             pointRadius: 2,
@@ -151,7 +172,6 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
 
   private scoreAt(entries: [string, Score[]][], datasetIndex: number, dataIndex: number): Score | undefined {
     const scores = entries[datasetIndex]?.[1] ?? [];
-    const filteredScores = scores.filter(score => !this.maximumDate || score.timeSet <= this.maximumDate);
-    return filteredScores[dataIndex];
+    return scores[dataIndex];
   }
 }
