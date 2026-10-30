@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.0] - 2026-10-30
+
+### Added
+
+- Score history charts now show the most recent score for each song as of the selected date.
+
+### Changed
+
+- JSON-backed repositories now use staged writes to avoid leaving partially written data files.
+- Score and player file loading now fails startup when stored data cannot be read, preventing later overwrites from incomplete state.
+- Score persistence now safely handles concurrent updates and rolls back in-memory changes if a write fails.
+- Dataset mutations now report missing dataset labels instead of silently succeeding.
+- Simplified storage error responses and removed redundant sorting from harvest totals calculation.
+
 ## [2.4.5] - 2026-10-30
 
 ### Added
