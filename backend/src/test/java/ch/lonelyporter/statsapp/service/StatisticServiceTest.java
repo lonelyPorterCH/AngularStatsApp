@@ -129,6 +129,30 @@ class StatisticServiceTest {
     }
 
     @Test
+    void datasetMutationsRejectUnknownLabelsWithoutSaving() throws Exception {
+        repository.save(createStatistic("chart", "Chart"));
+        Path statisticFile = tempDir.resolve("chart.json");
+        String originalJson = Files.readString(statisticFile);
+        Statistic.DataPoint point = new Statistic.DataPoint("2026-10-30", "1");
+        List<Runnable> mutations = List.of(
+                () -> service.deleteDataset("chart", "Missing"),
+                () -> service.renameDataset("chart", "Missing", "Renamed"),
+                () -> service.setDatasetFilled("chart", "Missing", true),
+                () -> service.setDatasetColor("chart", "Missing", "#ffffff"),
+                () -> service.addDataPoint("chart", "Missing", point),
+                () -> service.deleteDataPoint("chart", "Missing", point),
+                () -> service.reorderDatasets("chart", List.of("Missing"))
+        );
+
+        for (Runnable mutation : mutations) {
+            assertThatThrownBy(mutation::run)
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class)
+                    .hasMessageContaining("Missing");
+            assertThat(Files.readString(statisticFile)).isEqualTo(originalJson);
+        }
+    }
+
+    @Test
     void setSmoothingPersistsPerGraphWithoutChangingMeasurements() {
         Statistic weight = createStatistic("weight", "Weight");
         weight.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-10-30", "64"));

@@ -1,6 +1,7 @@
 package ch.lonelyporter.statsapp.service;
 
 import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
+import ch.lonelyporter.statsapp.exception.StatisticNotFoundException;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
@@ -83,36 +85,19 @@ public class StatisticService {
     }
 
     public void deleteDataset(String id, String label) {
-        Statistic statistic = repository.findById(id);
-        statistic.getDatasets().removeIf(ds -> ds.getLabel().equals(label));
-        repository.save(statistic);
+        updateDataset(id, label, (statistic, dataset) -> statistic.getDatasets().remove(dataset));
     }
 
     public void renameDataset(String id, String oldLabel, String newLabel) {
-        Statistic statistic = repository.findById(id);
-        statistic.getDatasets().stream()
-                .filter(ds -> ds.getLabel().equals(oldLabel))
-                .findFirst()
-                .ifPresent(ds -> ds.setLabel(newLabel));
-        repository.save(statistic);
+        updateDataset(id, oldLabel, (statistic, dataset) -> dataset.setLabel(newLabel));
     }
 
     public void setDatasetFilled(String id, String label, boolean filled) {
-        Statistic statistic = repository.findById(id);
-        statistic.getDatasets().stream()
-                .filter(ds -> ds.getLabel().equals(label))
-                .findFirst()
-                .ifPresent(ds -> ds.setFilled(filled));
-        repository.save(statistic);
+        updateDataset(id, label, (statistic, dataset) -> dataset.setFilled(filled));
     }
 
     public void setDatasetColor(String id, String label, String color) {
-        Statistic statistic = repository.findById(id);
-        statistic.getDatasets().stream()
-                .filter(ds -> ds.getLabel().equals(label))
-                .findFirst()
-                .ifPresent(ds -> ds.setColor(color));
-        repository.save(statistic);
+        updateDataset(id, label, (statistic, dataset) -> dataset.setColor(color));
     }
 
     public void renameStatistic(String id, String title) {
@@ -147,11 +132,7 @@ public class StatisticService {
     public void addDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
         Statistic statistic = repository.findById(id);
         validateDataPoint(statistic, dataPoint);
-        statistic.getDatasets().stream()
-                .filter(ds -> ds.getLabel().equals(datasetLabel))
-                .findFirst()
-                .ifPresent(ds -> ds.getDataPoints().add(dataPoint));
-        repository.save(statistic);
+        updateDataset(statistic, id, datasetLabel, (ignored, dataset) -> dataset.getDataPoints().add(dataPoint));
     }
 
     private void validateDataPoint(Statistic statistic, Statistic.DataPoint dataPoint) {
@@ -170,27 +151,37 @@ public class StatisticService {
     }
 
     public void deleteDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
-        Statistic statistic = repository.findById(id);
-        statistic.getDatasets().stream()
-                .filter(ds -> ds.getLabel().equals(datasetLabel))
-                .findFirst()
-                .ifPresent(ds -> ds.getDataPoints().removeIf(dp ->
-                        dp.getX().equals(dataPoint.getX()) && dp.getY().equals(dataPoint.getY())
-                ));
-        repository.save(statistic);
+        updateDataset(id, datasetLabel, (ignored, dataset) -> dataset.getDataPoints().removeIf(dp ->
+                dp.getX().equals(dataPoint.getX()) && dp.getY().equals(dataPoint.getY())
+        ));
     }
 
     public void reorderDatasets(String id, List<String> orderedLabels) {
         Statistic statistic = repository.findById(id);
         for (int i = 0; i < orderedLabels.size(); i++) {
-            final int index = i;
-            final String label = orderedLabels.get(i);
-            statistic.getDatasets().stream()
-                    .filter(ds -> ds.getLabel().equals(label))
-                    .findFirst()
-                    .ifPresent(ds -> ds.setIndex(index));
+            findDataset(statistic, id, orderedLabels.get(i)).setIndex(i);
         }
         repository.save(statistic);
+    }
+
+    private void updateDataset(String id, String label, BiConsumer<Statistic, Statistic.Dataset> update) {
+        Statistic statistic = repository.findById(id);
+        updateDataset(statistic, id, label, update);
+    }
+
+    private void updateDataset(Statistic statistic, String statisticId, String label,
+                               BiConsumer<Statistic, Statistic.Dataset> update) {
+        Statistic.Dataset dataset = findDataset(statistic, statisticId, label);
+        update.accept(statistic, dataset);
+        repository.save(statistic);
+    }
+
+    private Statistic.Dataset findDataset(Statistic statistic, String statisticId, String label) {
+        return statistic.getDatasets().stream()
+                .filter(dataset -> Objects.equals(dataset.getLabel(), label))
+                .findFirst()
+                .orElseThrow(() -> new StatisticNotFoundException(
+                        "dataset '" + label + "' in statistic '" + statisticId + "'"));
     }
 
     private void assignMissingStatisticIndices(List<Statistic> statistics) {
