@@ -6,8 +6,6 @@ import ch.lonelyporter.statsapp.integration.scoresaber.ScoresProperties;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
@@ -20,7 +18,6 @@ import java.util.Optional;
 
 @Repository
 public class PlayerFileRepository implements PlayerRepository {
-    private static final Logger log = LoggerFactory.getLogger(PlayerFileRepository.class);
     private final Map<String, Player> players = new HashMap<>();
     private final ObjectMapper mapper;
     private final ScoresProperties properties;
@@ -41,7 +38,7 @@ public class PlayerFileRepository implements PlayerRepository {
             mapper.readValue(file.toFile(), new TypeReference<ArrayList<Player>>() {
             }).forEach(player -> players.put(player.id(), player));
         } catch (RuntimeException exception) {
-            log.error("Error reading players from file: {}", file, exception);
+            throw new IllegalStateException("Unable to read players from file " + file, exception);
         }
     }
 

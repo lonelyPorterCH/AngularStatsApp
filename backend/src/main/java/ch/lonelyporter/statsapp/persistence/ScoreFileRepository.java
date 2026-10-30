@@ -4,8 +4,6 @@ import ch.lonelyporter.statsapp.domain.scores.Score;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresProperties;
 import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
@@ -19,7 +17,6 @@ import java.util.stream.Stream;
 
 @Repository
 public class ScoreFileRepository implements ScoreRepository {
-    private static final Logger log = LoggerFactory.getLogger(ScoreFileRepository.class);
     public static final String JSON = ".json";
     private final Map<String, List<Score>> playerScores = new HashMap<>();
     private final ObjectMapper mapper;
@@ -39,7 +36,7 @@ public class ScoreFileRepository implements ScoreRepository {
                             && !path.getFileName().toString().equals("players.json"))
                     .forEach(this::readPlayerScoreFile);
         } catch (IOException exception) {
-            log.error("Error reading scores from directory: {}", directory, exception);
+            throw new IllegalStateException("Unable to list score files in directory " + directory, exception);
         }
     }
 
@@ -76,7 +73,7 @@ public class ScoreFileRepository implements ScoreRepository {
             playerScores.put(playerId, mapper.readValue(file.toFile(), new TypeReference<>() {
             }));
         } catch (RuntimeException exception) {
-            log.error("Error reading scores from file: {}", file, exception);
+            throw new IllegalStateException("Unable to read scores from file " + file, exception);
         }
     }
 
