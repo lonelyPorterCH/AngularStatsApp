@@ -13,12 +13,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 @Repository
 public class ScoreFileRepository implements ScoreRepository {
     public static final String JSON = ".json";
-    private final Map<String, List<Score>> playerScores = new HashMap<>();
+    private static final int LOCK_STRIPES = 64;
+    private final Map<String, List<Score>> playerScores = new ConcurrentHashMap<>();
+    private final Object[] playerLocks = createPlayerLocks();
     private final ObjectMapper mapper;
     private final ScoresProperties properties;
 
@@ -42,23 +45,38 @@ public class ScoreFileRepository implements ScoreRepository {
 
     @Override
     public List<Score> loadScores(String playerId) {
-        return new ArrayList<>(playerScores.getOrDefault(playerId, List.of()));
+        synchronized (lockFor(playerId)) {
+            return new ArrayList<>(playerScores.getOrDefault(playerId, List.of()));
+        }
     }
 
     @Override
     public void addScores(List<Score> scores, String playerId) {
-        List<Score> existingScores = playerScores.computeIfAbsent(playerId, ignored -> new ArrayList<>());
-        existingScores.addAll(scores);
-        try {
-            AtomicFileWriter.replace(storageDirectory().resolve(playerId + JSON), mapper.writeValueAsBytes(existingScores));
-        } catch (IOException | RuntimeException exception) {
-            throw new IllegalStateException("Unable to save scores for player " + playerId, exception);
+        synchronized (lockFor(playerId)) {
+            List<Score> existingScores = playerScores.get(playerId);
+            if (existingScores == null) {
+                existingScores = new ArrayList<>();
+            }
+            int previousSize = existingScores.size();
+            existingScores.addAll(scores);
+            try {
+                byte[] json = mapper.writeValueAsBytes(existingScores);
+                AtomicFileWriter.replace(storageDirectory().resolve(playerId + JSON), json);
+                playerScores.put(playerId, existingScores);
+            } catch (IOException | RuntimeException exception) {
+                existingScores.subList(previousSize, existingScores.size()).clear();
+                throw new IllegalStateException("Unable to save scores for player " + playerId, exception);
+            }
         }
     }
 
     @Override
     public Optional<LocalDateTime> mostRecentScoreDate(String playerId) {
-        return loadScores(playerId).stream().map(Score::timeSet).max(Comparator.naturalOrder());
+        synchronized (lockFor(playerId)) {
+            return playerScores.getOrDefault(playerId, List.of()).stream()
+                    .map(Score::timeSet)
+                    .max(Comparator.naturalOrder());
+        }
     }
 
     @Override
@@ -79,6 +97,16 @@ public class ScoreFileRepository implements ScoreRepository {
 
     private Path storageDirectory() {
         return Path.of(properties.storagePath());
+    }
+
+    private Object lockFor(String playerId) {
+        return playerLocks[Math.floorMod(playerId.hashCode(), playerLocks.length)];
+    }
+
+    private static Object[] createPlayerLocks() {
+        Object[] locks = new Object[LOCK_STRIPES];
+        Arrays.setAll(locks, ignored -> new Object());
+        return locks;
     }
 
     private void ensureDirectoryExists(Path directory) {
