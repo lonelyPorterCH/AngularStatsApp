@@ -39,7 +39,7 @@ public class StatisticRepository {
             }
             sortDataPoints(statistic);
             byte[] json = objectMapper.writeValueAsBytes(statistic);
-            writeNewFile(file, json);
+            AtomicFileWriter.createNew(file, json);
         } catch (FileAlreadyExistsException e) {
             throw new StatisticConflictException("Statistic already exists: " + id);
         } catch (IOException e) {
@@ -144,25 +144,11 @@ public class StatisticRepository {
         }
     }
 
-    private void writeNewFile(Path file, byte[] json) throws IOException {
-        var output = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-        try (output) {
-            output.write(json);
-        } catch (IOException e) {
-            try {
-                Files.deleteIfExists(file);
-            } catch (IOException cleanupError) {
-                e.addSuppressed(cleanupError);
-            }
-            throw e;
-        }
-    }
-
     private void writeStatistic(Path folder, Statistic statistic) throws IOException {
         Files.createDirectories(folder);
         sortDataPoints(statistic);
         Path file = folder.resolve(statistic.getId() + JSON_FILE_ENDING);
-        objectMapper.writeValue(file.toFile(), statistic);
+        AtomicFileWriter.replace(file, objectMapper.writeValueAsBytes(statistic));
     }
 
     private void moveStatistic(Path source, Path target) throws IOException {

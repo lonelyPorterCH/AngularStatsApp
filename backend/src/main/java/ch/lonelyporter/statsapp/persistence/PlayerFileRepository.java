@@ -54,8 +54,8 @@ public class PlayerFileRepository implements PlayerRepository {
     public void savePlayer(Player player) {
         players.put(player.id(), player);
         try {
-            mapper.writeValue(playersFile().toFile(), new ArrayList<>(players.values()));
-        } catch (RuntimeException exception) {
+            AtomicFileWriter.replace(playersFile(), mapper.writeValueAsBytes(new ArrayList<>(players.values())));
+        } catch (IOException | RuntimeException exception) {
             throw new IllegalStateException("Unable to save players", exception);
         }
     }

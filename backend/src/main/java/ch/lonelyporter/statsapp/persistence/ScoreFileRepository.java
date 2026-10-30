@@ -53,8 +53,8 @@ public class ScoreFileRepository implements ScoreRepository {
         List<Score> existingScores = playerScores.computeIfAbsent(playerId, ignored -> new ArrayList<>());
         existingScores.addAll(scores);
         try {
-            mapper.writeValue(storageDirectory().resolve(playerId + JSON).toFile(), existingScores);
-        } catch (RuntimeException exception) {
+            AtomicFileWriter.replace(storageDirectory().resolve(playerId + JSON), mapper.writeValueAsBytes(existingScores));
+        } catch (IOException | RuntimeException exception) {
             throw new IllegalStateException("Unable to save scores for player " + playerId, exception);
         }
     }

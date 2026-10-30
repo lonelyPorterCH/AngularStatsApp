@@ -66,7 +66,7 @@ public class HarvestRepository {
     public void save(HarvestSeason season) {
         try {
             Files.createDirectories(harvestDirectory());
-            objectMapper.writeValue(seasonFile(season.getYear()).toFile(), season);
+            AtomicFileWriter.replace(seasonFile(season.getYear()), objectMapper.writeValueAsBytes(season));
         } catch (IOException exception) {
             throw new StatisticStorageException("Failed to save harvest season: " + season.getYear(), exception);
         }
