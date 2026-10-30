@@ -5,6 +5,8 @@ import ch.lonelyporter.statsapp.domain.harvest.HarvestSeason;
 import ch.lonelyporter.statsapp.domain.harvest.Plant;
 import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import ch.lonelyporter.statsapp.exception.StatisticConflictException;
+import ch.lonelyporter.statsapp.exception.StatisticNotFoundException;
+import ch.lonelyporter.statsapp.exception.StatisticStorageException;
 import ch.lonelyporter.statsapp.persistence.HarvestRepository;
 import ch.lonelyporter.statsapp.web.model.HarvestView;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +20,23 @@ import java.util.*;
 public class HarvestService {
     private final HarvestRepository repository;
 
+    /**
+     * Returns the years for which harvest data is stored, in descending order.
+     *
+     * @return stored harvest years
+     * @throws StatisticStorageException if the harvest directory cannot be read
+     */
     public List<Integer> getYears() {
         return repository.findYears();
     }
 
+    /**
+     * Builds the season view, including sorted plant harvests and cumulative chart series.
+     *
+     * @param year season year
+     * @return the season's plants, totals, and chart series
+     * @throws StatisticStorageException if season data cannot be read
+     */
     public HarvestView getSeason(int year) {
         HarvestSeason season = repository.findOrCreate(year);
         List<HarvestView.PlantView> plants = season.getPlants().stream()
@@ -55,8 +70,17 @@ public class HarvestService {
         return new HarvestView(year, plants, totals, series, globalSeries, globalCumulative);
     }
 
+    /**
+     * Add a new plant for a given year
+     *
+     * @param year season where it should be added
+     * @param name name of the plant
+     * @throws InvalidDataPointException  if the name is null or blank
+     * @throws StatisticConflictException if plant already exists
+     * @throws StatisticStorageException  if saving failed
+     */
     public void addPlant(int year, String name) {
-        String normalizedName = requireText(name, "Plant name is required");
+        String normalizedName = requireText(name);
         HarvestSeason season = repository.findOrCreate(year);
         if (season.getPlants().stream().anyMatch(plant -> plant.getName().equalsIgnoreCase(normalizedName))) {
             throw new StatisticConflictException("Plant already exists: " + normalizedName);
@@ -65,8 +89,19 @@ public class HarvestService {
         repository.save(season);
     }
 
+    /**
+     * Renames a plant in the given season. The new name cannot be null or blank.
+     *
+     * @param year    season
+     * @param plantId unique id
+     * @param name    new name
+     * @throws StatisticConflictException if name already exists
+     * @throws InvalidDataPointException  if name is invalid
+     * @throws StatisticNotFoundException if the season or plant does not exist
+     * @throws StatisticStorageException  if saving failed
+     */
     public void renamePlant(int year, String plantId, String name) {
-        String normalizedName = requireText(name, "Plant name is required");
+        String normalizedName = requireText(name);
         HarvestSeason season = repository.findByYear(year);
         Plant plant = findPlant(season, plantId);
         if (season.getPlants().stream().anyMatch(other -> !other.getId().equals(plantId)
@@ -77,15 +112,34 @@ public class HarvestService {
         repository.save(season);
     }
 
+    /**
+     * Deletes a plant by given year and id.
+     *
+     * @param year    season
+     * @param plantId unique id
+     * @throws StatisticNotFoundException if plant not found
+     * @throws StatisticStorageException  if saving failed
+     */
     public void deletePlant(int year, String plantId) {
         HarvestSeason season = repository.findByYear(year);
         boolean removed = season.getPlants().removeIf(plant -> plant.getId().equals(plantId));
         if (!removed) {
-            throw new ch.lonelyporter.statsapp.exception.StatisticNotFoundException("Plant not found: " + plantId);
+            throw new StatisticNotFoundException("Plant not found: " + plantId);
         }
         repository.save(season);
     }
 
+    /**
+     * Adds a harvest entry to a plant.
+     *
+     * @param year     season year
+     * @param plantId  id of the plant
+     * @param date     harvest date, which must belong to {@code year}
+     * @param quantity positive harvest quantity
+     * @throws InvalidDataPointException  if the date is null, outside the season, or quantity is not positive
+     * @throws StatisticNotFoundException if the season or plant does not exist
+     * @throws StatisticStorageException  if saving failed
+     */
     public void addHarvest(int year, String plantId, LocalDate date, int quantity) {
         validateEntry(year, date, quantity);
         HarvestSeason season = repository.findByYear(year);
@@ -94,6 +148,18 @@ public class HarvestService {
         repository.save(season);
     }
 
+    /**
+     * Updates the date and quantity of an existing harvest entry.
+     *
+     * @param year      season year
+     * @param plantId   id of the plant
+     * @param harvestId id of the harvest entry
+     * @param date      new harvest date, which must belong to {@code year}
+     * @param quantity  new positive harvest quantity
+     * @throws InvalidDataPointException  if the date is null, outside the season, or quantity is not positive
+     * @throws StatisticNotFoundException if the season, plant, or harvest entry does not exist
+     * @throws StatisticStorageException  if saving failed
+     */
     public void updateHarvest(int year, String plantId, String harvestId, LocalDate date, int quantity) {
         validateEntry(year, date, quantity);
         HarvestSeason season = repository.findByYear(year);
@@ -101,12 +167,21 @@ public class HarvestService {
         HarvestEntry entry = plant.getHarvests().stream()
                 .filter(harvest -> harvest.getId().equals(harvestId))
                 .findFirst()
-                .orElseThrow(() -> new ch.lonelyporter.statsapp.exception.StatisticNotFoundException("Harvest not found: " + harvestId));
+                .orElseThrow(() -> new StatisticNotFoundException("Harvest not found: " + harvestId));
         entry.setDate(date);
         entry.setQuantity(quantity);
         repository.save(season);
     }
 
+    /**
+     * Deletes a harvest entry from a plant.
+     *
+     * @param year      season year
+     * @param plantId   id of the plant
+     * @param harvestId id of the harvest entry
+     * @throws StatisticNotFoundException if the season, plant, or harvest entry does not exist
+     * @throws StatisticStorageException  if saving failed
+     */
     public void deleteHarvest(int year, String plantId, String harvestId) {
         HarvestSeason season = repository.findByYear(year);
         Plant plant = findPlant(season, plantId);
@@ -114,14 +189,14 @@ public class HarvestService {
             repository.save(season);
             return;
         }
-        throw new ch.lonelyporter.statsapp.exception.StatisticNotFoundException("Harvest not found: " + harvestId);
+        throw new StatisticNotFoundException("Harvest not found: " + harvestId);
     }
 
     private Plant findPlant(HarvestSeason season, String plantId) {
         return season.getPlants().stream()
                 .filter(plant -> plant.getId().equals(plantId))
                 .findFirst()
-                .orElseThrow(() -> new ch.lonelyporter.statsapp.exception.StatisticNotFoundException("Plant not found: " + plantId));
+                .orElseThrow(() -> new StatisticNotFoundException("Plant not found: " + plantId));
     }
 
     private void validateEntry(int year, LocalDate date, int quantity) {
@@ -133,9 +208,9 @@ public class HarvestService {
         }
     }
 
-    private String requireText(String value, String message) {
+    private String requireText(String value) {
         if (value == null || value.trim().isEmpty()) {
-            throw new InvalidDataPointException(message);
+            throw new InvalidDataPointException("Plant name is required");
         }
         return value.trim();
     }
@@ -148,7 +223,7 @@ public class HarvestService {
 
     private Map<LocalDate, Integer> dailyTotals(Plant plant) {
         Map<LocalDate, Integer> totals = new java.util.TreeMap<>();
-        for (HarvestEntry entry : sortedHarvests(plant)) {
+        for (HarvestEntry entry : plant.getHarvests()) {
             totals.merge(entry.getDate(), entry.getQuantity(), Integer::sum);
         }
         return totals;

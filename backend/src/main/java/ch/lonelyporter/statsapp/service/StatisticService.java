@@ -164,7 +164,7 @@ public class StatisticService {
             if (!Double.isFinite(x) || x < 0) {
                 throw new NumberFormatException();
             }
-        } catch (NumberFormatException | NullPointerException _) {
+        } catch (NumberFormatException | NullPointerException e) {
             throw new InvalidDataPointException("Linear x-axis values must be non-negative finite numbers");
         }
     }
