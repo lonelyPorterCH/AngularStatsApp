@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.4.5] - 2026-10-30
+
+### Added
+
+- Graph-title renaming on the edit page, preserving graph IDs, URLs, datasets and settings.
+- Blank-title validation and save feedback for graph renaming.
+
+## [2.4.4] - 2026-10-30
+
+### Changed
+
+- Smoothed graphs now show only the curve, without normal or hover dots, while retaining tooltips and point selection.
+
+## [2.4.3] - 2026-10-30
+
+### Added
+
+- Saved per-graph smooth-trend toggle using a trailing average of up to seven measurements per dataset.
+- Recorded-value tooltips on smoothed charts; original data and point editing remain unchanged.
+
+## [2.4.2] - 2026-10-30
+
+### Added
+
+- CSV import page with selectable measurement columns and combined or separate new graphs.
+- Import preview with date-only measurements, skipped-value diagnostics and editable graph details.
+- Per-graph save results and explicit verification of uncertain saves before retrying.
+
+### Changed
+
+- Creating a graph now rejects existing, unsafe and reserved IDs instead of overwriting existing graphs.
+
 ## [2.4.1] - 2026-10-27
 
 ### Added

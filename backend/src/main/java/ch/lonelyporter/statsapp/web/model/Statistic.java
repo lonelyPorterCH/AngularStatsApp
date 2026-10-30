@@ -14,11 +14,17 @@ public class Statistic {
     private Integer index;
     private String title;
     private boolean reverse;
+    @Getter(AccessLevel.NONE)
+    private Boolean smoothing = false;
     private String xAxisName;
     private String yAxisName;
     private String xAxisScaleType = "time";
     private String xAxisUnit = "";
     private List<Dataset> datasets = new ArrayList<>();
+
+    public boolean isSmoothing() {
+        return Boolean.TRUE.equals(smoothing);
+    }
 
     public String getXAxisScaleType() {
         return xAxisScaleType == null ? "time" : xAxisScaleType;

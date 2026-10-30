@@ -1,6 +1,19 @@
 @if (stat()) {
   <h2>Edit - {{ stat()!.title }}</h2>
 
+  <form class="rename-form" [formGroup]="titleForm" (ngSubmit)="renameGraph()">
+    <mat-form-field appearance="outline">
+      <mat-label>Graph Title</mat-label>
+      <input matInput formControlName="title">
+      @if (titleForm.controls.title.invalid) { <mat-error>A graph title is required.</mat-error> }
+    </mat-form-field>
+    <button mat-flat-button type="submit" [disabled]="renaming()">
+      <mat-icon>drive_file_rename_outline</mat-icon>{{ renaming() ? 'Saving...' : 'Rename Graph' }}
+    </button>
+  </form>
+  @if (renameError()) { <p class="rename-error" role="alert">{{ renameError() }}</p> }
+  @if (renameSaved()) { <p role="status">Graph renamed.</p> }
+
   <div class="chart-container">
     <app-chart [stat]="stat()!" (pointClick)="onChartPointClick($event)"></app-chart>
   </div>

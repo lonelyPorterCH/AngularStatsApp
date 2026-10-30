@@ -34,7 +34,25 @@ class StatisticServiceTest {
     }
 
     @Test
-    void createStatistic_assignsNextIndex() {
+    void createStatisticPreservesImportedDatasetsAndRejectsDuplicateCreation() {
+        Statistic statistic = createStatistic("body", "Body measurements");
+        Statistic.Dataset weight = new Statistic.Dataset("Weight (kg)", new ArrayList<>(List.of(
+                new Statistic.DataPoint("2026-10-30", "64"))));
+        Statistic.Dataset fat = new Statistic.Dataset("Fat mass (kg)", new ArrayList<>(List.of(
+                new Statistic.DataPoint("2026-10-30", "8.8"))));
+        fat.setIndex(1);
+        statistic.setDatasets(new ArrayList<>(List.of(weight, fat)));
+        service.createStatistic(statistic);
+
+        Statistic loaded = repository.findById("body");
+        assertThat(loaded.getDatasets()).hasSize(2);
+        assertThat(loaded.getDatasets().get(1).getDataPoints().getFirst().getY()).isEqualTo("8.8");
+        assertThatThrownBy(() -> service.createStatistic(statistic))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+    }
+
+    @Test
+    void createStatisticAssignsNextIndex() {
         Statistic first = createStatistic("chart-1", "Chart 1");
         first.setIndex(0);
         repository.save(first);
@@ -47,7 +65,7 @@ class StatisticServiceTest {
     }
 
     @Test
-    void getStatistics_assignsMissingIndexAndPersistsIt() throws Exception {
+    void getStatisticsAssignsMissingIndexAndPersistsIt() throws Exception {
         String legacyJsonWithoutIndex = """
                 {
                   "id": "legacy-chart",
@@ -78,7 +96,7 @@ class StatisticServiceTest {
     }
 
     @Test
-    void getArchivedStatistics_returnsArchivedStatistics() {
+    void getArchivedStatisticsReturnsArchivedStatistics() {
         Statistic archived = createStatistic("archived-chart", "Archived Chart");
         repository.save(archived);
         repository.toggleArchive("archived-chart");
@@ -90,7 +108,7 @@ class StatisticServiceTest {
     }
 
     @Test
-    void toggleArchive_movesStatisticBetweenFolders() {
+    void toggleArchiveMovesStatisticBetweenFolders() {
         Statistic statistic = createStatistic("chart-1", "Chart 1");
         repository.save(statistic);
 
@@ -100,7 +118,7 @@ class StatisticServiceTest {
     }
 
     @Test
-    void addDataPoint_rejectsNegativeLinearXAxisValue() {
+    void addDataPointRejectsNegativeLinearXAxisValue() {
         Statistic statistic = createStatistic("linear-chart", "Linear Chart");
         statistic.setXAxisScaleType("linear");
         repository.save(statistic);
@@ -111,7 +129,78 @@ class StatisticServiceTest {
     }
 
     @Test
-    void renameAxes_trimsAndPersistsXAxisUnit() {
+    void setSmoothingPersistsPerGraphWithoutChangingMeasurements() {
+        Statistic weight = createStatistic("weight", "Weight");
+        weight.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-10-30", "64"));
+        repository.save(weight);
+        repository.save(createStatistic("other", "Other"));
+
+        service.setSmoothing("weight", true);
+
+        Statistic loaded = repository.findById("weight");
+        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(new Statistic.DataPoint("2026-10-30", "64"));
+        assertThat(repository.findById("other").isSmoothing()).isFalse();
+
+        service.setSmoothing("weight", false);
+        assertThat(repository.findById("weight").isSmoothing()).isFalse();
+    }
+
+    @Test
+    void setSmoothingRejectsArchivedGraphs() {
+        repository.save(createStatistic("weight", "Weight"));
+        repository.toggleArchive("weight");
+
+        assertThatThrownBy(() -> service.setSmoothing("weight", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById("weight").isSmoothing()).isFalse();
+    }
+
+    @Test
+    void missingSmoothingPropertyDefaultsToOff() throws Exception {
+        Files.writeString(tempDir.resolve("legacy.json"), """
+                {"id":"legacy","title":"Legacy","reverse":false,"datasets":[]}
+                """);
+        assertThat(repository.findById("legacy").isSmoothing()).isFalse();
+    }
+
+    @Test
+    void renameStatisticChangesOnlyTheTitleAndTrimsWhitespace() {
+        Statistic statistic = createStatistic("weight", "weight");
+        statistic.setSmoothing(true);
+        statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-10-30", "64"));
+        repository.save(statistic);
+
+        service.renameStatistic("weight", "  Weight  ");
+
+        Statistic loaded = repository.findById("weight");
+        assertThat(loaded.getTitle()).isEqualTo("Weight");
+        assertThat(loaded.getId()).isEqualTo("weight");
+        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getXAxisName()).isEqualTo("Date");
+        assertThat(loaded.getDatasets().getFirst().getLabel()).isEqualTo("Series");
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(new Statistic.DataPoint("2026-10-30", "64"));
+    }
+
+    @Test
+    void renameStatisticRejectsBlankTitlesAndArchivedGraphs() {
+        repository.save(createStatistic("weight", "weight"));
+        for (String title : List.of("", "   ", "\t\n")) {
+            assertThatThrownBy(() -> service.renameStatistic("weight", title))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        }
+        assertThatThrownBy(() -> service.renameStatistic("weight", null))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(repository.findById("weight").getTitle()).isEqualTo("weight");
+
+        repository.toggleArchive("weight");
+        assertThatThrownBy(() -> service.renameStatistic("weight", "Weight"))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById("weight").getTitle()).isEqualTo("weight");
+    }
+
+    @Test
+    void renameAxesTrimsAndPersistsXAxisUnit() {
         Statistic statistic = createStatistic("linear-chart", "Linear Chart");
         repository.save(statistic);
 

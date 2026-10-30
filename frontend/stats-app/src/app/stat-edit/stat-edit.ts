@@ -1,9 +1,10 @@
-import {Component, OnInit, signal, viewChild} from '@angular/core';
+import {Component, inject, OnInit, signal, viewChild} from '@angular/core';
+import {DOCUMENT} from '@angular/common';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
-import {ReactiveFormsModule} from '@angular/forms';
+import {FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Stat} from '../models/stat';
 import {StatService} from '../services/stat-service';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -23,6 +24,14 @@ import {forkJoin} from 'rxjs';
 })
 export class StatEdit implements OnInit {
 
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly document = inject(DOCUMENT);
+  readonly titleForm = this.formBuilder.nonNullable.group({
+    title: ['', [Validators.required, Validators.pattern(/\S/)]]
+  }, {updateOn: 'blur'});
+  readonly renaming = signal(false);
+  readonly renameError = signal('');
+  readonly renameSaved = signal(false);
   stat = signal<Stat | undefined>(undefined);
   tabGroup = viewChild<MatTabGroup>('tabGroup');
   editDeleteForm = viewChild<EditDeleteForm>('editDeleteForm');
@@ -51,6 +60,9 @@ export class StatEdit implements OnInit {
             }
 
             this.stat.set(result.stat);
+            this.titleForm.reset({title: result.stat.title});
+            this.renameError.set('');
+            this.renameSaved.set(false);
             this.title.setTitle(`StatsApp - Edit ${result.stat.title}`);
           },
           error: err => {
@@ -62,6 +74,38 @@ export class StatEdit implements OnInit {
             console.error(err);
           }
         });
+      }
+    });
+  }
+
+  renameGraph(): void {
+    const stat = this.stat();
+    if (!stat || this.renaming()) return;
+    const activeElement = this.document.activeElement;
+    if (activeElement instanceof HTMLElement) activeElement.blur();
+    this.titleForm.markAllAsTouched();
+    if (this.titleForm.invalid) return;
+    const title = this.titleForm.controls.title.value.trim();
+    if (title === stat.title) return;
+    this.renaming.set(true);
+    this.renameError.set('');
+    this.renameSaved.set(false);
+    this.titleForm.disable();
+    this.statService.renameStat(stat.id, title).subscribe({
+      next: () => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, title} : current);
+          this.titleForm.reset({title});
+          this.title.setTitle(`StatsApp - Edit ${title}`);
+          this.renameSaved.set(true);
+        }
+        this.titleForm.enable();
+        this.renaming.set(false);
+      },
+      error: () => {
+        this.titleForm.enable();
+        this.renaming.set(false);
+        this.renameError.set('Could not rename the graph. Please try again.');
       }
     });
   }

@@ -10,11 +10,11 @@ import org.springframework.stereotype.Repository;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Repository
@@ -22,11 +22,30 @@ import java.util.stream.Stream;
 public class StatisticRepository {
 
     private static final String ARCHIVED_FOLDER = "archived";
-    private static final String RESERVED_ID = "archived";
-    public static final java.lang.String JSON_FILE_ENDING = ".json";
+    private static final Set<String> RESERVED_CREATE_IDS = Set.of(ARCHIVED_FOLDER, "new", "import", "con", "prn", "aux", "nul");
+    private static final java.lang.String JSON_FILE_ENDING = ".json";
 
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
+
+    public void create(Statistic statistic) {
+        String id = statistic.getId();
+        validateCreateId(id);
+        Path file = activeFile(id);
+        try {
+            Files.createDirectories(activeFolder());
+            if (Files.exists(archivedFile(id))) {
+                throw new StatisticConflictException("Statistic is archived: " + id);
+            }
+            sortDataPoints(statistic);
+            byte[] json = objectMapper.writeValueAsBytes(statistic);
+            writeNewFile(file, json);
+        } catch (FileAlreadyExistsException e) {
+            throw new StatisticConflictException("Statistic already exists: " + id);
+        } catch (IOException e) {
+            throw new StatisticStorageException("Failed to create statistic: " + id, e);
+        }
+    }
 
     public void save(Statistic statistic) {
         try {
@@ -125,6 +144,20 @@ public class StatisticRepository {
         }
     }
 
+    private void writeNewFile(Path file, byte[] json) throws IOException {
+        var output = Files.newOutputStream(file, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+        try (output) {
+            output.write(json);
+        } catch (IOException e) {
+            try {
+                Files.deleteIfExists(file);
+            } catch (IOException cleanupError) {
+                e.addSuppressed(cleanupError);
+            }
+            throw e;
+        }
+    }
+
     private void writeStatistic(Path folder, Statistic statistic) throws IOException {
         Files.createDirectories(folder);
         sortDataPoints(statistic);
@@ -141,8 +174,17 @@ public class StatisticRepository {
         return path.toString().endsWith(JSON_FILE_ENDING);
     }
 
+    private void validateCreateId(String id) {
+        String lowerId = id == null ? "" : id.toLowerCase(Locale.ROOT);
+        if (id == null || !id.matches("[a-zA-Z0-9][a-zA-Z0-9_-]{0,99}")
+                || RESERVED_CREATE_IDS.contains(lowerId)
+                || lowerId.matches("(?:com|lpt)[1-9]")) {
+            throw new StatisticConflictException("Invalid or reserved statistic id: " + id);
+        }
+    }
+
     private void validateWritableId(String id) {
-        if (RESERVED_ID.equals(id)) {
+        if (ARCHIVED_FOLDER.equals(id)) {
             throw new StatisticConflictException("Statistic id is reserved: " + id);
         }
     }

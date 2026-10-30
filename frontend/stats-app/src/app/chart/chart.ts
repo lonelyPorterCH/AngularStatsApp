@@ -12,6 +12,18 @@ export interface ChartPointClickEvent {
   point: DataPoint;
 }
 
+export function chartDataPoints(points: DataPoint[], stat: Stat): {x: string | number; y: number}[] {
+  const sorted = [...points].sort((first, second) => compareDataPoints(first, second, stat));
+  const values = sorted.map(point => parseFloat(point.y));
+  return sorted.map((point, index) => {
+    const window = values.slice(Math.max(0, index - 6), index + 1).filter(Number.isFinite);
+    const value = stat.smoothing && Number.isFinite(values[index])
+      ? window.reduce((total, measurement) => total + measurement, 0) / window.length
+      : values[index];
+    return {x: parseXAxisValue(point.x, stat), y: value};
+  });
+}
+
 @Component({
   selector: 'app-chart',
   template: '<canvas #canvas></canvas>',
@@ -58,14 +70,14 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           };
           return {
             label: ds.label,
-            data: ds.dataPoints.map(dp => ({
-              x: parseXAxisValue(dp.x, this.stat) as any,
-              y: parseFloat(dp.y)
-            })),
+            data: chartDataPoints(ds.dataPoints, this.stat) as any,
             fill: ds.filled ?? false,
             tension: 0,
+            cubicInterpolationMode: this.stat.smoothing ? 'monotone' as const : 'default' as const,
             borderWidth: 1,
-            pointRadius: 2,
+            pointRadius: this.stat.smoothing ? 0 : 2,
+            pointHoverRadius: this.stat.smoothing ? 0 : 4,
+            pointHitRadius: this.stat.smoothing ? 6 : 1,
             borderColor: color.border,
             backgroundColor: color.background,
           };
@@ -75,11 +87,19 @@ export class ChartComponent implements OnChanges, AfterViewInit {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          tooltip: linearXAxis ? {
+          tooltip: {
             callbacks: {
-              title: items => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
+              ...(linearXAxis ? {
+                title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
+              } : {}),
+              afterLabel: item => {
+                if (!this.stat.smoothing) return '';
+                const dataset = this.stat.datasets[item.datasetIndex];
+                const sorted = [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat));
+                return `Recorded: ${sorted[item.dataIndex].y}`;
+              }
             }
-          } : {}
+          }
         },
         onClick: (_event, elements) => {
           if (elements.length > 0) {

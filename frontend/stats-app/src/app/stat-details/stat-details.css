@@ -3,6 +3,14 @@
   height: 500px;
 }
 
+.chart-settings {
+  margin-bottom: 12px;
+}
+
+.setting-error {
+  color: var(--mat-sys-error, #b3261e);
+}
+
 button {
   margin-left: 10px;
 }

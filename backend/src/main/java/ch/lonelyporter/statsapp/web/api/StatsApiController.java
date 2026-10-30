@@ -27,6 +27,12 @@ public class StatsApiController {
     public record ColorRequest(String color) {
     }
 
+    public record SmoothingRequest(Boolean smoothing) {
+    }
+
+    public record TitleRequest(String title) {
+    }
+
     @GetMapping
     public ResponseEntity<List<Statistic>> getStatistics() {
         return ResponseEntity.ok(statisticService.getStatistics());
@@ -95,6 +101,21 @@ public class StatsApiController {
     public ResponseEntity<Void> setDatasetColor(@PathVariable String id, @PathVariable String label,
                                                 @RequestBody ColorRequest request) {
         statisticService.setDatasetColor(id, label, request.color());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/title")
+    public ResponseEntity<Void> renameStatistic(@PathVariable String id, @RequestBody TitleRequest request) {
+        statisticService.renameStatistic(id, request.title());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/smoothing")
+    public ResponseEntity<Void> setSmoothing(@PathVariable String id, @RequestBody SmoothingRequest request) {
+        if (request.smoothing() == null) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing must be true or false");
+        }
+        statisticService.setSmoothing(id, request.smoothing());
         return ResponseEntity.ok().build();
     }
 

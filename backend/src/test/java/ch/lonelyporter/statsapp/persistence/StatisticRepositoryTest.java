@@ -47,7 +47,64 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void save_writesJsonFile() {
+    void createDoesNotOverwriteActiveOrArchivedGraphs() {
+        Statistic original = createStatisticWithUnsortedDataset();
+        repository.create(original);
+        Statistic replacement = createStatisticWithUnsortedDataset();
+        replacement.setTitle("Replacement");
+
+        assertThatThrownBy(() -> repository.create(replacement))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById(original.getId()).getTitle()).isEqualTo("My Chart");
+
+        repository.toggleArchive(original.getId());
+        assertThatThrownBy(() -> repository.create(replacement))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById(original.getId()).getTitle()).isEqualTo("My Chart");
+    }
+
+    @Test
+    void createRejectsUnsafeAndReservedIds() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+        for (String id : List.of("", "../escape", "a/b", "a\\b", "archived", "ARCHIVED", "new", "NEW", "import", "IMPORT",
+            "CON", "prn", "aux", "nul", "com1", "lpt1", "a:b")) {
+            statistic.setId(id);
+            assertThatThrownBy(() -> repository.create(statistic))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        }
+        statistic.setId(null);
+        assertThatThrownBy(() -> repository.create(statistic))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findAll()).isEmpty();
+    }
+
+    @Test
+    void savePreservesEditingForLegacyIdsReservedOnlyForCreation() {
+        for (String id : List.of("new", "import")) {
+            Statistic statistic = createStatisticWithUnsortedDataset();
+            statistic.setId(id);
+            repository.save(statistic);
+            statistic.setTitle("Edited legacy graph");
+
+            repository.save(statistic);
+
+            assertThat(repository.findById(id).getTitle()).isEqualTo("Edited legacy graph");
+        }
+    }
+
+    @Test
+    void createThenSavePreservesOrdinaryEditingAndSortedPoints() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+        repository.create(statistic);
+        statistic.setTitle("Edited");
+        repository.save(statistic);
+        Statistic loaded = repository.findById(statistic.getId());
+        assertThat(loaded.getTitle()).isEqualTo("Edited");
+        assertThat(loaded.getDatasets().getFirst().getDataPoints().getFirst().getX()).isEqualTo("2024-01-01");
+    }
+
+    @Test
+    void saveWritesJsonFile() {
         Statistic statistic = createStatisticWithUnsortedDataset();
 
         repository.save(statistic);
@@ -57,7 +114,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void save_thenFindById_returnsEquivalentStatistic() {
+    void saveThenFindByIdReturnsEquivalentStatistic() {
         Statistic original = createStatisticWithUnsortedDataset();
 
         repository.save(original);
@@ -74,7 +131,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void toggleArchive_movesStatisticBetweenFolders() {
+    void toggleArchiveMovesStatisticBetweenFolders() {
         Statistic statistic = createStatisticWithUnsortedDataset();
 
         repository.save(statistic);
@@ -92,7 +149,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void findAll_returnsAllSavedStatistics() {
+    void findAllReturnsAllSavedStatistics() {
         Statistic s1 = new Statistic();
         s1.setId("chart-1");
         s1.setTitle("Chart 1");
@@ -116,7 +173,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void findAllArchived_returnsOnlyArchivedStatistics() {
+    void findAllArchivedReturnsOnlyArchivedStatistics() {
         Statistic active = new Statistic();
         active.setId("chart-1");
         active.setTitle("Chart 1");
@@ -142,14 +199,14 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void findAll_onEmptyFolder_returnsEmptyList() {
+    void findAllOnEmptyFolderReturnsEmptyList() {
         List<Statistic> all = repository.findAll();
 
         assertThat(all).isEmpty();
     }
 
     @Test
-    void save_sortsDataPointsByDateAscending() {
+    void saveSortsDataPointsByDateAscending() {
         Statistic statistic = createStatisticWithUnsortedDataset();
 
         repository.save(statistic);
@@ -163,7 +220,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void findById_whenFilledMissing_defaultsToFalse() throws Exception {
+    void findByIdWhenFilledMissingDefaultsToFalse() throws Exception {
         String json = """
                 {
                   "id": "legacy-scale-chart",
@@ -191,7 +248,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void findById_whenXAxisScaleMissing_defaultsToTime() throws Exception {
+    void findByIdWhenXAxisScaleMissingDefaultsToTime() throws Exception {
         String json = """
                 {
                                     "id": "legacy-scale-chart",
@@ -211,7 +268,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void save_persistsXAxisUnit() {
+    void savePersistsXAxisUnit() {
         Statistic statistic = createStatisticWithUnsortedDataset();
         statistic.setXAxisScaleType("linear");
         statistic.setXAxisUnit("km");
@@ -222,7 +279,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void save_linearChart_sortsDataPointsNumerically() {
+    void saveLinearChartSortsDataPointsNumerically() {
         Statistic statistic = createStatisticWithUnsortedDataset();
         statistic.setXAxisScaleType("linear");
         statistic.getDatasets().getFirst().getDataPoints().clear();
@@ -240,7 +297,7 @@ class StatisticRepositoryTest {
     }
 
     @Test
-    void save_whenIdIsReserved_throwsConflict() {
+    void saveWhenIdIsReservedThrowsConflict() {
         Statistic statistic = createStatisticWithUnsortedDataset();
         statistic.setId("archived");
 

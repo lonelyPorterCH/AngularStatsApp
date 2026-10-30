@@ -40,8 +40,8 @@ export class StatService {
     return this.http.get<boolean>(`${this.baseUrl}/${id}/archived`);
   }
 
-  addStat(stat: Stat) {
-    return this.http.post<Stat>(`${this.baseUrl}`, stat);
+  addStat(stat: Stat): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}`, stat);
   }
 
   deleteStat(id: string) {
@@ -50,6 +50,14 @@ export class StatService {
 
   toggleArchive(id: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/archived`, {});
+  }
+
+  setSmoothing(id: string, smoothing: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/smoothing`, {smoothing});
+  }
+
+  renameStat(id: string, title: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/title`, {title});
   }
 
   addDataset(id: string, label: string): Observable<void> {

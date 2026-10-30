@@ -3,6 +3,10 @@
   <mat-icon>add</mat-icon>
   <span>New Statistic</span>
 </button>
+<a [routerLink]="['/stats/import']" matButton="outlined">
+  <mat-icon>upload_file</mat-icon>
+  <span>Import CSV</span>
+</a>
 <div class="stats-overview">
   @for (stat of stats(); track stat.id) {
     <app-stats-card [stat]="stat"></app-stats-card>

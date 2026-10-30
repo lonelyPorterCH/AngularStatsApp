@@ -40,7 +40,7 @@ public class StatisticService {
                 .max(Integer::compareTo)
                 .orElse(-1) + 1;
         statistic.setIndex(nextStatisticIndex);
-        repository.save(statistic);
+        repository.create(statistic);
     }
 
     /**
@@ -115,6 +115,21 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void renameStatistic(String id, String title) {
+        if (title == null || title.isBlank()) {
+            throw new InvalidDataPointException("Graph title must not be blank");
+        }
+        Statistic statistic = repository.findById(id);
+        statistic.setTitle(title.strip());
+        repository.save(statistic);
+    }
+
+    public void setSmoothing(String id, boolean smoothing) {
+        Statistic statistic = repository.findById(id);
+        statistic.setSmoothing(smoothing);
+        repository.save(statistic);
+    }
+
     public void renameAxes(String id, String xAxisName, String yAxisName, String xAxisScaleType, String xAxisUnit) {
         Statistic statistic = repository.findById(id);
         if (xAxisName != null) statistic.setXAxisName(xAxisName);
@@ -149,7 +164,7 @@ public class StatisticService {
             if (!Double.isFinite(x) || x < 0) {
                 throw new NumberFormatException();
             }
-        } catch (NumberFormatException | NullPointerException e) {
+        } catch (NumberFormatException | NullPointerException _) {
             throw new InvalidDataPointException("Linear x-axis values must be non-negative finite numbers");
         }
     }

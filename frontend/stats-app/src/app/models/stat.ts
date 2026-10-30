@@ -6,6 +6,7 @@ export interface Stat {
   xAxisScaleType?: 'time' | 'linear';
   xAxisUnit?: string;
   reverse: boolean;
+  smoothing?: boolean;
   datasets: Dataset[];
 }
 

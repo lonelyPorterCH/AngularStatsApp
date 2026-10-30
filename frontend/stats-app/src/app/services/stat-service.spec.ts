@@ -44,6 +44,24 @@ describe('StatService', () => {
     expect(service).toBeTruthy();
   });
 
+  it('should rename a graph without changing its ID', async () => {
+    const promise = firstValueFrom(service.renameStat('weight', 'Weight'));
+    const request = httpTesting.expectOne(`${environment.apiBaseUrl}/weight/title`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({title: 'Weight'});
+    request.flush(null);
+    await promise;
+  });
+
+  it('should persist the smoothing setting for a graph', async () => {
+    const promise = firstValueFrom(service.setSmoothing('test-stat', true));
+    const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/smoothing`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({smoothing: true});
+    request.flush(null);
+    await promise;
+  });
+
   it('should fetch all stats', async () => {
     const promise = firstValueFrom(service.getStats());
 
@@ -114,7 +132,7 @@ describe('StatService', () => {
     const req = httpTesting.expectOne(`${environment.apiBaseUrl}`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(MOCK_STAT);
-    req.flush(MOCK_STAT);
+    req.flush(null);
 
     await promise;
   });

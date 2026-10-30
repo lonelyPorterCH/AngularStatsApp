@@ -15,6 +15,29 @@ form {
   padding-top: 16px;
 }
 
+.rename-form {
+  flex-direction: row;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 0;
+  margin-bottom: 16px;
+}
+
+.rename-form mat-form-field {
+  flex: 1 1 240px;
+  max-width: 500px;
+  min-width: 0;
+}
+
+.rename-form button {
+  margin-top: 8px;
+}
+
+.rename-error {
+  color: var(--mat-sys-error, #b3261e);
+}
+
 /*Fix Scrollbars appearing inside the tabs*/
 ::ng-deep .mat-mdc-tab-body-content {
   overflow: hidden !important;

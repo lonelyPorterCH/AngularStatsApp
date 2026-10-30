@@ -75,6 +75,42 @@ environment:
   - SERVER_PORT=8081
 ```
 
+## CSV Import
+
+Select **Import CSV** on the statistics overview, or open `/stats/import`.
+Choose a CSV file, its date column and the numeric measurement columns to import.
+Choose **One Graph** for multiple datasets sharing the same axes, or **Separate Graphs**
+for one new graph per measurement. Review the titles, IDs, axis labels and skipped
+values before confirming. `/stats/new` remains available for manual creation.
+
+Files must be UTF-8, comma-separated, with a header row. Quoted cells, embedded commas,
+multiline comments and Windows line endings are supported. For example:
+
+```csv
+Date,"Weight (kg)","Fat mass (kg)",Comments
+"2026-10-30 12:11:09",64.00,8.80,
+```
+
+Dates use `yyyy-MM-dd` or `yyyy-MM-dd HH:mm:ss` (also `T` in place of the space).
+Times are discarded without timezone conversion. Repeated dates are retained, not
+averaged. Numeric values use a decimal point, without units or thousands separators;
+zero and negative numbers are accepted. Missing or invalid dates skip the entire row;
+missing or invalid numeric cells skip only the affected measurement. The preview
+lists those omissions before saving. Diagnostic record numbers count CSV records,
+including the header, rather than physical lines within quoted multiline cells.
+
+CSV files are parsed locally; only the selected measurements are sent to the server.
+Imports create new graphs and never merge into or overwrite existing ones. Multiple
+graphs save independently: successful graphs remain saved if another fails. Saved
+graphs are not resubmitted on retry. If a save response is lost, use **Check Saved Graph**
+before retrying. New graph IDs must start with a letter or number and contain only
+letters, numbers, hyphens or underscores (maximum 100 characters); route names and
+reserved filesystem names are unavailable. Existing IDs remain usable when editing.
+
+The `/stats/import` route reserves `import` as a graph ID. Before upgrading a legacy
+installation that already uses that exact ID, rename that graph and its JSON file
+while the application is stopped, or access it through its existing edit route.
+
 ## ScoreSaber comparison
 
 StatsApp exposes the migrated Beat Saber feature at `/scores`. The overview contains an
@@ -89,7 +125,8 @@ including players who do not yet have ranked scores.
 The backend API is grouped under `/api/scores`:
 
 - `GET /api/scores/players/details` lists tracked players.
-- `POST /api/scores/players/{playerId}` adds a player and imports their scores (400 for an invalid ID, 404 if not found, 502 if ScoreSaber is unavailable).
+- `POST /api/scores/players/{playerId}` adds a player and imports their scores (400 for an invalid ID, 404 if not found,
+  502 if ScoreSaber is unavailable).
 - `GET /api/scores/players/{playerId}/scores` returns a player's ranked scores.
 - `GET /api/scores/players/{playerId}/scores/compare/{otherPlayerId}` returns both histories.
 - `POST /api/scores/players/{playerId}/scores/update` refreshes scores from ScoreSaber.

@@ -9,6 +9,7 @@ import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
 import {Title} from '@angular/platform-browser';
 import {forkJoin} from 'rxjs';
+import {MatSlideToggle} from '@angular/material/slide-toggle';
 
 @Component({
   selector: 'app-stat-details',
@@ -16,7 +17,8 @@ import {forkJoin} from 'rxjs';
     MatButton,
     RouterLink,
     ChartComponent,
-    MatIcon
+    MatIcon,
+    MatSlideToggle
   ],
   templateUrl: './stat-details.html',
   styleUrl: './stat-details.css',
@@ -26,6 +28,8 @@ export class StatDetails implements OnInit {
   archived = signal<boolean>(false);
   loading = signal<boolean>(true);
   notFound = signal<boolean>(false);
+  smoothingSaving = signal(false);
+  smoothingError = signal('');
 
   constructor(
     private statService: StatService,
@@ -47,6 +51,7 @@ export class StatDetails implements OnInit {
   loadStatById(id: string) {
     this.loading.set(true);
     this.notFound.set(false);
+    this.smoothingError.set('');
 
     forkJoin({
       stat: this.statService.getStatById(id),
@@ -66,6 +71,24 @@ export class StatDetails implements OnInit {
         } else {
           console.error(err);
         }
+      }
+    });
+  }
+
+  onSmoothingChange(smoothing: boolean): void {
+    const stat = this.stat();
+    if (!stat || this.archived() || this.smoothingSaving()) return;
+    this.smoothingError.set('');
+    this.smoothingSaving.set(true);
+    this.stat.set({...stat, smoothing});
+    this.statService.setSmoothing(stat.id, smoothing).subscribe({
+      next: () => this.smoothingSaving.set(false),
+      error: () => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, smoothing: stat.smoothing ?? false} : current);
+          this.smoothingError.set('Could not save smoothing. The previous setting has been restored.');
+        }
+        this.smoothingSaving.set(false);
       }
     });
   }

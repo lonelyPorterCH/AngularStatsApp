@@ -1,5 +1,10 @@
 @if (stat()) {
 <h2>{{ stat()!.title }}</h2>
+<div class="chart-settings">
+  <mat-slide-toggle [checked]="stat()!.smoothing ?? false" [disabled]="archived() || smoothingSaving()"
+    (change)="onSmoothingChange($event.checked)">Smooth trend (7 measurements)</mat-slide-toggle>
+  @if (smoothingError()) { <p class="setting-error" role="alert">{{ smoothingError() }}</p> }
+</div>
 <div class="chart-container">
   <app-chart [stat]="stat()!"></app-chart>
 </div>

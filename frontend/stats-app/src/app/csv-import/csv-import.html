@@ -1,0 +1,130 @@
+<div class="import-page">
+  <header>
+    <h2>Import CSV</h2>
+    <a matButton="text" routerLink="/stats"><mat-icon>arrow_back</mat-icon>Overview</a>
+  </header>
+
+  <section class="file-section" aria-labelledby="file-heading">
+    <h3 id="file-heading">CSV File</h3>
+    <input #fileInput type="file" accept=".csv,text/csv" hidden (change)="loadFile($event)"
+      [disabled]="busy() || reading() || attempted()">
+    <button matButton="outlined" type="button" (click)="fileInput.click()" [disabled]="busy() || reading() || attempted()">
+      <mat-icon>upload_file</mat-icon>{{ reading() ? 'Reading...' : 'Choose CSV' }}
+    </button>
+    <span class="filename">{{ fileName() }}</span>
+  </section>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+
+  @if (table(); as csv) {
+    <section aria-labelledby="columns-heading">
+      <h3 id="columns-heading">Measurements</h3>
+      <mat-form-field appearance="outline">
+        <mat-label>Date Column</mat-label>
+        <mat-select [value]="dateColumn()" (selectionChange)="setDateColumn($event.value)" [disabled]="prepared() || busy()">
+          @for (header of csv.headers; track $index) { <mat-option [value]="$index">{{ header }}</mat-option> }
+        </mat-select>
+      </mat-form-field>
+      <div class="column-list">
+        @for (column of numericColumns(); track column.index) {
+          <div class="column-row">
+            <mat-checkbox [checked]="selected().includes(column.index)" (change)="toggleColumn(column.index, $event.checked)"
+              [disabled]="prepared() || busy()">{{ column.label }}</mat-checkbox>
+            <span class="sample">{{ column.sample }}</span>
+          </div>
+        } @empty { <p role="status">No numeric measurement columns found.</p> }
+      </div>
+      <mat-button-toggle-group aria-label="Graph layout" [value]="separate()" (change)="setSeparate($event.value)"
+        [disabled]="prepared() || busy()">
+        <mat-button-toggle [value]="false">One Graph</mat-button-toggle>
+        <mat-button-toggle [value]="true">Separate Graphs</mat-button-toggle>
+      </mat-button-toggle-group>
+    </section>
+
+    @if (preview(); as current) {
+      @if (selected().length) {
+        <section aria-labelledby="preview-heading">
+          <h3 id="preview-heading">Import Preview</h3>
+          <div class="table-scroll" tabindex="0" aria-label="Measurement preview">
+            <table>
+              <thead><tr><th>Measurement</th><th>Valid Values</th><th>First Date</th><th>First Value</th></tr></thead>
+              <tbody>
+                @for (dataset of current.datasets; track dataset.label) {
+                  <tr><th>{{ dataset.label }}</th><td>{{ dataset.dataPoints.length }}</td>
+                    <td>{{ dataset.dataPoints[0]?.x || '-' }}</td><td>{{ dataset.dataPoints[0]?.y || '-' }}</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (!canReview()) { <p class="error">Every selected measurement needs at least one valid value.</p> }
+          @if (current.duplicateDates) {
+            <p class="warning">{{ current.duplicateDates }} repeated dates. All measurements will be kept.</p>
+          }
+          @if (mixedUnits()) { <p class="warning">Selected measurements have different or unspecified units and will share one Y axis.</p> }
+          @if (current.issues.length) {
+            <details class="warning"><summary>{{ current.issues.length }} skipped rows or values</summary>
+              <ul>@for (issue of current.issues; track $index) { <li>{{ issue }}</li> }</ul>
+            </details>
+          }
+          @if (!prepared()) {
+            <button matButton="filled" type="button" (click)="review()" [disabled]="!canReview()">
+              <mat-icon>preview</mat-icon>Review {{ separate() ? selected().length : 1 }} {{ separate() && selected().length > 1 ? 'Graphs' : 'Graph' }}
+            </button>
+          }
+        </section>
+      }
+    }
+
+    @if (prepared()) {
+      <section aria-labelledby="graphs-heading">
+        <h3 id="graphs-heading">New Graphs</h3>
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div formArrayName="graphs">
+            @for (graph of graphs.controls; track graph; let index = $index) {
+              <fieldset [formGroupName]="index">
+                <legend>Graph {{ index + 1 }}</legend>
+                <div class="metadata">
+                  <mat-form-field appearance="outline"><mat-label>Title</mat-label>
+                    <input matInput formControlName="title" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                  <mat-form-field appearance="outline"><mat-label>Graph ID</mat-label>
+                    <input matInput formControlName="id" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                  <mat-form-field appearance="outline"><mat-label>X Axis</mat-label>
+                    <input matInput formControlName="xAxisName" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                  <mat-form-field appearance="outline"><mat-label>Y Axis</mat-label>
+                    <input matInput formControlName="yAxisName" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                </div>
+                <div class="result" aria-live="polite">
+                  <span>{{ results()[index].message }}</span>
+                  @if (results()[index].status === 'saved') {
+                    <a matButton="text" [routerLink]="['/stats', results()[index].payload!.id]">Open Graph<mat-icon>open_in_new</mat-icon></a>
+                  }
+                  @if (results()[index].status === 'unknown') {
+                    <button matButton="outlined" type="button" (click)="checkResult(index)" [disabled]="busy()">
+                      <mat-icon>refresh</mat-icon>Check Saved Graph
+                    </button>
+                  }
+                </div>
+              </fieldset>
+            }
+          </div>
+          @if (!allSaved()) {
+            <mat-checkbox [checked]="confirmed()" (change)="confirmed.set($event.checked)" [disabled]="busy()">
+              Confirm {{ graphs.length }} new {{ graphs.length === 1 ? 'graph' : 'graphs' }}, dates only, {{ preview()!.issues.length }} skipped rows or values
+            </mat-checkbox>
+          }
+          <div class="actions">
+            @if (!attempted()) {
+              <button matButton="outlined" type="button" (click)="resetReview()" [disabled]="busy()"><mat-icon>edit</mat-icon>Change Selection</button>
+            }
+            @if (!allSaved()) {
+              <button matButton="filled" type="submit" [disabled]="!confirmed() || busy() || hasUnknown()">
+                <mat-icon>save</mat-icon>{{ busy() ? 'Saving...' : attempted() ? 'Retry Unsaved Graphs' : 'Import Graphs' }}
+              </button>
+            }
+            @if (allSaved()) { <a matButton="filled" routerLink="/stats"><mat-icon>done</mat-icon>Done</a> }
+          </div>
+        </form>
+      </section>
+    }
+  }
+</div>
