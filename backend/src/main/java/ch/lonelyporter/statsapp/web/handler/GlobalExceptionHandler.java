@@ -6,7 +6,6 @@ import ch.lonelyporter.statsapp.exception.StatisticStorageException;
 import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -15,10 +14,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(StatisticStorageException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<String> handleStorageException(StatisticStorageException e, Model model) {
-        model.addAttribute("error", e.getMessage());
-        model.addAttribute("cause", e.getCause().getMessage());
+    public ResponseEntity<String> handleStorageException(StatisticStorageException e) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
     }
 
