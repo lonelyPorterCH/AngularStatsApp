@@ -30,6 +30,10 @@ export class StatDetails implements OnInit {
   notFound = signal<boolean>(false);
   smoothingSaving = signal(false);
   smoothingError = signal('');
+  stackedSaving = signal(false);
+  stackedError = signal('');
+  includeZeroSaving = signal(false);
+  includeZeroError = signal('');
 
   constructor(
     private statService: StatService,
@@ -52,6 +56,8 @@ export class StatDetails implements OnInit {
     this.loading.set(true);
     this.notFound.set(false);
     this.smoothingError.set('');
+    this.stackedError.set('');
+    this.includeZeroError.set('');
 
     forkJoin({
       stat: this.statService.getStatById(id),
@@ -89,6 +95,42 @@ export class StatDetails implements OnInit {
           this.smoothingError.set('Could not save smoothing. The previous setting has been restored.');
         }
         this.smoothingSaving.set(false);
+      }
+    });
+  }
+
+  onStackedChange(stacked: boolean): void {
+    const stat = this.stat();
+    if (!stat || this.archived() || this.stackedSaving() || (stacked && stat.datasets.length < 2)) return;
+    this.stackedError.set('');
+    this.stackedSaving.set(true);
+    this.stat.set({...stat, stacked});
+    this.statService.setStacked(stat.id, stacked).subscribe({
+      next: () => this.stackedSaving.set(false),
+      error: () => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, stacked: stat.stacked ?? false} : current);
+          this.stackedError.set('Could not save stacking. The previous setting has been restored.');
+        }
+        this.stackedSaving.set(false);
+      }
+    });
+  }
+
+  onIncludeZeroChange(includeZero: boolean): void {
+    const stat = this.stat();
+    if (!stat || this.archived() || this.includeZeroSaving()) return;
+    this.includeZeroError.set('');
+    this.includeZeroSaving.set(true);
+    this.stat.set({...stat, includeZero});
+    this.statService.setIncludeZero(stat.id, includeZero).subscribe({
+      next: () => this.includeZeroSaving.set(false),
+      error: () => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, includeZero: stat.includeZero ?? false} : current);
+          this.includeZeroError.set('Could not save the Y axis setting. The previous setting has been restored.');
+        }
+        this.includeZeroSaving.set(false);
       }
     });
   }

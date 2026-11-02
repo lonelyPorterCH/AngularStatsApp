@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.2] - 2026-11-02
+
+### Added
+
+- Saved "Include zero on Y axis" option for all statistics charts, including independent and stacked lines, with automatic scaling retained when off.
+
+### Changed
+
+- Chart display settings use smaller switches, shorter labels and a spaced, wrapping row while retaining accessible names and touch targets.
+
+## [2.5.1] - 2026-11-02
+
+### Added
+
+- Saved stacked-line chart option for new charts and existing charts with at least two datasets.
+- Stacked charts show cumulative dataset heights and a combined total in tooltips without changing recorded measurements.
+
 ## [2.5.0] - 2026-10-30
 
 ### Added

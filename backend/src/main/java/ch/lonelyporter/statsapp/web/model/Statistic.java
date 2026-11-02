@@ -16,6 +16,10 @@ public class Statistic {
     private boolean reverse;
     @Getter(AccessLevel.NONE)
     private Boolean smoothing = false;
+    @Getter(AccessLevel.NONE)
+    private Boolean stacked = false;
+    @Getter(AccessLevel.NONE)
+    private Boolean includeZero = false;
     private String xAxisName;
     private String yAxisName;
     private String xAxisScaleType = "time";
@@ -24,6 +28,14 @@ public class Statistic {
 
     public boolean isSmoothing() {
         return Boolean.TRUE.equals(smoothing);
+    }
+
+    public boolean isStacked() {
+        return Boolean.TRUE.equals(stacked);
+    }
+
+    public boolean isIncludeZero() {
+        return Boolean.TRUE.equals(includeZero);
     }
 
     public String getXAxisScaleType() {

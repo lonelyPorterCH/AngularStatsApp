@@ -46,6 +46,109 @@ describe('StatDetails', () => {
 
   const stat: Stat = {id: 'weight', title: 'Weight', xAxisName: 'Date', yAxisName: 'kg', reverse: false, datasets: []};
 
+  it('saves the zero baseline for any chart, prevents duplicate saves and supports turning it off', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.onIncludeZeroChange(true);
+    component.onIncludeZeroChange(false);
+    expect(component.stat()?.includeZero).toBe(true);
+    expect(component.includeZeroSaving()).toBe(true);
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/include-zero`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({includeZero: true});
+    request.flush(null);
+    expect(component.includeZeroSaving()).toBe(false);
+    expect(component.stat()?.datasets).toBe(stat.datasets);
+    expect(stat.includeZero).toBeUndefined();
+    component.onIncludeZeroChange(false);
+    const offRequest = http.expectOne(`${environment.apiBaseUrl}/weight/include-zero`);
+    expect(offRequest.request.body).toEqual({includeZero: false});
+    offRequest.flush(null);
+    expect(component.stat()?.includeZero).toBe(false);
+    http.verify();
+  });
+
+  it('restores the Y axis setting after a save failure without undoing other settings', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set({...stat, includeZero: true});
+    component.onIncludeZeroChange(false);
+    component.stat.update(current => current ? {...current, smoothing: true} : current);
+    http.expectOne(`${environment.apiBaseUrl}/weight/include-zero`).flush('Failed', {status: 500, statusText: 'Error'});
+    expect(component.stat()?.includeZero).toBe(true);
+    expect(component.stat()?.smoothing).toBe(true);
+    expect(component.includeZeroSaving()).toBe(false);
+    expect(component.includeZeroError()).toContain('previous setting');
+    http.verify();
+  });
+
+  it('does not save the Y axis setting for archived graphs or overwrite another graph after failure', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.archived.set(true);
+    component.onIncludeZeroChange(true);
+    http.expectNone(`${environment.apiBaseUrl}/weight/include-zero`);
+    component.archived.set(false);
+    component.onIncludeZeroChange(true);
+    component.stat.set({...stat, id: 'other'});
+    http.expectOne(`${environment.apiBaseUrl}/weight/include-zero`).flush('Failed', {status: 500, statusText: 'Error'});
+    expect(component.stat()?.id).toBe('other');
+    expect(component.stat()?.includeZero).toBeUndefined();
+    expect(component.includeZeroError()).toBe('');
+    expect(component.includeZeroSaving()).toBe(false);
+    http.verify();
+  });
+
+  const stackable: Stat = {...stat, datasets: [
+    {label: 'Paid out', index: 0, dataPoints: [{x: '2026-09-30', y: '1000'}]},
+    {label: 'Carried forward', index: 1, dataPoints: [{x: '2026-09-30', y: '391'}]}
+  ]};
+
+  it('saves stacking, prevents duplicate saves and preserves measurements', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stackable);
+    component.onStackedChange(true);
+    component.onStackedChange(false);
+    expect(component.stat()?.stacked).toBe(true);
+    expect(component.stackedSaving()).toBe(true);
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/stacked`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({stacked: true});
+    request.flush(null);
+    expect(component.stackedSaving()).toBe(false);
+    expect(component.stat()?.datasets).toBe(stackable.datasets);
+    expect(stackable.stacked).toBeUndefined();
+    http.verify();
+  });
+
+  it('restores stacking after a failed save without undoing other settings', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set({...stackable, stacked: true});
+    component.onStackedChange(false);
+    component.stat.update(current => ({...current!, smoothing: true}));
+    http.expectOne(`${environment.apiBaseUrl}/weight/stacked`).flush('Failed', {status: 500, statusText: 'Error'});
+    expect(component.stat()?.stacked).toBe(true);
+    expect(component.stat()?.smoothing).toBe(true);
+    expect(component.stackedSaving()).toBe(false);
+    expect(component.stackedError()).toContain('previous setting');
+    http.verify();
+  });
+
+  it('does not enable stacking on archived or single-dataset charts but allows disabling it', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stackable);
+    component.archived.set(true);
+    component.onStackedChange(true);
+    http.expectNone(`${environment.apiBaseUrl}/weight/stacked`);
+    component.archived.set(false);
+    component.stat.set({...stat, stacked: true});
+    component.onStackedChange(true);
+    http.expectNone(`${environment.apiBaseUrl}/weight/stacked`);
+    component.onStackedChange(false);
+    http.expectOne(`${environment.apiBaseUrl}/weight/stacked`).flush(null);
+    expect(component.stat()?.stacked).toBe(false);
+    http.verify();
+  });
+
   it('saves smoothing and updates this graph without changing recorded data', () => {
     const http = TestBed.inject(HttpTestingController);
     component.stat.set(stat);

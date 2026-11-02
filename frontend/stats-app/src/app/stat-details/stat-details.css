@@ -4,11 +4,28 @@
 }
 
 .chart-settings {
-  margin-bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-bottom: 8px;
+}
+
+.chart-settings mat-slide-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+.setting-hint {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 12px;
+  margin: 0 0 8px;
 }
 
 .setting-error {
   color: var(--mat-sys-error, #b3261e);
+  margin: 0 0 8px;
 }
 
 button {

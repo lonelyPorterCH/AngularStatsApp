@@ -40,6 +40,8 @@ export class CreateForm implements OnInit {
       xAxisName: ['', Validators.required],
       yAxisName: ['', Validators.required],
       reverse: [false, Validators.required],
+      stacked: [false],
+      includeZero: [false],
       xAxisScaleType: ['time', Validators.required],
       xAxisUnit: ['']
     }, {updateOn: 'blur'});
@@ -56,6 +58,8 @@ export class CreateForm implements OnInit {
       xAxisName: this.statForm.value.xAxisName,
       yAxisName: this.statForm.value.yAxisName,
       reverse: this.statForm.value.reverse,
+      stacked: this.statForm.value.stacked,
+      includeZero: this.statForm.value.includeZero,
       xAxisScaleType: this.statForm.value.xAxisScaleType,
       xAxisUnit: this.statForm.value.xAxisUnit?.trim(),
       datasets: []

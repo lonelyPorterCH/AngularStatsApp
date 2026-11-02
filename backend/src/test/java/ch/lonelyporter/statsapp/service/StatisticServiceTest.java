@@ -233,6 +233,102 @@ class StatisticServiceTest {
         assertThat(repository.findById("linear-chart").getXAxisUnit()).isEqualTo("km");
     }
 
+    @Test
+    void stackingPersistsAcrossReloadAndDatasetChangesWithoutChangingMeasurements() {
+        Statistic statistic = createStatistic("cumulus", "Cumulus");
+        statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-09-30", "1000"));
+        statistic.setSmoothing(true);
+        repository.save(statistic);
+        service.addDataset("cumulus", "Carry");
+        service.addDataPoint("cumulus", "Carry", new Statistic.DataPoint("2026-09-30", "391"));
+
+        service.setStacked("cumulus", true);
+        Statistic loaded = service.getStatisticById("cumulus");
+        assertThat(loaded.isStacked()).isTrue();
+        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().getDataPoints())
+                .containsExactly(new Statistic.DataPoint("2026-09-30", "1000"));
+        assertThat(loaded.getDatasets().get(1).getDataPoints())
+                .containsExactly(new Statistic.DataPoint("2026-09-30", "391"));
+
+        service.deleteDataset("cumulus", "Carry");
+        assertThat(repository.findById("cumulus").isStacked()).isTrue();
+        service.setStacked("cumulus", false);
+        assertThat(repository.findById("cumulus").isStacked()).isFalse();
+    }
+
+    @Test
+    void stackingRejectsTooFewDatasetsAndArchivedGraphs() {
+        repository.save(createStatistic("cumulus", "Cumulus"));
+        assertThatThrownBy(() -> service.setStacked("cumulus", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(repository.findById("cumulus").isStacked()).isFalse();
+        service.addDataset("cumulus", "Carry");
+        repository.toggleArchive("cumulus");
+        assertThatThrownBy(() -> service.setStacked("cumulus", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById("cumulus").isStacked()).isFalse();
+    }
+
+    @Test
+    void newChartsCanSelectStackingBeforeAddingDatasetsAndLegacyChartsDefaultToOff() throws Exception {
+        Statistic statistic = createStatistic("new-chart", "New chart");
+        statistic.setDatasets(new ArrayList<>());
+        statistic.setStacked(true);
+        service.createStatistic(statistic);
+        assertThat(repository.findById("new-chart").isStacked()).isTrue();
+        for (String property : List.of("", ",\"stacked\":null")) {
+            Files.writeString(tempDir.resolve("legacy.json"), "{\"id\":\"legacy\",\"reverse\":false,\"datasets\":[]" + property + "}");
+            assertThat(repository.findById("legacy").isStacked()).isFalse();
+        }
+    }
+
+    @Test
+    void includeZeroPersistsIndependentlyPerChartWithoutChangingDataOrOtherSettings() {
+        Statistic statistic = createStatistic("chart", "Chart");
+        statistic.setReverse(true);
+        statistic.setSmoothing(true);
+        statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-02", "-50"));
+        repository.save(statistic);
+        repository.save(createStatistic("other", "Other"));
+
+        service.setIncludeZero("chart", true);
+
+        Statistic loaded = service.getStatisticById("chart");
+        assertThat(loaded.isIncludeZero()).isTrue();
+        assertThat(loaded.isReverse()).isTrue();
+        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.isStacked()).isFalse();
+        assertThat(loaded.getDatasets().getFirst().getDataPoints())
+                .containsExactly(new Statistic.DataPoint("2026-11-02", "-50"));
+        assertThat(repository.findById("other").isIncludeZero()).isFalse();
+        service.setIncludeZero("chart", false);
+        assertThat(repository.findById("chart").isIncludeZero()).isFalse();
+    }
+
+    @Test
+    void includeZeroRejectsArchivedAndMissingCharts() {
+        repository.save(createStatistic("chart", "Chart"));
+        repository.toggleArchive("chart");
+        assertThatThrownBy(() -> service.setIncludeZero("chart", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById("chart").isIncludeZero()).isFalse();
+        assertThatThrownBy(() -> service.setIncludeZero("missing", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class);
+    }
+
+    @Test
+    void includeZeroCanBeSelectedAtCreationAndMissingOrNullDefaultsToOff() throws Exception {
+        Statistic statistic = createStatistic("chart", "Chart");
+        statistic.setIncludeZero(true);
+        service.createStatistic(statistic);
+        assertThat(repository.findById("chart").isIncludeZero()).isTrue();
+        for (String property : List.of("", ",\"includeZero\":null")) {
+            Files.writeString(tempDir.resolve("legacy.json"), "{\"id\":\"legacy\",\"reverse\":false,\"datasets\":[]" + property + "}");
+            assertThat(repository.findById("legacy").isIncludeZero()).isFalse();
+        }
+    }
+
     private static Statistic createStatistic(String id, String title) {
         Statistic statistic = new Statistic();
         statistic.setId(id);

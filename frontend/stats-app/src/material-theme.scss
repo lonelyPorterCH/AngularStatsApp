@@ -44,3 +44,19 @@ body {
     container-text-color: var(--mat-sys-on-primary),
   ));
 }
+
+.chart-settings {
+  @include mat.slide-toggle-overrides((
+    track-width: 36px,
+    track-height: 20px,
+    selected-handle-size: 12px,
+    unselected-handle-size: 12px,
+    pressed-handle-size: 16px,
+    selected-handle-horizontal-margin: 0 20px,
+    unselected-handle-horizontal-margin: 0 4px,
+    selected-pressed-handle-horizontal-margin: 0 18px,
+    unselected-pressed-handle-horizontal-margin: 0 2px,
+    state-layer-size: 32px,
+    label-text-size: 12px,
+  ));
+}

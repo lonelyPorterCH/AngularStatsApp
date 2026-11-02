@@ -60,6 +60,14 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/title`, {title});
   }
 
+  setStacked(id: string, stacked: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/stacked`, {stacked});
+  }
+
+  setIncludeZero(id: string, includeZero: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/include-zero`, {includeZero});
+  }
+
   addDataset(id: string, label: string): Observable<void> {
     return this.http.post<void>(`${this.baseUrl}/${id}/dataset`, {label});
   }

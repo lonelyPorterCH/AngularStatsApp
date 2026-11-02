@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, Output, viewChild} from '@angular/core';
-import {Chart, registerables} from 'chart.js';
+import {Chart, registerables, TooltipItem} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {DataPoint, Stat} from '../models/stat';
 import {compareDataPoints, isLinearXAxis, parseXAxisValue} from '../models/x-axis';
@@ -54,6 +54,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
     }
     this.chart?.destroy();
     const linearXAxis = isLinearXAxis(this.stat);
+    const stacked = !!this.stat.stacked && this.stat.datasets.length >= 2;
     const xAxisUnit = linearXAxis ? this.stat.xAxisUnit?.trim() ?? '' : '';
     const xAxisTitle = xAxisUnit ? `${this.stat.xAxisName} (${xAxisUnit})` : this.stat.xAxisName;
     this.chart = new Chart(this.canvas().nativeElement, {
@@ -71,7 +72,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           return {
             label: ds.label,
             data: chartDataPoints(ds.dataPoints, this.stat) as any,
-            fill: ds.filled ?? false,
+            fill: ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
             tension: 0,
             cubicInterpolationMode: this.stat.smoothing ? 'monotone' as const : 'default' as const,
             borderWidth: 1,
@@ -88,7 +89,18 @@ export class ChartComponent implements OnChanges, AfterViewInit {
         maintainAspectRatio: false,
         plugins: {
           tooltip: {
+            ...(stacked ? {
+              mode: 'nearest' as const,
+              axis: 'x' as const,
+              intersect: false,
+              filter: (item: TooltipItem<'line'>, _index: number, items: TooltipItem<'line'>[]) =>
+                item.parsed.x === items[0]?.parsed.x
+            } : {}),
             callbacks: {
+              ...(stacked ? {
+                footer: (items: {parsed: {y: number | null}}[]) =>
+                  `Total: ${items.reduce((total, item) => total + (item.parsed.y ?? 0), 0)}`
+              } : {}),
               ...(linearXAxis ? {
                 title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
               } : {}),
@@ -123,6 +135,8 @@ export class ChartComponent implements OnChanges, AfterViewInit {
             title: {display: true, text: xAxisTitle}
           },
           y: {
+            beginAtZero: this.stat.includeZero ?? false,
+            stacked: stacked ? 'single' : false,
             reverse: this.stat.reverse,
             title: {display: true, text: this.stat.yAxisName}
           }

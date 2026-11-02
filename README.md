@@ -75,6 +75,31 @@ environment:
   - SERVER_PORT=8081
 ```
 
+## Y axis range
+
+Enable **Include zero on Y axis** during chart creation or on any statistics chart's
+details page to keep zero within the displayed Y axis range. This works independently
+of stacking and smoothing, including reversed axes and negative measurements (which
+are not clipped). Turn it off to restore automatic scaling based on the displayed data.
+The setting defaults to off, is saved per chart, and also applies to previews and the
+edit page. Unarchive archived charts before changing this setting.
+
+## Stacked line charts
+
+Enable **Stacked line chart** when creating a chart, or use the toggle on an existing
+chart's details page once it has at least two datasets. The setting is saved per chart
+and applies to previews and the edit page as well. Archived charts retain their saved
+display setting but cannot be changed until unarchived.
+
+Datasets are added vertically at matching X values (including signed contributions), so the last line shows their total
+(for example, paid-out Cumulus points plus points carried forward). Tooltips show the
+individual contributions and the total of visible datasets at that X value. Hiding a
+dataset in the legend removes it from the stack and tooltip total. Missing X values
+are not interpolated or carried forward; use matching dates for comparable totals.
+Smoothing, if enabled, stacks the displayed averages rather than the recorded values.
+Stacking is inactive with fewer than two datasets, and disabling it restores independent
+lines. Recorded values and per-dataset fill settings remain unchanged.
+
 ## CSV Import
 
 Select **Import CSV** on the statistics overview, or open `/stats/import`.

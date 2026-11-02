@@ -115,6 +115,21 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void setIncludeZero(String id, boolean includeZero) {
+        Statistic statistic = repository.findById(id);
+        statistic.setIncludeZero(includeZero);
+        repository.save(statistic);
+    }
+
+    public void setStacked(String id, boolean stacked) {
+        Statistic statistic = repository.findById(id);
+        if (stacked && statistic.getDatasets().size() < 2) {
+            throw new InvalidDataPointException("Stacked line charts require at least two datasets");
+        }
+        statistic.setStacked(stacked);
+        repository.save(statistic);
+    }
+
     public void renameAxes(String id, String xAxisName, String yAxisName, String xAxisScaleType, String xAxisUnit) {
         Statistic statistic = repository.findById(id);
         if (xAxisName != null) statistic.setXAxisName(xAxisName);

@@ -51,6 +51,8 @@
   </mat-form-field>
 
   <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
+  <mat-checkbox formControlName="includeZero">Include zero on Y axis</mat-checkbox>
+  <mat-checkbox formControlName="stacked">Stacked line chart (active with at least 2 datasets)</mat-checkbox>
 
   <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>
 

@@ -30,6 +30,12 @@ public class StatsApiController {
     public record SmoothingRequest(Boolean smoothing) {
     }
 
+    public record StackedRequest(Boolean stacked) {
+    }
+
+    public record IncludeZeroRequest(Boolean includeZero) {
+    }
+
     public record TitleRequest(String title) {
     }
 
@@ -116,6 +122,24 @@ public class StatsApiController {
             throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing must be true or false");
         }
         statisticService.setSmoothing(id, request.smoothing());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/include-zero")
+    public ResponseEntity<Void> setIncludeZero(@PathVariable String id, @RequestBody IncludeZeroRequest request) {
+        if (request.includeZero() == null) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Include zero must be true or false");
+        }
+        statisticService.setIncludeZero(id, request.includeZero());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/stacked")
+    public ResponseEntity<Void> setStacked(@PathVariable String id, @RequestBody StackedRequest request) {
+        if (request.stacked() == null) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Stacked must be true or false");
+        }
+        statisticService.setStacked(id, request.stacked());
         return ResponseEntity.ok().build();
     }
 

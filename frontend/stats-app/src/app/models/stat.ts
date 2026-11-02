@@ -7,6 +7,8 @@ export interface Stat {
   xAxisUnit?: string;
   reverse: boolean;
   smoothing?: boolean;
+  stacked?: boolean;
+  includeZero?: boolean;
   datasets: Dataset[];
 }
 

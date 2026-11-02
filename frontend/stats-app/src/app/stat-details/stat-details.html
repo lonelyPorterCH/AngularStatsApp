@@ -1,10 +1,21 @@
 @if (stat()) {
 <h2>{{ stat()!.title }}</h2>
-<div class="chart-settings">
-  <mat-slide-toggle [checked]="stat()!.smoothing ?? false" [disabled]="archived() || smoothingSaving()"
-    (change)="onSmoothingChange($event.checked)">Smooth trend (7 measurements)</mat-slide-toggle>
-  @if (smoothingError()) { <p class="setting-error" role="alert">{{ smoothingError() }}</p> }
+<div class="chart-settings" role="group" aria-label="Chart display settings">
+  <mat-slide-toggle [hideIcon]="true" aria-label="Include zero on Y axis" title="Include zero on Y axis"
+    [checked]="stat()!.includeZero ?? false" [disabled]="archived() || includeZeroSaving()"
+    (change)="onIncludeZeroChange($event.checked)">Zero baseline</mat-slide-toggle>
+  <mat-slide-toggle [hideIcon]="true" aria-label="Smooth trend (7 measurements)" title="Smooth trend (7 measurements)"
+    [checked]="stat()!.smoothing ?? false" [disabled]="archived() || smoothingSaving()"
+    (change)="onSmoothingChange($event.checked)">Smooth trend</mat-slide-toggle>
+  <mat-slide-toggle [hideIcon]="true" aria-label="Stacked line chart" title="Stacked line chart"
+    [checked]="stat()!.stacked ?? false"
+    [disabled]="archived() || stackedSaving() || (!stat()!.stacked && stat()!.datasets.length < 2)"
+    (change)="onStackedChange($event.checked)">Stacked</mat-slide-toggle>
 </div>
+@if (includeZeroError()) { <p class="setting-error" role="alert">{{ includeZeroError() }}</p> }
+@if (smoothingError()) { <p class="setting-error" role="alert">{{ smoothingError() }}</p> }
+@if (stackedError()) { <p class="setting-error" role="alert">{{ stackedError() }}</p> }
+@if (stat()!.datasets.length < 2) { <p class="setting-hint">Stacking requires at least 2 datasets.</p> }
 <div class="chart-container">
   <app-chart [stat]="stat()!"></app-chart>
 </div>
