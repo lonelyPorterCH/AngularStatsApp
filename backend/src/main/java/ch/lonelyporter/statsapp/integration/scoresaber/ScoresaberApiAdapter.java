@@ -1,7 +1,7 @@
 package ch.lonelyporter.statsapp.integration.scoresaber;
 
 import ch.lonelyporter.statsapp.domain.scores.Player;
-import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -26,7 +26,7 @@ public class ScoresaberApiAdapter {
         this.endpoints = endpoints;
     }
 
-    public List<Score> loadScoresStarting(String playerId, LocalDateTime startDate) {
+    public List<ScoreRecord> loadScoresStarting(String playerId, LocalDateTime startDate) {
         int page = 1;
         boolean loadNextPage = true;
         List<PlayerScoresDto.PlayerScore> result = new ArrayList<>();

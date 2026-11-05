@@ -28,4 +28,19 @@ class ScoreFileRepositoryLoadTest {
 
         assertThat(Files.readString(scoreFile)).isEqualTo(invalidJson);
     }
+
+    @Test
+    void readScoresFailsAndPreservesUnreadableLeaderboardFile() throws Exception {
+        Path leaderboardFile = tempDir.resolve("leaderboards.json");
+        String invalidJson = "{ invalid json";
+        Files.writeString(leaderboardFile, invalidJson);
+        ScoreFileRepository repository = new ScoreFileRepository(new ObjectMapper(),
+                new ScoresProperties(tempDir.toString()));
+
+        assertThatThrownBy(repository::readScores)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Unable to read leaderboard metadata from file");
+
+        assertThat(Files.readString(leaderboardFile)).isEqualTo(invalidJson);
+    }
 }

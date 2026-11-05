@@ -1,6 +1,7 @@
 package ch.lonelyporter.statsapp.service;
 
 import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,7 @@ public class ScoreService {
 
     public int updateScores(String playerId) {
         LocalDateTime startDate = scoreRepository.mostRecentScoreDate(playerId).orElse(LocalDateTime.MIN);
-        List<Score> scores = apiAdapter.loadScoresStarting(playerId, startDate);
+        List<ScoreRecord> scores = apiAdapter.loadScoresStarting(playerId, startDate);
         scoreRepository.addScores(scores, playerId);
         return scores.size();
     }

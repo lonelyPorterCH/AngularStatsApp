@@ -3,6 +3,7 @@ package ch.lonelyporter.statsapp.service;
 import ch.lonelyporter.statsapp.domain.scores.Player;
 import ch.lonelyporter.statsapp.domain.scores.PlayerRepository;
 import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +42,7 @@ class PlayerServiceTest {
 
     @Test
     void addPlayerImportsProfileAndScores() {
-        List<Score> scores = List.of(mock(Score.class));
+        List<ScoreRecord> scores = List.of(mock(ScoreRecord.class));
         when(apiAdapter.getPlayerDetails(PLAYER_ID)).thenReturn(Optional.of(player));
         when(apiAdapter.loadScoresStarting(PLAYER_ID, LocalDateTime.MIN)).thenReturn(scores);
 

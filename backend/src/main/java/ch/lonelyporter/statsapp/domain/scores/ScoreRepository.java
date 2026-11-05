@@ -7,7 +7,9 @@ import java.util.Optional;
 public interface ScoreRepository {
     List<Score> loadScores(String playerId);
 
-    void addScores(List<Score> scores, String playerId);
+    void addScores(List<ScoreRecord> scores, String playerId);
+
+    void refreshLeaderboardMetadata(List<LeaderboardMetadata> leaderboards);
 
     Optional<LocalDateTime> mostRecentScoreDate(String playerId);
 

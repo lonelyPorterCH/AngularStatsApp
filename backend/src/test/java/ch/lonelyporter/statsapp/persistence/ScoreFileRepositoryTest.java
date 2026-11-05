@@ -1,6 +1,9 @@
 package ch.lonelyporter.statsapp.persistence;
 
 import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.LeaderboardMetadata;
+import ch.lonelyporter.statsapp.domain.scores.ScoreEvent;
+import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,7 +38,7 @@ class ScoreFileRepositoryTest {
                 int threadId = thread;
                 futures.add(executor.submit(() -> {
                     start.await();
-                    List<Score> scores = new ArrayList<>();
+                    List<ScoreRecord> scores = new ArrayList<>();
                     for (int scoreIndex = 0; scoreIndex < scoresPerThread; scoreIndex++) {
                         long id = (long) threadId * scoresPerThread + scoreIndex;
                         scores.add(score(id));
@@ -62,7 +65,7 @@ class ScoreFileRepositoryTest {
         Path scoreDirectory = Files.createDirectory(tempDir.resolve("player-1.json"));
         Files.writeString(scoreDirectory.resolve("existing"), "keep");
         ScoreFileRepository repository = createRepository();
-        List<Score> scores = List.of(score(1));
+        List<ScoreRecord> scores = List.of(score(1));
 
         assertThatThrownBy(() -> repository.addScores(scores, "player-1"))
                 .isInstanceOf(IllegalStateException.class)
@@ -76,8 +79,11 @@ class ScoreFileRepositoryTest {
         return new ScoreFileRepository(new ObjectMapper(), new ScoresProperties(tempDir.toString()));
     }
 
-    private static Score score(long id) {
-        return new Score("song", "author", id, 100, id, 1.0,
-                LocalDateTime.of(2026, 10, 30, 12, 0).plusSeconds(id), "hash-" + id);
+    private static ScoreRecord score(long id) {
+        String hash = "hash-" + id;
+        var date = LocalDateTime.of(2026, 10, 30, 12, 0).plusSeconds(id);
+        return new ScoreRecord(
+                new ScoreEvent(id, date, id, 100, hash),
+                new LeaderboardMetadata(id, hash, "song", "author", "Hard", "SoloStandard", 1.0));
     }
 }

@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.3] - 2026-11-05
+
+### Added
+
+- Separated ScoreSaber score-event history from shared leaderboard metadata, with a non-destructive migration tool.
+
+### Changed
+
+- Score reads compose the existing API response from score events and the current leaderboard cache.
+
 ## [2.5.2] - 2026-11-02
 
 ### Added

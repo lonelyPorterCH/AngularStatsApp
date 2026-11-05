@@ -64,23 +64,28 @@ An empty response body causes an error. Profile HTTP 404 responses become an
 empty optional; other HTTP failures propagate. Adding a player translates
 `RestClientException` failures to HTTP 502 and a missing profile to HTTP 404.
 
-## 3. Mapping API data into stored scores
+## 3. Mapping API data into score events and leaderboard metadata
 
 [PlayerScoresDto](backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/PlayerScoresDto.java)
 models both a nested API `score` and a nested `leaderboard`.
 [ScoreMapper](backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoreMapper.java)
-keeps only entries whose `leaderboard.realm.leaderboardStatus` is `RANKED`.
+keeps only entries whose `leaderboard.realm.leaderboardStatus` is `RANKED`,
+then creates a score event and its leaderboard metadata. The metadata is shared
+by the `(leaderboardId, songHash)` pair; a song hash alone is not unique across
+difficulties. Reads join those values into the existing API `Score` shape.
 
-| Stored field      | Source or transformation                           |
-|-------------------|----------------------------------------------------|
-| `songName`        | `leaderboard.map.songName`                         |
-| `levelAuthorName` | `leaderboard.map.levelAuthorName`                  |
-| `timeSetMillis`   | `score.createdAt.toEpochMilli()`                   |
-| `accuracy`        | Percentage conversion described below              |
-| `id`              | **`leaderboard.id`, not `score.id`**               |
-| `stars`           | `leaderboard.realm.stars`                          |
-| `timeSet`         | `score.createdAt` converted to UTC `LocalDateTime` |
-| `songHash`        | `leaderboard.map.hash`                             |
+| Stored field      | Storage         | Source or transformation                           |
+|-------------------|-----------------|----------------------------------------------------|
+| `leaderboardId`   | score event     | `leaderboard.id`, not the individual `score.id`    |
+| `timeSetMillis`   | score event     | `score.createdAt.toEpochMilli()`                   |
+| `timeSet`         | score event     | `score.createdAt` converted to UTC `LocalDateTime` |
+| `accuracy`        | score event     | Percentage conversion described below              |
+| `songHash`        | event and cache | `leaderboard.map.hash`; paired with leaderboard ID |
+| `songName`        | leaderboard     | `leaderboard.map.songName`                         |
+| `levelAuthorName` | leaderboard     | `leaderboard.map.levelAuthorName`                  |
+| `difficulty`      | leaderboard     | `leaderboard.difficulty.rawDifficulty`             |
+| `gameMode`        | leaderboard     | `leaderboard.difficulty.gameMode`                  |
+| `stars`           | leaderboard     | `leaderboard.realm.stars`                          |
 
 Accuracy conversion:
 
@@ -88,13 +93,12 @@ Accuracy conversion:
 - If it is at most 1, multiply it by 100.
 - Otherwise, use it unchanged.
 
-The original API accuracy and modified/max scores are not retained, so the JSON
-alone does not reveal which conversion branch produced an existing value.
+The original API accuracy and modified/max scores are not retained, so the
+event JSON alone does not reveal which conversion branch produced its value.
 
-Although the DTO includes `score.id` and difficulty information
-(`rawDifficulty` and `gameMode`), the mapper does not persist those fields.
-The stored leaderboard ID can distinguish leaderboards, but the JSON does not
-contain a readable difficulty name.
+Although the DTO includes the individual `score.id`, that value is not used as
+a score-event ID or persisted. Existing player files store one event per
+record, including repeated leaderboard IDs and repeated song hashes.
 
 `timeSet` has no timezone suffix even though the backend derives it in UTC.
 `timeSetMillis` is the epoch-millisecond representation of the same source instant.
@@ -103,11 +107,14 @@ is worth preserving or explicitly correcting in any future timestamp migration.
 
 ## 4. Example Scores
 
-A unique Score to be shown on the scatterplot is defined by the `songHash` and the leaderboard `id`. One Song has a
-unique songHash and can have multiple leaderboards, one for each difficulty.
+A song/leaderboard is identified by the combination of `songHash` and
+leaderboard `id`. One song can have multiple leaderboard IDs, one for each
+difficulty. A player may also have multiple score events on the same
+leaderboard; the event date and accuracy are retained independently.
 
-Each Score is made up of the Leaderboard information (SongName, levelAuthorName, stars, songHash and id) and the Score
-Information (accuracy, timeSet).
+Each API Score is composed from shared leaderboard information (`songName`,
+`levelAuthorName`, `stars`, `songHash`, and `id`) and per-play score event
+information (`accuracy`, `timeSet`, and `timeSetMillis`).
 
 Below are the examples that make up the given 2 scores returned by the StatsApp API.
 
@@ -336,8 +343,63 @@ Note: coverUrl & modifierValues were replaced with "..." for better readability
 1. Find the maximum stored `timeSet` for that player, or `LocalDateTime.MIN` if
    there are no scores.
 2. Fetch pages using that timestamp as the strict lower bound.
-3. Append the mapped ranked records to the player's history.
+3. Append the mapped ranked events to the player's history.
 4. Return the number of records fetched and passed to the repository.
+
+Repeated leaderboard IDs are retained as separate events when their date or
+accuracy differs. Score reads and comparisons compose each event with the
+current metadata cache. Refreshing leaderboard metadata changes names, mapper,
+difficulty, game mode, or stars in `leaderboards.json` only; it does not rewrite
+player event dates or accuracies. The UI's existing date-based latest-score
+selection is unchanged.
+
+## 6. Storage layout and one-time migration
+
+The configured ScoreSaber storage directory contains:
+
+| File                   | Contents                                                                                                   |
+|------------------------|------------------------------------------------------------------------------------------------------------|
+| `players.json`         | Tracked player profiles                                                                                    |
+| `<playerId>.json`      | An ordered array of score events (`leaderboardId`, `songHash`, `timeSet`, `timeSetMillis`, and `accuracy`) |
+| `leaderboards.json`    | Shared metadata keyed by the `(leaderboardId, songHash)` combination                                       |
+| `migration-report.txt` | Migration summary, including historical star conflicts                                                     |
+
+Use the standalone migration tool on a backup or copy of the legacy directory.
+It reads but never modifies the source, validates all input before publishing,
+and creates its output in a separate directory by staging the complete result
+and renaming it into place. If interrupted before publishing, run the same
+command again. Re-running after a completed migration to the same destination
+is also safe when the source has not changed; an existing unrelated or partial
+destination is never overwritten.
+
+Example PowerShell commands:
+
+```powershell
+Copy-Item -LiteralPath 'C:\Users\fast\Documents\rankedScores' `
+  -Destination 'C:\Users\fast\Documents\rankedScores-backup-20261105' -Recurse
+py tools\migrate_scoresaber_storage.py `
+  --source 'C:\Users\fast\Documents\rankedScores\legacy' `
+  --destination 'C:\Users\fast\Documents\rankedScores\separated'
+```
+
+The migrator preserves all distinct events, including repeated dates/IDs/hashes
+and different accuracies. Only records whose complete legacy JSON values are
+identical are deduplicated. For metadata conflicts in `stars` for the same
+leaderboard/hash pair, the cache uses the most recent event's stars; ties use
+the lexically later player ID and then the later array position. Every conflict
+and selected value is recorded in both command output and
+`migration-report.txt`. Legacy data does not contain readable difficulty or
+game-mode fields, so those cache fields are `null` until refreshed from
+ScoreSaber.
+
+After verifying `players.json`, score-event files, `leaderboards.json`, and the
+migration report in `separated`, stop the backend and set
+`APP_SCORES_STORAGE_PATH` to
+`C:\Users\fast\Documents\rankedScores\separated` before restarting. Keep the
+backup and the `legacy` directory until the new backend has been verified.
+For recovery, stop the new backend and point the previous application version
+back at its original legacy storage directory (or restore the backup); the new
+format is intentionally not written back into legacy files.
 
 The controller then refreshes profiles for **all tracked players**, not only the
 player whose scores were refreshed.
