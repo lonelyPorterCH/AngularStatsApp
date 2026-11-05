@@ -6,10 +6,10 @@
     <mat-label>ID</mat-label>
     <input formControlName="id" matInput/>
     @if (statForm.get('id')?.errors?.['required']) {
-      <mat-error>ID is required</mat-error>
+    <mat-error>ID is required</mat-error>
     }
     @if (statForm.get('id')?.errors?.['idExists']) {
-      <mat-error>This ID already exists</mat-error>
+    <mat-error>This ID already exists</mat-error>
     }
   </mat-form-field>
 
@@ -17,23 +17,23 @@
     <mat-label>Title</mat-label>
     <input formControlName="title" matInput/>
     @if (statForm.get('title')?.errors?.['required']) {
-      <mat-error>Title is required</mat-error>
+    <mat-error>Title is required</mat-error>
     }
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>X Axis Name</mat-label>
+    <mat-label>X Axis Name (Date)</mat-label>
     <input formControlName="xAxisName" matInput/>
     @if (statForm.get('xAxisName')?.errors?.['required']) {
-      <mat-error>X Axis Name is required</mat-error>
+    <mat-error>X Axis Name is required</mat-error>
     }
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Y Axis Name</mat-label>
+    <mat-label>Y Axis Name (Value)</mat-label>
     <input formControlName="yAxisName" matInput/>
     @if (statForm.get('yAxisName')?.errors?.['required']) {
-      <mat-error>Y Axis Name is required</mat-error>
+    <mat-error>Y Axis Name is required</mat-error>
     }
   </mat-form-field>
 
