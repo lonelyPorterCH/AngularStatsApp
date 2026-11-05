@@ -1,6 +1,5 @@
 package ch.lonelyporter.statsapp.persistence;
 
-import ch.lonelyporter.statsapp.domain.scores.Score;
 import ch.lonelyporter.statsapp.domain.scores.LeaderboardMetadata;
 import ch.lonelyporter.statsapp.domain.scores.ScoreEvent;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
@@ -84,6 +83,6 @@ class ScoreFileRepositoryTest {
         var date = LocalDateTime.of(2026, 10, 30, 12, 0).plusSeconds(id);
         return new ScoreRecord(
                 new ScoreEvent(id, date, id, 100, hash),
-                new LeaderboardMetadata(id, hash, "song", "author", "Hard", "SoloStandard", 1.0));
+                new LeaderboardMetadata(id, hash, "song", "author", 1.0));
     }
 }

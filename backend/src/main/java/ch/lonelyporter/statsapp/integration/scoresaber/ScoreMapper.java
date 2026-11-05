@@ -24,8 +24,7 @@ final class ScoreMapper {
         var map = leaderboard.map();
         var timeSet = score.createdAt().atOffset(ZoneOffset.UTC).toLocalDateTime();
         var metadata = new LeaderboardMetadata(leaderboard.id(), map.hash(), map.songName(),
-                map.levelAuthorName(), leaderboard.difficulty().rawDifficulty(),
-                leaderboard.difficulty().gameMode(), leaderboard.realm().stars());
+                map.levelAuthorName(), leaderboard.realm().stars());
         var event = new ScoreEvent(leaderboard.id(), timeSet, score.createdAt().toEpochMilli(),
                 toPercentage(score.accuracy(), score.modifiedScore(), leaderboard.maxScore()), map.hash());
         return new ScoreRecord(event, metadata);

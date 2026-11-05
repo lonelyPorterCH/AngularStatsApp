@@ -26,15 +26,16 @@ class ScoreFileRepositoryFormatTest {
     void newFormatComposesScoreEventsWithCompositeLeaderboardMetadataAndPreservesApiShape() throws Exception {
         ScoreFileRepository repository = createRepository();
         repository.addScores(List.of(
-                scoreRecord(407243, FIRST_DATE, 54.0, "Hard", 6.14),
-                scoreRecord(407243, FIRST_DATE.plusDays(2), 61.0, "Hard", 5.0),
-                scoreRecord(407355, FIRST_DATE.plusDays(3), 70.0, "Normal", 4.65)
+                scoreRecord(407243, FIRST_DATE, 54.0, 6.14),
+                scoreRecord(407243, FIRST_DATE.plusDays(2), 61.0, 5.0),
+                scoreRecord(407355, FIRST_DATE.plusDays(3), 70.0, 4.65)
         ), "player-1");
 
         String eventFile = Files.readString(tempDir.resolve("player-1.json"));
         String leaderboardFile = Files.readString(tempDir.resolve("leaderboards.json"));
         assertThat(eventFile).contains("\"leaderboardId\"").doesNotContain("\"songName\"", "\"stars\"");
-        assertThat(leaderboardFile).contains("\"songName\"", "\"stars\"", "\"difficulty\"");
+        assertThat(leaderboardFile).contains("\"songName\"", "\"stars\"")
+                .doesNotContain("\"difficulty\"", "\"gameMode\"");
 
         ScoreFileRepository reloaded = createRepository();
         reloaded.readScores();
@@ -50,21 +51,21 @@ class ScoreFileRepositoryFormatTest {
         assertThat(reloaded.getAllPlayerIds()).containsExactly("player-1");
 
         String response = new ObjectMapper().writeValueAsString(scores);
-        assertThat(response).contains("\"id\":407243", "\"songName\":\"song\"", "\"accuracy\":54.0",
-                "\"timeSet\":\"2022-01-19T19:09:08\"");
-        assertThat(response).doesNotContain("leaderboardId", "gameMode", "difficulty");
+        assertThat(response)
+                .contains("\"id\":407243", "\"songName\":\"song\"", "\"accuracy\":54.0", "\"timeSet\":\"2022-01-19T19:09:08\"")
+                .doesNotContain("leaderboardId", "gameMode", "difficulty");
     }
 
     @Test
     void refreshingMetadataChangesComposedCacheOnlyAndLeavesHistoricalEventsUnchanged() throws Exception {
         ScoreFileRepository repository = createRepository();
-        ScoreRecord historical = scoreRecord(1475, FIRST_DATE, 88.25, "Expert", 7.2);
+        ScoreRecord historical = scoreRecord(1475, FIRST_DATE, 88.25, 7.2);
         repository.addScores(List.of(historical), "player-1");
         String originalEvents = Files.readString(tempDir.resolve("player-1.json"));
         Score before = repository.loadScores("player-1").getFirst();
 
         repository.refreshLeaderboardMetadata(List.of(new LeaderboardMetadata(1475, HASH, "renamed song",
-                "new author", "Expert+", "SoloStandard", 8.1)));
+                "new author", 8.1)));
 
         Score after = repository.loadScores("player-1").getFirst();
         assertThat(Files.readString(tempDir.resolve("player-1.json"))).isEqualTo(originalEvents);
@@ -89,11 +90,10 @@ class ScoreFileRepositoryFormatTest {
         return new ScoreFileRepository(new ObjectMapper(), new ScoresProperties(tempDir.toString()));
     }
 
-    private static ScoreRecord scoreRecord(long leaderboardId, LocalDateTime date, double accuracy,
-                                           String difficulty, double stars) {
+    private static ScoreRecord scoreRecord(long leaderboardId, LocalDateTime date, double accuracy, double stars) {
         return new ScoreRecord(
                 new ScoreEvent(leaderboardId, date, date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli(),
                         accuracy, HASH),
-                new LeaderboardMetadata(leaderboardId, HASH, "song", "author", difficulty, "SoloStandard", stars));
+                new LeaderboardMetadata(leaderboardId, HASH, "song", "author", stars));
     }
 }

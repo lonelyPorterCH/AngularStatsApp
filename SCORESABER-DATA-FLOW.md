@@ -83,8 +83,6 @@ difficulties. Reads join those values into the existing API `Score` shape.
 | `songHash`        | event and cache | `leaderboard.map.hash`; paired with leaderboard ID |
 | `songName`        | leaderboard     | `leaderboard.map.songName`                         |
 | `levelAuthorName` | leaderboard     | `leaderboard.map.levelAuthorName`                  |
-| `difficulty`      | leaderboard     | `leaderboard.difficulty.rawDifficulty`             |
-| `gameMode`        | leaderboard     | `leaderboard.difficulty.gameMode`                  |
 | `stars`           | leaderboard     | `leaderboard.realm.stars`                          |
 
 Accuracy conversion:
@@ -349,8 +347,9 @@ Note: coverUrl & modifierValues were replaced with "..." for better readability
 Repeated leaderboard IDs are retained as separate events when their date or
 accuracy differs. Score reads and comparisons compose each event with the
 current metadata cache. Refreshing leaderboard metadata changes names, mapper,
-difficulty, game mode, or stars in `leaderboards.json` only; it does not rewrite
-player event dates or accuracies. The UI's existing date-based latest-score
+or stars in `leaderboards.json` only; it does not rewrite player event dates or
+accuracies. Difficulty and game mode are not currently stored because no
+application feature uses them. The UI's existing date-based latest-score
 selection is unchanged.
 
 ## 6. Storage layout and one-time migration
@@ -388,9 +387,7 @@ identical are deduplicated. For metadata conflicts in `stars` for the same
 leaderboard/hash pair, the cache uses the most recent event's stars; ties use
 the lexically later player ID and then the later array position. Every conflict
 and selected value is recorded in both command output and
-`migration-report.txt`. Legacy data does not contain readable difficulty or
-game-mode fields, so those cache fields are `null` until refreshed from
-ScoreSaber.
+`migration-report.txt`.
 
 After verifying `players.json`, score-event files, `leaderboards.json`, and the
 migration report in `separated`, stop the backend and set
