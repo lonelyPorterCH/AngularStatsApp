@@ -1,0 +1,43 @@
+<div class="score-layout" [class.has-selection]="canSelect && selectedSongs().length > 0">
+  <div class="score-chart">
+    <canvas #canvas aria-label="Score accuracy by stars. Click a dot to select or remove a song in single-player view."></canvas>
+    <div #tooltip class="score-tooltip"></div>
+  </div>
+  @if (canSelect && selectedSongs().length) {
+    <aside class="song-selection" aria-label="Selected songs">
+      <h3>Selected songs ({{ selectedSongs().length }})</h3>
+      <div class="song-selection__list" tabindex="0" aria-label="Selected song details">
+        @for (selection of selectedSongs(); track selection.key) {
+          <article class="song-card" [style.border-left-color]="selection.color">
+            <header>
+              <img [src]="'https://cdn.scoresaber.com/covers/' + selection.score.songHash + '.png'" alt="" loading="lazy">
+              <div>
+                <strong>{{ selection.score.songName }}</strong>
+                <span>Mapper: {{ selection.score.levelAuthorName }}</span>
+              </div>
+              <button matIconButton type="button" [attr.aria-label]="'Remove ' + selection.score.songName"
+                      (click)="removeSelection(selection.key)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </header>
+            @if (selection.score.difficulty; as difficulty) {
+              <p>{{ difficulty.characteristic }} / {{ difficulty.name }}</p>
+            } @else {
+              <p class="selection-error">Difficulty unavailable. Update everything or migrate the leaderboard data to export.</p>
+            }
+            <p>{{ selection.score.accuracy | number:'1.2-2' }}% accuracy &middot; {{ selection.score.stars | number:'1.2-2' }} stars</p>
+            <p>Set {{ selection.score.timeSet | date:'medium' }}</p>
+            <a [href]="'https://scoresaber.com/leaderboard/' + selection.score.leaderboardId"
+               target="_blank" rel="noopener noreferrer">Leaderboard {{ selection.score.leaderboardId }}</a>
+          </article>
+        }
+      </div>
+      <footer>
+        @if (exportError()) {
+          <p class="selection-error" role="alert">{{ exportError() }}</p>
+        }
+        <button matButton="filled" type="button" (click)="exportPlaylist()">Export as Beat Saber playlist</button>
+      </footer>
+    </aside>
+  }
+</div>

@@ -4,6 +4,7 @@ import ch.lonelyporter.statsapp.domain.scores.LeaderboardMetadata;
 import ch.lonelyporter.statsapp.domain.scores.Score;
 import ch.lonelyporter.statsapp.domain.scores.ScoreEvent;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
+import ch.lonelyporter.statsapp.domain.scores.SongDifficulty;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresProperties;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -34,8 +35,7 @@ class ScoreFileRepositoryFormatTest {
         String eventFile = Files.readString(tempDir.resolve("player-1.json"));
         String leaderboardFile = Files.readString(tempDir.resolve("leaderboards.json"));
         assertThat(eventFile).contains("\"leaderboardId\"").doesNotContain("\"songName\"", "\"stars\"");
-        assertThat(leaderboardFile).contains("\"songName\"", "\"stars\"")
-                .doesNotContain("\"difficulty\"", "\"gameMode\"");
+        assertThat(leaderboardFile).contains("\"songName\"", "\"stars\"", "\"difficulty\"", "\"characteristic\":\"Standard\"");
 
         ScoreFileRepository reloaded = createRepository();
         reloaded.readScores();
@@ -47,13 +47,15 @@ class ScoreFileRepositoryFormatTest {
         assertThat(scores).extracting(Score::accuracy).containsExactly(54.0, 61.0, 70.0);
         assertThat(scores).extracting(Score::songName).containsOnly("song");
         assertThat(scores).extracting(Score::stars).containsExactly(6.14, 6.14, 4.65);
+        assertThat(scores).extracting(Score::difficulty).containsOnly(new SongDifficulty("Standard", "Hard"));
         assertThat(reloaded.mostRecentScoreDate("player-1")).contains(FIRST_DATE.plusDays(3));
         assertThat(reloaded.getAllPlayerIds()).containsExactly("player-1");
 
         String response = new ObjectMapper().writeValueAsString(scores);
         assertThat(response)
                 .contains("\"leaderboardId\":407243", "\"songName\":\"song\"", "\"accuracy\":54.0", "\"timeSet\":\"2022-01-19T19:09:08\"")
-                .doesNotContain("\"id\"", "gameMode", "difficulty");
+                .contains("\"difficulty\":{\"characteristic\":\"Standard\",\"name\":\"Hard\"}")
+                .doesNotContain("\"id\"", "gameMode");
     }
 
     @Test
@@ -65,7 +67,7 @@ class ScoreFileRepositoryFormatTest {
         Score before = repository.loadScores("player-1").getFirst();
 
         repository.refreshLeaderboardMetadata(List.of(new LeaderboardMetadata(1475, HASH, "renamed song",
-                "new author", 8.1)));
+                "new author", 8.1, new SongDifficulty("Standard", "Hard"))));
 
         Score after = repository.loadScores("player-1").getFirst();
         assertThat(Files.readString(tempDir.resolve("player-1.json"))).isEqualTo(originalEvents);
@@ -85,7 +87,7 @@ class ScoreFileRepositoryFormatTest {
         repository.addScores(List.of(new ScoreRecord(
                 new ScoreEvent(1475, FIRST_DATE.plusDays(2), FIRST_DATE.plusDays(2)
                         .toInstant(java.time.ZoneOffset.UTC).toEpochMilli(), 91.5, HASH),
-                new LeaderboardMetadata(1475, HASH, "changed name", "changed author", 8.1))), "player-1");
+                new LeaderboardMetadata(1475, HASH, "changed name", "changed author", 8.1, null))), "player-1");
 
         List<Score> scores = repository.loadScores("player-1");
         assertThat(scores).hasSize(2);
@@ -94,6 +96,45 @@ class ScoreFileRepositoryFormatTest {
         assertThat(scores).extracting(Score::levelAuthorName).containsOnly("author");
         assertThat(scores).extracting(Score::timeSet).containsExactly(FIRST_DATE, FIRST_DATE.plusDays(2));
         assertThat(scores).extracting(Score::accuracy).containsExactly(88.25, 91.5);
+        assertThat(scores).extracting(Score::difficulty).containsOnly(new SongDifficulty("Standard", "Hard"));
+    }
+
+    @Test
+    void oldFilesRemainReadableAndRefreshBackfillsDifficultyWithoutChangingStarsOrEvents() throws Exception {
+        Files.writeString(tempDir.resolve("leaderboards.json"), """
+                [{"leaderboardId":1475,"songHash":"%s","songName":"song","levelAuthorName":"author","stars":7.2}]
+                """.formatted(HASH));
+        ScoreFileRepository repository = createRepository();
+        repository.readScores();
+        repository.addScores(List.of(new ScoreRecord(
+                new ScoreEvent(1475, FIRST_DATE, 123, 80, HASH),
+                new LeaderboardMetadata(1475, HASH, "song", "author", 7.2, null))), "player-1");
+        assertThat(repository.loadScores("player-1").getFirst().difficulty()).isNull();
+        String originalEvents = Files.readString(tempDir.resolve("player-1.json"));
+
+        repository.refreshLeaderboardMetadata(List.of(
+                new LeaderboardMetadata(1475, HASH, "renamed", "renamed", 7.2, new SongDifficulty("OneSaber", "ExpertPlus"))));
+
+        ScoreFileRepository reloaded = createRepository();
+        reloaded.readScores();
+        Score score = reloaded.loadScores("player-1").getFirst();
+        assertThat(score.difficulty()).isEqualTo(new SongDifficulty("OneSaber", "ExpertPlus"));
+        assertThat(score.stars()).isEqualTo(7.2);
+        assertThat(score.songName()).isEqualTo("song");
+        assertThat(Files.readString(tempDir.resolve("player-1.json"))).isEqualTo(originalEvents);
+    }
+
+    @Test
+    void addingNewScoresBackfillsDifficultyButDoesNotRefreshStars() {
+        ScoreFileRepository repository = createRepository();
+        repository.addScores(List.of(new ScoreRecord(new ScoreEvent(1475, FIRST_DATE, 123, 80, HASH),
+                new LeaderboardMetadata(1475, HASH, "song", "author", 7.2, null))), "player-1");
+
+        repository.addScores(List.of(scoreRecord(1475, FIRST_DATE.plusDays(1), 90, 8.1)), "player-1");
+
+        assertThat(repository.loadScores("player-1")).extracting(Score::difficulty)
+                .containsOnly(new SongDifficulty("Standard", "Hard"));
+        assertThat(repository.loadScores("player-1")).extracting(Score::stars).containsOnly(7.2);
     }
 
     @Test
@@ -114,6 +155,6 @@ class ScoreFileRepositoryFormatTest {
         return new ScoreRecord(
                 new ScoreEvent(leaderboardId, date, date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli(),
                         accuracy, HASH),
-                new LeaderboardMetadata(leaderboardId, HASH, "song", "author", stars));
+                new LeaderboardMetadata(leaderboardId, HASH, "song", "author", stars, new SongDifficulty("Standard", "Hard")));
     }
 }

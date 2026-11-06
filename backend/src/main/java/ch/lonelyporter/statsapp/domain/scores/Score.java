@@ -10,6 +10,7 @@ public record Score(
         long leaderboardId,
         double stars,
         LocalDateTime timeSet,
-        String songHash
+        String songHash,
+        SongDifficulty difficulty
 ) {
 }

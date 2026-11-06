@@ -56,6 +56,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/smoothing`, {smoothing});
   }
 
+  setChartType(id: string, chartType: 'line' | 'bar'): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/chart-type`, {chartType});
+  }
+
   renameStat(id: string, title: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/title`, {title});
   }

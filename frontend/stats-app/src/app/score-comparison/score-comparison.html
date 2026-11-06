@@ -90,7 +90,8 @@
     <p class="status">No tracked players found.</p>
   } @else {
     <div class="comparison-chart">
-      <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [maximumDate]="maximumDate"></app-score-scatter-plot>
+      <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [maximumDate]="maximumDate"
+                             [selectionEnabled]="!compareMode"></app-score-scatter-plot>
     </div>
     <label class="date-slider">
       <span>Show scores up to {{ selectedDateTimestamp | date: 'dd.MM.yyyy' }}</span>

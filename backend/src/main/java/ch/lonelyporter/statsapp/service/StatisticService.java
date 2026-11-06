@@ -7,16 +7,14 @@ import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
 public class StatisticService {
 
+    public static final String LINEAR = "linear";
     private final StatisticRepository repository;
 
     public List<Statistic> getStatistics() {
@@ -36,6 +34,8 @@ public class StatisticService {
      *
      */
     public void createStatistic(Statistic statistic) {
+        validateChartType(statistic.getChartType());
+        validateBarDatasets(statistic);
         int nextStatisticIndex = repository.findAll().stream()
                 .map(Statistic::getIndex)
                 .filter(Objects::nonNull)
@@ -115,6 +115,36 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void setChartType(String id, String chartType) {
+        validateChartType(chartType);
+        Statistic statistic = repository.findById(id);
+        statistic.setChartType(chartType);
+        validateBarDatasets(statistic);
+        repository.save(statistic);
+    }
+
+    private void validateChartType(String chartType) {
+        if (!"line".equals(chartType) && !"bar".equals(chartType)) {
+            throw new InvalidDataPointException("Chart type must be line or bar");
+        }
+    }
+
+    private void validateBarDatasets(Statistic statistic) {
+        if (!"bar".equals(statistic.getChartType())) return;
+        for (Statistic.Dataset dataset : statistic.getDatasets()) {
+            var xValues = new HashSet<>();
+            for (Statistic.DataPoint point : dataset.getDataPoints()) {
+                validateDataPoint(statistic, point);
+                Object x = LINEAR.equals(statistic.getXAxisScaleType())
+                        ? Double.parseDouble(point.getX()) + 0.0 : point.getX();
+                if (!xValues.add(x)) {
+                    throw new InvalidDataPointException("Bar charts require one value per dataset and X value. Edit the existing point for "
+                            + dataset.getLabel() + " at " + point.getX() + ".");
+                }
+            }
+        }
+    }
+
     public void setIncludeZero(String id, boolean includeZero) {
         Statistic statistic = repository.findById(id);
         statistic.setIncludeZero(includeZero);
@@ -124,7 +154,7 @@ public class StatisticService {
     public void setStacked(String id, boolean stacked) {
         Statistic statistic = repository.findById(id);
         if (stacked && statistic.getDatasets().size() < 2) {
-            throw new InvalidDataPointException("Stacked line charts require at least two datasets");
+            throw new InvalidDataPointException("Stacked charts require at least two datasets");
         }
         statistic.setStacked(stacked);
         repository.save(statistic);
@@ -135,23 +165,27 @@ public class StatisticService {
         if (xAxisName != null) statistic.setXAxisName(xAxisName);
         if (yAxisName != null) statistic.setYAxisName(yAxisName);
         if (xAxisScaleType != null) {
-            if (!"time".equals(xAxisScaleType) && !"linear".equals(xAxisScaleType)) {
+            if (!"time".equals(xAxisScaleType) && !LINEAR.equals(xAxisScaleType)) {
                 throw new InvalidDataPointException("Unsupported x-axis scale type: " + xAxisScaleType);
             }
             statistic.setXAxisScaleType(xAxisScaleType);
         }
         if (xAxisUnit != null) statistic.setXAxisUnit(xAxisUnit.trim());
+        validateBarDatasets(statistic);
         repository.save(statistic);
     }
 
     public void addDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
         Statistic statistic = repository.findById(id);
         validateDataPoint(statistic, dataPoint);
-        updateDataset(statistic, id, datasetLabel, (ignored, dataset) -> dataset.getDataPoints().add(dataPoint));
+        updateDataset(statistic, id, datasetLabel, (ignored, dataset) -> {
+            dataset.getDataPoints().add(dataPoint);
+            validateBarDatasets(statistic);
+        });
     }
 
     private void validateDataPoint(Statistic statistic, Statistic.DataPoint dataPoint) {
-        if (!"linear".equals(statistic.getXAxisScaleType())) {
+        if (!LINEAR.equals(statistic.getXAxisScaleType())) {
             return;
         }
 

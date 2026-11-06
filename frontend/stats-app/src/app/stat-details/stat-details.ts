@@ -10,6 +10,8 @@ import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
 import {Title} from '@angular/platform-browser';
 import {forkJoin} from 'rxjs';
 import {MatSlideToggle} from '@angular/material/slide-toggle';
+import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatOption, MatSelect} from '@angular/material/select';
 
 @Component({
   selector: 'app-stat-details',
@@ -18,7 +20,11 @@ import {MatSlideToggle} from '@angular/material/slide-toggle';
     RouterLink,
     ChartComponent,
     MatIcon,
-    MatSlideToggle
+    MatSlideToggle,
+    MatFormField,
+    MatLabel,
+    MatSelect,
+    MatOption
   ],
   templateUrl: './stat-details.html',
   styleUrl: './stat-details.css',
@@ -34,6 +40,8 @@ export class StatDetails implements OnInit {
   stackedError = signal('');
   includeZeroSaving = signal(false);
   includeZeroError = signal('');
+  chartTypeSaving = signal(false);
+  chartTypeError = signal('');
 
   constructor(
     private statService: StatService,
@@ -58,6 +66,7 @@ export class StatDetails implements OnInit {
     this.smoothingError.set('');
     this.stackedError.set('');
     this.includeZeroError.set('');
+    this.chartTypeError.set('');
 
     forkJoin({
       stat: this.statService.getStatById(id),
@@ -81,9 +90,29 @@ export class StatDetails implements OnInit {
     });
   }
 
+  onChartTypeChange(chartType: 'line' | 'bar'): void {
+    const stat = this.stat();
+    if (!stat || this.archived() || this.chartTypeSaving() || (stat.chartType ?? 'line') === chartType) return;
+    this.chartTypeError.set('');
+    this.chartTypeSaving.set(true);
+    this.stat.set({...stat, chartType});
+    this.statService.setChartType(stat.id, chartType).subscribe({
+      next: () => this.chartTypeSaving.set(false),
+      error: error => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, chartType: stat.chartType ?? 'line'} : current);
+          const reason = error.status === 400 && typeof error.error === 'string'
+            ? error.error : 'Could not save chart type.';
+          this.chartTypeError.set(`${reason} The previous setting has been restored.`);
+        }
+        this.chartTypeSaving.set(false);
+      }
+    });
+  }
+
   onSmoothingChange(smoothing: boolean): void {
     const stat = this.stat();
-    if (!stat || this.archived() || this.smoothingSaving()) return;
+    if (!stat || stat.chartType === 'bar' || this.archived() || this.smoothingSaving()) return;
     this.smoothingError.set('');
     this.smoothingSaving.set(true);
     this.stat.set({...stat, smoothing});

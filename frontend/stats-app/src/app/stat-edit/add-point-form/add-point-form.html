@@ -47,3 +47,6 @@
     Add Point
   </button>
 </form>
+@if (submissionError()) {
+  <p role="alert">{{ submissionError() }}</p>
+}

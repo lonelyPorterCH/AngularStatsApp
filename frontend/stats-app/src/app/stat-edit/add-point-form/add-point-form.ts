@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatError, MatFormField, MatInput, MatInputModule, MatLabel} from '@angular/material/input';
 import {DataPoint, Stat} from '../../models/stat';
@@ -39,6 +39,7 @@ export class AddPointForm implements OnInit, OnChanges {
   @Input() stat!: Stat;
   @Output() pointChanged = new EventEmitter<void>();
   addPointForm!: FormGroup;
+  submissionError = signal('');
 
   constructor(
     private statService: StatService,
@@ -65,6 +66,7 @@ export class AddPointForm implements OnInit, OnChanges {
 
   onAddPoint(): void {
     if (this.addPointForm.invalid || !this.stat) return;
+    this.submissionError.set('');
 
     const datasetLabel: string = this.addPointForm.get('dataset')?.value;
     const yInput: string = this.addPointForm.get('y')?.value;
@@ -113,7 +115,8 @@ export class AddPointForm implements OnInit, OnChanges {
         this.addPointForm.reset();
         this.preselectDatasetIfSingle();
       },
-      error: err => console.error(err)
+      error: error => this.submissionError.set(error.status === 400 && typeof error.error === 'string'
+        ? error.error : 'Could not save the datapoint. Please try again.')
     });
   }
 

@@ -304,4 +304,25 @@ class StatisticRepositoryTest {
         assertThatThrownBy(() -> repository.save(statistic))
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
     }
+
+    @Test
+    void missingOrNullChartTypeDefaultsToLine() throws Exception {
+        for (String property : List.of("", ",\"chartType\":null")) {
+            Files.writeString(tempDir.resolve("legacy.json"),
+                    "{\"id\":\"legacy\",\"reverse\":false,\"datasets\":[]" + property + "}");
+            assertThat(repository.findById("legacy").getChartType()).isEqualTo("line");
+        }
+    }
+
+    @Test
+    void barChartTypeSurvivesPersistenceAndArchiving() {
+        Statistic statistic = createStatisticWithUnsortedDataset();
+        statistic.setChartType("bar");
+        repository.create(statistic);
+        assertThat(repository.findById("test-chart").getChartType()).isEqualTo("bar");
+        repository.toggleArchive("test-chart");
+        assertThat(repository.findAllArchived().getFirst().getChartType()).isEqualTo("bar");
+        repository.toggleArchive("test-chart");
+        assertThat(repository.findById("test-chart").getChartType()).isEqualTo("bar");
+    }
 }

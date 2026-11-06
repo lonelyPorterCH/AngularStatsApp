@@ -74,18 +74,31 @@ then creates a score event and its leaderboard metadata. The metadata is shared
 by the `(leaderboardId, songHash)` pair; a song hash alone is not unique across
 difficulties. Reads join those values into the existing API `Score` shape.
 
-| Stored field      | Storage         | Source or transformation                           |
-|-------------------|-----------------|----------------------------------------------------|
-| `leaderboardId`   | score event     | `leaderboard.id`, not the individual `score.id`    |
-| `timeSetMillis`   | score event     | `score.createdAt.toEpochMilli()`                   |
-| `timeSet`         | score event     | `score.createdAt` converted to UTC `LocalDateTime` |
-| `accuracy`        | score event     | Percentage conversion described below              |
-| `songHash`        | event and cache | `leaderboard.map.hash`; paired with leaderboard ID |
-| `songName`        | leaderboard     | `leaderboard.map.songName`                         |
-| `levelAuthorName` | leaderboard     | `leaderboard.map.levelAuthorName`                  |
-| `stars`           | leaderboard     | `leaderboard.realm.stars`                          |
+| Stored field      | Storage         | Source or transformation                                       |
+|-------------------|-----------------|----------------------------------------------------------------|
+| `leaderboardId`   | score event     | `leaderboard.id`, not the individual `score.id`                |
+| `timeSetMillis`   | score event     | `score.createdAt.toEpochMilli()`                               |
+| `timeSet`         | score event     | `score.createdAt` converted to UTC `LocalDateTime`             |
+| `accuracy`        | score event     | Percentage conversion described below                          |
+| `songHash`        | event and cache | `leaderboard.map.hash`; paired with leaderboard ID             |
+| `songName`        | leaderboard     | `leaderboard.map.songName`                                     |
+| `levelAuthorName` | leaderboard     | `leaderboard.map.levelAuthorName`                              |
+| `stars`           | leaderboard     | `leaderboard.realm.stars`                                      |
+| `difficulty`      | leaderboard     | `{characteristic, name}` derived from `leaderboard.difficulty` |
 
-Accuracy conversion:
+`difficulty.difficulty` values 1, 3, 5, 7 and 9 map to `Easy`, `Normal`,
+`Hard`, `Expert` and `ExpertPlus`. The `Solo` prefix is removed from
+`difficulty.gameMode`, e.g. `SoloStandard` becomes `Standard` and
+`SoloOneSaber` becomes `OneSaber`. Unsupported or missing API difficulty data
+fails the import rather than guessing a playable difficulty.
+
+Old leaderboard files without this field remain readable and return
+`difficulty: null`. Normal score imports backfill difficulty for matching
+leaderboards without changing cached stars; **Update everything** refreshes
+stars and difficulty even if no new scores were added. Historical event files
+do not change as part of metadata enrichment.
+
+### Accuracy conversion
 
 - If API accuracy is null, use `modifiedScore / maxScore * 100`.
 - If it is at most 1, multiply it by 100.

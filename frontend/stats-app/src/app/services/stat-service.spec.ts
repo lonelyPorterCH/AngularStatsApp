@@ -62,6 +62,15 @@ describe('StatService', () => {
     await promise;
   });
 
+  it('should persist the chart type for a graph', async () => {
+    const promise = firstValueFrom(service.setChartType('test-stat', 'bar'));
+    const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/chart-type`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({chartType: 'bar'});
+    request.flush(null);
+    await promise;
+  });
+
   it('should fetch all stats', async () => {
     const promise = firstValueFrom(service.getStats());
 

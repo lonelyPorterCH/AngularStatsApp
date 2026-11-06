@@ -98,9 +98,10 @@ public class ScoreFileRepository implements ScoreRepository {
                 LeaderboardMetadata existing = updatedLeaderboards.get(key);
                 if (existing == null) {
                     updatedLeaderboards.put(key, metadata);
-                } else if (Double.compare(existing.stars(), metadata.stars()) != 0) {
+                } else {
                     updatedLeaderboards.put(key, new LeaderboardMetadata(existing.leaderboardId(),
-                            existing.songHash(), existing.songName(), existing.levelAuthorName(), metadata.stars()));
+                            existing.songHash(), existing.songName(), existing.levelAuthorName(), metadata.stars(),
+                            metadata.difficulty() != null ? metadata.difficulty() : existing.difficulty()));
                 }
             }
             if (updatedLeaderboards.equals(leaderboards)) {
@@ -178,7 +179,7 @@ public class ScoreFileRepository implements ScoreRepository {
                     + event.leaderboardId() + "/" + event.songHash());
         }
         return new Score(metadata.songName(), metadata.levelAuthorName(), event.timeSetMillis(), event.accuracy(),
-                event.leaderboardId(), metadata.stars(), event.timeSet(), event.songHash());
+                event.leaderboardId(), metadata.stars(), event.timeSet(), event.songHash(), metadata.difficulty());
     }
 
     private void persistNewLeaderboards(List<LeaderboardMetadata> additions) {
@@ -186,9 +187,16 @@ public class ScoreFileRepository implements ScoreRepository {
         additions.forEach(metadata -> {
             validateLeaderboard(metadata);
             LeaderboardKey key = keyFor(metadata);
-            updatedLeaderboards.putIfAbsent(key, metadata);
+            updatedLeaderboards.compute(key, (ignored, existing) -> {
+                if (existing == null) {
+                    return metadata;
+                }
+                var difficulty = metadata.difficulty() != null ? metadata.difficulty() : existing.difficulty();
+                return new LeaderboardMetadata(existing.leaderboardId(), existing.songHash(), existing.songName(),
+                        existing.levelAuthorName(), existing.stars(), difficulty);
+            });
         });
-        if (updatedLeaderboards.size() == leaderboards.size()) {
+        if (updatedLeaderboards.equals(leaderboards)) {
             return;
         }
         persistLeaderboards(updatedLeaderboards);

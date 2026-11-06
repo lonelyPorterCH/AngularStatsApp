@@ -5,6 +5,11 @@ export interface Player {
   rank: number | null;
 }
 
+export interface SongDifficulty {
+  characteristic: string;
+  name: 'Easy' | 'Normal' | 'Hard' | 'Expert' | 'ExpertPlus';
+}
+
 export interface Score {
   songName: string;
   levelAuthorName: string;
@@ -14,6 +19,7 @@ export interface Score {
   stars: number;
   timeSet: string;
   songHash: string;
+  difficulty?: SongDifficulty | null;
 }
 
 export interface PlayerScoreUpdate {

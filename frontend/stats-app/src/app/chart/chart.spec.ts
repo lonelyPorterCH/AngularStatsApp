@@ -40,6 +40,75 @@ describe('Chart', () => {
     {label: 'Carried forward', index: 1, dataPoints: [{x: '2026-09-30', y: '391'}]}
   ];
 
+  it('renders stacked bars with exact contributions even when smoothing is stored', () => {
+    fixture.componentRef.setInput('stat', {...stat, chartType: 'bar', stacked: true, smoothing: true,
+      includeZero: true, datasets: [
+        {label: 'Main unsuccessful', index: 0, dataPoints: [{x: '2026-11-03', y: '100'}, {x: '2026-11-10', y: '300'}]},
+        {label: 'Small unsuccessful', index: 1, dataPoints: [{x: '2026-11-10', y: '200'}]},
+        {label: 'Shinies', index: 2, dataPoints: [{x: '2026-11-10', y: '5'}]}
+      ]});
+    fixture.detectChanges();
+    const config = chartConfig.mock.lastCall![0];
+    expect(config.type).toBe('bar');
+    expect(config.options.scales.x.stacked).toBe(true);
+    expect(config.options.scales.x.offset).toBe(true);
+    expect(config.options.scales.y.stacked).toBe(true);
+    expect(config.data.datasets.map((dataset: {data: {y: number | null}[]}) => dataset.data[1].y))
+      .toEqual([300, 200, 5]);
+    expect(config.data.datasets[1].data[0].y).toBeNull();
+    expect(config.data.datasets[0].fill).toBeUndefined();
+    expect(config.options.plugins.tooltip.callbacks.footer([
+      {parsed: {y: 300}}, {parsed: {y: 200}}, {parsed: {y: 5}}
+    ])).toBe('Total: 505');
+    expect(config.options.plugins.tooltip.callbacks.afterLabel({datasetIndex: 0, dataIndex: 1})).toBe('');
+    const emit = vi.spyOn(component.pointClick, 'emit');
+    config.options.onClick(null, [{datasetIndex: 1, index: 0}]);
+    expect(emit).not.toHaveBeenCalled();
+    config.options.onClick(null, [{datasetIndex: 1, index: 1}]);
+    expect(emit).toHaveBeenCalledWith({datasetLabel: 'Small unsuccessful', point: {x: '2026-11-10', y: '200'}});
+  });
+
+  it('keeps bars grouped when stacking is off and aligns numeric values without changing saved points', () => {
+    const source = [
+      {label: 'Main', index: 0, dataPoints: [{x: '10', y: '300'}, {x: '2', y: '100'}]},
+      {label: 'Shinies', index: 1, dataPoints: [{x: '10', y: '0'}]}
+    ];
+    const original = JSON.stringify(source);
+    fixture.componentRef.setInput('stat', {...stat, chartType: 'bar', stacked: false,
+      xAxisScaleType: 'linear', xAxisUnit: 'km', datasets: source});
+    fixture.detectChanges();
+    const config = chartConfig.mock.lastCall![0];
+    expect(config.type).toBe('bar');
+    expect(config.options.scales.x.stacked).toBe(false);
+    expect(config.options.scales.y.stacked).toBe(false);
+    expect(config.options.scales.x.type).toBe('linear');
+    expect(config.options.scales.x.suggestedMin).toBe(-2);
+    expect(config.options.scales.x.suggestedMax).toBe(14);
+    expect(config.data.datasets[0].data).toEqual([{x: 2, y: 100}, {x: 10, y: 300}]);
+    expect(config.data.datasets[1].data).toEqual([{x: 2, y: null}, {x: 10, y: 0}]);
+    expect(config.options.plugins.tooltip.callbacks.footer).toBeUndefined();
+    expect(JSON.stringify(source)).toBe(original);
+  });
+
+  it('supports empty and single-dataset bars and restores line rendering when switched back', () => {
+    for (const source of [[], datasets.slice(0, 1)]) {
+      fixture.componentRef.setInput('stat', {...stat, chartType: 'bar', stacked: true, datasets: source});
+      fixture.detectChanges();
+      const config = chartConfig.mock.lastCall![0];
+      expect(config.type).toBe('bar');
+      expect(config.options.scales.y.stacked).toBe(false);
+      expect(config.data.datasets).toHaveLength(source.length);
+    }
+    for (const chartType of [undefined, 'line'] as const) {
+      fixture.componentRef.setInput('stat', {...stat, chartType, smoothing: true, datasets});
+      fixture.detectChanges();
+      const config = chartConfig.mock.lastCall![0];
+      expect(config.type).toBe('line');
+      expect(config.options.scales.x.stacked).toBeUndefined();
+      expect(config.data.datasets[0].pointRadius).toBe(0);
+    }
+  });
+
   it('includes zero independently of stacking, smoothing, axis direction and X axis type', () => {
     for (const stacked of [false, true]) {
       for (const reverse of [false, true]) {

@@ -26,8 +26,8 @@ class ScoreServiceTest {
     void updateAllPlayersRefreshesCachedStarsAndReportsPerPlayerCounts() {
         Player first = new Player("player-1", "First", "CH", 1);
         Player second = new Player("player-2", "Second", "US", 2);
-        LeaderboardMetadata oldMetadata = new LeaderboardMetadata(1475, "hash", "song", "mapper", 6.0);
-        LeaderboardMetadata currentMetadata = new LeaderboardMetadata(1475, "hash", "song", "mapper", 7.0);
+        LeaderboardMetadata oldMetadata = new LeaderboardMetadata(1475, "hash", "song", "mapper", 6.0, null);
+        LeaderboardMetadata currentMetadata = new LeaderboardMetadata(1475, "hash", "song", "mapper", 7.0, null);
         LocalDateTime scoreDate = LocalDateTime.of(2026, 11, 5, 12, 0);
         ScoreRecord newScore = new ScoreRecord(
                 new ScoreEvent(1475, scoreDate, 1, 99.0, "hash"),

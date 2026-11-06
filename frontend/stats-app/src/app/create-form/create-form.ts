@@ -37,6 +37,7 @@ export class CreateForm implements OnInit {
     this.statForm = this.formBuilder.group({
       id: ['', Validators.required, idExistsValidator(this.statService)],
       title: ['', Validators.required],
+      chartType: ['line', Validators.required],
       xAxisName: ['', Validators.required],
       yAxisName: ['', Validators.required],
       reverse: [false, Validators.required],
@@ -47,6 +48,14 @@ export class CreateForm implements OnInit {
     }, {updateOn: 'blur'});
   }
 
+  onChartTypeChange(chartType: 'line' | 'bar'): void {
+    if (chartType !== 'bar') return;
+    for (const setting of ['stacked', 'includeZero']) {
+      const control = this.statForm.get(setting);
+      if (control?.pristine) control.setValue(true);
+    }
+  }
+
   protected onSubmit(): void {
     if (this.statForm.invalid) {
       return
@@ -55,6 +64,7 @@ export class CreateForm implements OnInit {
     const newStat: Stat = {
       id: this.statForm.value.id,
       title: this.statForm.value.title,
+      chartType: this.statForm.value.chartType,
       xAxisName: this.statForm.value.xAxisName,
       yAxisName: this.statForm.value.yAxisName,
       reverse: this.statForm.value.reverse,

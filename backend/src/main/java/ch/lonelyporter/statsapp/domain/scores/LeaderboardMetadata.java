@@ -5,6 +5,7 @@ public record LeaderboardMetadata(
         String songHash,
         String songName,
         String levelAuthorName,
-        double stars
+        double stars,
+        SongDifficulty difficulty
 ) {
 }

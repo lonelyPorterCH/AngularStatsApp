@@ -1,6 +1,7 @@
 package ch.lonelyporter.statsapp.integration.scoresaber;
 
 import ch.lonelyporter.statsapp.domain.scores.LeaderboardMetadata;
+import ch.lonelyporter.statsapp.domain.scores.SongDifficulty;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -35,6 +36,9 @@ class ScoresaberApiAdapterTest {
         assertThat(result.leaderboards()).extracting(LeaderboardMetadata::leaderboardId)
                 .containsExactly(1475L, 2000L);
         assertThat(result.leaderboards()).extracting(LeaderboardMetadata::stars).containsExactly(7.5, 0.0);
+        assertThat(result.newScores().getFirst().leaderboard().difficulty())
+                .isEqualTo(new SongDifficulty("Standard", "Hard"));
+        assertThat(result.leaderboards().get(1).difficulty()).isEqualTo(new SongDifficulty("OneSaber", "ExpertPlus"));
     }
 
     private static String pageOne() {
@@ -44,6 +48,7 @@ class ScoresaberApiAdapterTest {
                     "score": {"id": 10, "accuracy": 0.90, "modifiedScore": 900, "createdAt": "2022-01-19T19:09:08Z"},
                     "leaderboard": {
                       "id": 1475,
+                      "difficulty": {"difficulty": 5, "gameMode": "SoloStandard", "rawDifficulty": "_Hard_SoloStandard"},
                       "map": {"hash": "song-hash", "songName": "Song", "levelAuthorName": "Mapper"},
                       "maxScore": 1000,
                       "realm": {"leaderboardStatus": "RANKED", "stars": 7.5}
@@ -62,6 +67,7 @@ class ScoresaberApiAdapterTest {
                       "score": {"id": 11, "accuracy": 0.95, "modifiedScore": 950, "createdAt": "2022-01-21T19:09:08Z"},
                       "leaderboard": {
                         "id": 1475,
+                        "difficulty": {"difficulty": 5, "gameMode": "SoloStandard"},
                         "map": {"hash": "song-hash", "songName": "Song", "levelAuthorName": "Mapper"},
                         "maxScore": 1000,
                         "realm": {"leaderboardStatus": "RANKED", "stars": 7.5}
@@ -71,6 +77,7 @@ class ScoresaberApiAdapterTest {
                       "score": {"id": 12, "accuracy": 0.80, "modifiedScore": 800, "createdAt": "2022-01-22T19:09:08Z"},
                       "leaderboard": {
                         "id": 2000,
+                        "difficulty": {"difficulty": 9, "gameMode": "SoloOneSaber"},
                         "map": {"hash": "another-hash", "songName": "Other", "levelAuthorName": "Another Mapper"},
                         "maxScore": 1000,
                         "realm": {"leaderboardStatus": "UNRANKED", "stars": 0.0}

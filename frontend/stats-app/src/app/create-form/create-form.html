@@ -22,6 +22,14 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline">
+    <mat-label>Chart type</mat-label>
+    <mat-select formControlName="chartType" (selectionChange)="onChartTypeChange($event.value)">
+      <mat-option value="line">Line</mat-option>
+      <mat-option value="bar">Bar</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
     <mat-label>X Axis Name (Date)</mat-label>
     <input formControlName="xAxisName" matInput/>
     @if (statForm.get('xAxisName')?.errors?.['required']) {
@@ -52,7 +60,7 @@
 
   <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
   <mat-checkbox formControlName="includeZero">Include zero on Y axis</mat-checkbox>
-  <mat-checkbox formControlName="stacked">Stacked line chart (active with at least 2 datasets)</mat-checkbox>
+  <mat-checkbox formControlName="stacked">Stacked</mat-checkbox>
 
   <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>
 

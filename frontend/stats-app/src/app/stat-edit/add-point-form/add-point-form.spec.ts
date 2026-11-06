@@ -5,6 +5,7 @@ import {HttpTestingController, provideHttpClientTesting} from '@angular/common/h
 import {provideNativeDateAdapter} from '@angular/material/core';
 import {Stat} from '../../models/stat';
 import {DateTime} from 'luxon';
+import {environment} from '../../../environments/environment';
 
 const MOCK_STAT: Stat = {
   id: 'test-stat',
@@ -73,5 +74,25 @@ describe('AddPointForm', () => {
 
     httpTesting.expectNone('/api/stats/test-stat/datapoint');
     expect(emitted).toBe(false);
+  });
+
+  it('shows duplicate bar-point validation errors and retains the input for correction', () => {
+    fixture.componentRef.setInput('stat', {...MOCK_STAT, chartType: 'bar', xAxisScaleType: 'linear',
+      datasets: [{label: 'Series', index: 0, dataPoints: [{x: '2', y: '100'}]}]});
+    fixture.detectChanges();
+    const emit = vi.spyOn(component.pointChanged, 'emit');
+    component.addPointForm.setValue({dataset: 'Series', x: '2', y: '200'});
+    component.onAddPoint();
+    httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/datapoint`)
+      .flush('Edit the existing point for Series at 2.', {status: 400, statusText: 'Bad Request'});
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain('Edit the existing point');
+    expect(component.addPointForm.get('y')?.value).toBe('200');
+    expect(emit).not.toHaveBeenCalled();
+    component.addPointForm.patchValue({x: '3'});
+    component.onAddPoint();
+    expect(component.submissionError()).toBe('');
+    httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/datapoint`).flush(null);
+    expect(emit).toHaveBeenCalledOnce();
   });
 });

@@ -46,6 +46,69 @@ describe('StatDetails', () => {
 
   const stat: Stat = {id: 'weight', title: 'Weight', xAxisName: 'Date', yAxisName: 'kg', reverse: false, datasets: []};
 
+  it('saves chart type once and preserves the data and line preferences', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set({...stat, smoothing: true});
+    component.onChartTypeChange('bar');
+    component.onChartTypeChange('line');
+    expect(component.chartTypeSaving()).toBe(true);
+    expect(component.stat()?.chartType).toBe('bar');
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/chart-type`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({chartType: 'bar'});
+    request.flush(null);
+    expect(component.chartTypeSaving()).toBe(false);
+    expect(component.stat()?.datasets).toBe(stat.datasets);
+    expect(component.stat()?.smoothing).toBe(true);
+    component.onSmoothingChange(false);
+    http.expectNone(`${environment.apiBaseUrl}/weight/smoothing`);
+    component.onChartTypeChange('line');
+    http.expectOne(`${environment.apiBaseUrl}/weight/chart-type`).flush(null);
+    expect(component.stat()?.chartType).toBe('line');
+    http.verify();
+  });
+
+  it('rolls back a failed chart-type save without replacing other display settings', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.onChartTypeChange('bar');
+    component.stat.update(current => ({...current!, includeZero: true}));
+    http.expectOne(`${environment.apiBaseUrl}/weight/chart-type`).flush('Failed', {status: 500, statusText: 'Error'});
+    expect(component.stat()?.chartType).toBe('line');
+    expect(component.stat()?.includeZero).toBe(true);
+    expect(component.chartTypeError()).toContain('previous setting');
+    expect(component.chartTypeSaving()).toBe(false);
+    http.verify();
+  });
+
+  it('does not save chart types for archived graphs or roll back a different graph', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.archived.set(true);
+    component.onChartTypeChange('bar');
+    http.expectNone(`${environment.apiBaseUrl}/weight/chart-type`);
+    component.archived.set(false);
+    component.onChartTypeChange('bar');
+    component.stat.set({...stat, id: 'other'});
+    http.expectOne(`${environment.apiBaseUrl}/weight/chart-type`).flush('Failed', {status: 500, statusText: 'Error'});
+    expect(component.stat()?.chartType).toBeUndefined();
+    expect(component.chartTypeError()).toBe('');
+    expect(component.chartTypeSaving()).toBe(false);
+    http.verify();
+  });
+
+  it('explains why a chart cannot be converted to bars', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.onChartTypeChange('bar');
+    http.expectOne(`${environment.apiBaseUrl}/weight/chart-type`)
+      .flush('Bar charts require one value per dataset and X value.', {status: 400, statusText: 'Bad Request'});
+    expect(component.stat()?.chartType).toBe('line');
+    expect(component.chartTypeError()).toContain('one value per dataset');
+    expect(component.chartTypeError()).toContain('previous setting');
+    http.verify();
+  });
+
   it('saves the zero baseline for any chart, prevents duplicate saves and supports turning it off', () => {
     const http = TestBed.inject(HttpTestingController);
     component.stat.set(stat);

@@ -13,6 +13,7 @@ public class Statistic {
     private String id;
     private Integer index;
     private String title;
+    private String chartType = "line";
     private boolean reverse;
     @Getter(AccessLevel.NONE)
     private Boolean smoothing = false;
@@ -25,6 +26,10 @@ public class Statistic {
     private String xAxisScaleType = "time";
     private String xAxisUnit = "";
     private List<Dataset> datasets = new ArrayList<>();
+
+    public String getChartType() {
+        return chartType == null ? "line" : chartType;
+    }
 
     public boolean isSmoothing() {
         return Boolean.TRUE.equals(smoothing);

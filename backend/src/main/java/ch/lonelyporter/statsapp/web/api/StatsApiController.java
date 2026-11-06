@@ -39,6 +39,9 @@ public class StatsApiController {
     public record TitleRequest(String title) {
     }
 
+    public record ChartTypeRequest(String chartType) {
+    }
+
     @GetMapping
     public ResponseEntity<List<Statistic>> getStatistics() {
         return ResponseEntity.ok(statisticService.getStatistics());
@@ -122,6 +125,12 @@ public class StatsApiController {
             throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing must be true or false");
         }
         statisticService.setSmoothing(id, request.smoothing());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/chart-type")
+    public ResponseEntity<Void> setChartType(@PathVariable String id, @RequestBody ChartTypeRequest request) {
+        statisticService.setChartType(id, request.chartType());
         return ResponseEntity.ok().build();
     }
 

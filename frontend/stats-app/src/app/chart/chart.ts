@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, Output, viewChild} from '@angular/core';
 import {Chart, registerables, TooltipItem} from 'chart.js';
 import 'chartjs-adapter-luxon';
+import {DateTime} from 'luxon';
 import {DataPoint, Stat} from '../models/stat';
 import {compareDataPoints, isLinearXAxis, parseXAxisValue} from '../models/x-axis';
 import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
@@ -17,7 +18,7 @@ export function chartDataPoints(points: DataPoint[], stat: Stat): {x: string | n
   const values = sorted.map(point => parseFloat(point.y));
   return sorted.map((point, index) => {
     const window = values.slice(Math.max(0, index - 6), index + 1).filter(Number.isFinite);
-    const value = stat.smoothing && Number.isFinite(values[index])
+    const value = stat.chartType !== 'bar' && stat.smoothing && Number.isFinite(values[index])
       ? window.reduce((total, measurement) => total + measurement, 0) / window.length
       : values[index];
     return {x: parseXAxisValue(point.x, stat), y: value};
@@ -53,12 +54,32 @@ export class ChartComponent implements OnChanges, AfterViewInit {
       return;
     }
     this.chart?.destroy();
+    const bar = this.stat.chartType === 'bar';
+    const smoothing = !bar && !!this.stat.smoothing;
     const linearXAxis = isLinearXAxis(this.stat);
     const stacked = !!this.stat.stacked && this.stat.datasets.length >= 2;
+    const sortedPoints = this.stat.datasets.map(dataset =>
+      [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat)));
+    const xValues = [...new Set(sortedPoints.flat().map(point => parseXAxisValue(point.x, this.stat)))]
+      .sort((first, second) => compareDataPoints({x: String(first), y: ''}, {x: String(second), y: ''}, this.stat));
+    const sourcePoints = bar ? sortedPoints.map(points => {
+      const byX = new Map(points.map(point => [parseXAxisValue(point.x, this.stat), point]));
+      return xValues.map(x => byX.get(x));
+    }) : sortedPoints;
+    const coordinates = bar ? [...new Set(xValues.map(value => linearXAxis
+      ? Number(value) : DateTime.fromISO(String(value)).toMillis()).filter(Number.isFinite))]
+      .sort((first, second) => first - second) : [];
+    const minimumGap = coordinates.slice(1).reduce((gap, value, index) =>
+      Math.min(gap, value - coordinates[index]), Infinity);
+    const padding = (Number.isFinite(minimumGap) ? minimumGap : linearXAxis ? 1 : 86_400_000) / 2;
+    const barBounds = coordinates.length ? {
+      suggestedMin: coordinates[0] - padding,
+      suggestedMax: coordinates[coordinates.length - 1] + padding
+    } : {};
     const xAxisUnit = linearXAxis ? this.stat.xAxisUnit?.trim() ?? '' : '';
     const xAxisTitle = xAxisUnit ? `${this.stat.xAxisName} (${xAxisUnit})` : this.stat.xAxisName;
     this.chart = new Chart(this.canvas().nativeElement, {
-      type: 'line',
+      type: bar ? 'bar' : 'line',
       data: {
         datasets: this.stat.datasets.map((ds, i) => {
           //Use Dataset Color if present, use predefined color if not
@@ -71,16 +92,20 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           };
           return {
             label: ds.label,
-            data: chartDataPoints(ds.dataPoints, this.stat) as any,
-            fill: ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
-            tension: 0,
-            cubicInterpolationMode: this.stat.smoothing ? 'monotone' as const : 'default' as const,
+            data: (bar ? sourcePoints[i].map((point, index) => ({
+              x: xValues[index], y: point ? parseFloat(point.y) : null
+            })) : chartDataPoints(ds.dataPoints, this.stat)) as any,
+            ...(!bar ? {
+              fill: ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
+              tension: 0,
+              cubicInterpolationMode: smoothing ? 'monotone' as const : 'default' as const,
+              pointRadius: smoothing ? 0 : 2,
+              pointHoverRadius: smoothing ? 0 : 4,
+              pointHitRadius: smoothing ? 6 : 1,
+            } : {}),
             borderWidth: 1,
-            pointRadius: this.stat.smoothing ? 0 : 2,
-            pointHoverRadius: this.stat.smoothing ? 0 : 4,
-            pointHitRadius: this.stat.smoothing ? 6 : 1,
             borderColor: color.border,
-            backgroundColor: color.background,
+            backgroundColor: bar ? color.border : color.background,
           };
         })
       },
@@ -90,10 +115,10 @@ export class ChartComponent implements OnChanges, AfterViewInit {
         plugins: {
           tooltip: {
             ...(stacked ? {
-              mode: 'nearest' as const,
+              mode: bar ? 'index' as const : 'nearest' as const,
               axis: 'x' as const,
               intersect: false,
-              filter: (item: TooltipItem<'line'>, _index: number, items: TooltipItem<'line'>[]) =>
+              filter: (item: TooltipItem<'line' | 'bar'>, _index: number, items: TooltipItem<'line' | 'bar'>[]) =>
                 item.parsed.x === items[0]?.parsed.x
             } : {}),
             callbacks: {
@@ -105,7 +130,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
                 title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
               } : {}),
               afterLabel: item => {
-                if (!this.stat.smoothing) return '';
+                if (!smoothing) return '';
                 const dataset = this.stat.datasets[item.datasetIndex];
                 const sorted = [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat));
                 return `Recorded: ${sorted[item.dataIndex].y}`;
@@ -117,8 +142,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           if (elements.length > 0) {
             const el = elements[0];
             const ds = this.stat.datasets[el.datasetIndex];
-            const sorted = [...ds.dataPoints].sort((a, b) => compareDataPoints(a, b, this.stat));
-            const point = sorted[el.index];
+            const point = sourcePoints[el.datasetIndex]?.[el.index];
             if (ds && point) {
               this.pointClick.emit({datasetLabel: ds.label, point});
             }
@@ -127,6 +151,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
         scales: {
           x: {
             type: linearXAxis ? 'linear' : 'time',
+            ...(bar ? {stacked, offset: true, ...barBounds} : {}),
             ticks: {
               maxTicksLimit: 6,
               ...(linearXAxis ? {callback: value => `${value}${xAxisUnit ? ` ${xAxisUnit}` : ''}`} : {})
@@ -136,7 +161,7 @@ export class ChartComponent implements OnChanges, AfterViewInit {
           },
           y: {
             beginAtZero: this.stat.includeZero ?? false,
-            stacked: stacked ? 'single' : false,
+            stacked: bar ? stacked : stacked ? 'single' : false,
             reverse: this.stat.reverse,
             title: {display: true, text: this.stat.yAxisName}
           }

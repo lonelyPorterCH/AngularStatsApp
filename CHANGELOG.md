@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.7] - 2026-11-06
+
+### Added
+
+- Click-to-toggle song/difficulty selection in the single-player Beat Saber scatterplot, with stable per-selection colors and removable detail cards in a scrollable panel.
+- Export selected maps and difficulties as a Beat Saber `.bplist` playlist, combining difficulties belonging to the same song hash.
+- Resumable, non-destructive Python enrichment of existing leaderboard metadata with playlist difficulty names and characteristics.
+
+### Changed
+
+- ScoreSaber imports and regular metadata refreshes now retain difficulty information and expose it in score responses; older files remain readable.
+- Selections follow the date slider's latest eligible score, and selections no longer visible after date or player changes are removed. Comparison and compact previews remain non-selectable.
+
+## [2.5.6] - 2026-11-06
+
+### Added
+
+- Saved Line/Bar chart selection for new and existing statistics, including stacked bars with per-date totals.
+- New bar charts default to stacking and a zero baseline, reusing existing datasets, colors and datapoint editing.
+
+### Changed
+
+- Bar charts show exact recorded values without smoothing and align sparse datasets by date or numeric X value.
+- Line-only smoothing and fill controls are hidden for bar charts; existing line charts retain their settings.
+- Bar charts reject duplicate X values within a dataset with validation feedback instead of silently hiding measurements.
+
 ## [2.5.5] - 2026-11-06
 
 ### Added

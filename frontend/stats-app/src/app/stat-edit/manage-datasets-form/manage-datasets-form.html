@@ -59,6 +59,7 @@
                   (change)="onSetDatasetColor(ds.label, $event)"
                   [title]="'Dataset color'"
                 />
+                @if (stat.chartType !== 'bar') {
                 <mat-checkbox
                   [ngModel]="ds.filled ?? false"
                   [ngModelOptions]="{standalone: true}"
@@ -66,6 +67,7 @@
                 >
                   Filled
                 </mat-checkbox>
+                }
               </div>
             <div class="dataset-actions">
               <button mat-icon-button (click)="moveDatasetUp(ds.label)" aria-label="Move dataset up"

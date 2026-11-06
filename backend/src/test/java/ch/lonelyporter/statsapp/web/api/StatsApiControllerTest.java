@@ -75,4 +75,36 @@ class StatsApiControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"stacked\":true}"))
                 .andExpect(status().isBadRequest());
     }
+
+            @Test
+            void chartTypeEndpointAcceptsLineAndBar() throws Exception {
+            for (String chartType : new String[]{"line", "bar"}) {
+                mvc.perform(patch("/api/stats/chart/chart-type")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"chartType\":\"" + chartType + "\"}"))
+                    .andExpect(status().isOk());
+                verify(service).setChartType("chart", chartType);
+            }
+            }
+
+            @Test
+            void chartTypeEndpointReportsValidationAndReadOnlyFailures() throws Exception {
+            doThrow(new InvalidDataPointException("Chart type must be line or bar"))
+                .when(service).setChartType(eq("chart"), nullable(String.class));
+            for (String body : new String[]{"{}", "{\"chartType\":null}", "{\"chartType\":\"pie\"}", "{\"chartType\":{}}"}) {
+                mvc.perform(patch("/api/stats/chart/chart-type")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+            }
+            doThrow(new ch.lonelyporter.statsapp.exception.StatisticConflictException("Archived"))
+                .when(service).setChartType("archived", "bar");
+            mvc.perform(patch("/api/stats/archived/chart-type")
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"chartType\":\"bar\"}"))
+                .andExpect(status().isConflict());
+            doThrow(new ch.lonelyporter.statsapp.exception.StatisticNotFoundException("missing"))
+                .when(service).setChartType("missing", "bar");
+            mvc.perform(patch("/api/stats/missing/chart-type")
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"chartType\":\"bar\"}"))
+                .andExpect(status().isNotFound());
+            }
 }

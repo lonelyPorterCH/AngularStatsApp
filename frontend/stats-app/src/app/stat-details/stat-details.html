@@ -1,17 +1,28 @@
 @if (stat()) {
 <h2>{{ stat()!.title }}</h2>
 <div class="chart-settings" role="group" aria-label="Chart display settings">
+  <mat-form-field appearance="outline">
+    <mat-label>Chart type</mat-label>
+    <mat-select [value]="stat()!.chartType ?? 'line'" [disabled]="archived() || chartTypeSaving()"
+      (selectionChange)="onChartTypeChange($event.value)">
+      <mat-option value="line">Line</mat-option>
+      <mat-option value="bar">Bar</mat-option>
+    </mat-select>
+  </mat-form-field>
   <mat-slide-toggle [hideIcon]="true" aria-label="Include zero on Y axis" title="Include zero on Y axis"
     [checked]="stat()!.includeZero ?? false" [disabled]="archived() || includeZeroSaving()"
     (change)="onIncludeZeroChange($event.checked)">Zero baseline</mat-slide-toggle>
+  @if (stat()!.chartType !== 'bar') {
   <mat-slide-toggle [hideIcon]="true" aria-label="Smooth trend (7 measurements)" title="Smooth trend (7 measurements)"
     [checked]="stat()!.smoothing ?? false" [disabled]="archived() || smoothingSaving()"
     (change)="onSmoothingChange($event.checked)">Smooth trend</mat-slide-toggle>
-  <mat-slide-toggle [hideIcon]="true" aria-label="Stacked line chart" title="Stacked line chart"
+  }
+  <mat-slide-toggle [hideIcon]="true" aria-label="Stacked chart" title="Stacked chart"
     [checked]="stat()!.stacked ?? false"
     [disabled]="archived() || stackedSaving() || (!stat()!.stacked && stat()!.datasets.length < 2)"
     (change)="onStackedChange($event.checked)">Stacked</mat-slide-toggle>
 </div>
+@if (chartTypeError()) { <p class="setting-error" role="alert">{{ chartTypeError() }}</p> }
 @if (includeZeroError()) { <p class="setting-error" role="alert">{{ includeZeroError() }}</p> }
 @if (smoothingError()) { <p class="setting-error" role="alert">{{ smoothingError() }}</p> }
 @if (stackedError()) { <p class="setting-error" role="alert">{{ stackedError() }}</p> }

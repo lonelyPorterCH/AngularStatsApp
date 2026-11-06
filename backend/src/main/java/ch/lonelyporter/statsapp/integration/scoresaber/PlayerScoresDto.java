@@ -14,7 +14,11 @@ public record PlayerScoresDto(List<PlayerScore> data, Metadata metadata) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Leaderboard(long id, Map map, int maxScore, Realm realm) {
+    public record Leaderboard(long id, Map map, int maxScore, Realm realm, Difficulty difficulty) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Difficulty(int difficulty, String gameMode) {
     }
 
     public record Map(String hash, String songName, String levelAuthorName) {
