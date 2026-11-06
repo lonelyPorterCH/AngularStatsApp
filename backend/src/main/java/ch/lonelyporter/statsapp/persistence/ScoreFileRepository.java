@@ -94,11 +94,28 @@ public class ScoreFileRepository implements ScoreRepository {
             Map<LeaderboardKey, LeaderboardMetadata> updatedLeaderboards = new LinkedHashMap<>(leaderboards);
             for (LeaderboardMetadata metadata : refreshedLeaderboards) {
                 validateLeaderboard(metadata);
-                updatedLeaderboards.put(keyFor(metadata), metadata);
+                LeaderboardKey key = keyFor(metadata);
+                LeaderboardMetadata existing = updatedLeaderboards.get(key);
+                if (existing == null) {
+                    updatedLeaderboards.put(key, metadata);
+                } else if (Double.compare(existing.stars(), metadata.stars()) != 0) {
+                    updatedLeaderboards.put(key, new LeaderboardMetadata(existing.leaderboardId(),
+                            existing.songHash(), existing.songName(), existing.levelAuthorName(), metadata.stars()));
+                }
+            }
+            if (updatedLeaderboards.equals(leaderboards)) {
+                return;
             }
             persistLeaderboards(updatedLeaderboards);
             leaderboards.clear();
             leaderboards.putAll(updatedLeaderboards);
+        }
+    }
+
+    @Override
+    public List<LeaderboardMetadata> getAllLeaderboardMetadata() {
+        synchronized (leaderboardLock) {
+            return new ArrayList<>(leaderboards.values());
         }
     }
 
@@ -168,7 +185,8 @@ public class ScoreFileRepository implements ScoreRepository {
         Map<LeaderboardKey, LeaderboardMetadata> updatedLeaderboards = new LinkedHashMap<>(leaderboards);
         additions.forEach(metadata -> {
             validateLeaderboard(metadata);
-            updatedLeaderboards.putIfAbsent(keyFor(metadata), metadata);
+            LeaderboardKey key = keyFor(metadata);
+            updatedLeaderboards.putIfAbsent(key, metadata);
         });
         if (updatedLeaderboards.size() == leaderboards.size()) {
             return;

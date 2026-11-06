@@ -15,3 +15,16 @@ export interface Score {
   timeSet: string;
   songHash: string;
 }
+
+export interface PlayerScoreUpdate {
+  playerId: string;
+  playerName: string;
+  scoresAdded: number;
+}
+
+export interface ScoreUpdateSummary {
+  players: PlayerScoreUpdate[];
+  leaderboardStarsRefreshed: boolean;
+  leaderboardsChanged: number;
+  leaderboardsChecked: number;
+}

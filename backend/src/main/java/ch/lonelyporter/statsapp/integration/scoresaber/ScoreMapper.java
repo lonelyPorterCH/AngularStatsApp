@@ -18,15 +18,26 @@ final class ScoreMapper {
                 .toList();
     }
 
+    static List<LeaderboardMetadata> mapLeaderboards(List<PlayerScoresDto.PlayerScore> playerScores) {
+        return playerScores.stream()
+                .map(PlayerScoresDto.PlayerScore::leaderboard)
+                .map(ScoreMapper::mapLeaderboard)
+                .toList();
+    }
+
+    static LeaderboardMetadata mapLeaderboard(PlayerScoresDto.Leaderboard leaderboard) {
+        var map = leaderboard.map();
+        return new LeaderboardMetadata(leaderboard.id(), map.hash(), map.songName(),
+                map.levelAuthorName(), leaderboard.realm().stars());
+    }
+
     private static ScoreRecord map(PlayerScoresDto.PlayerScore playerScore) {
         var score = playerScore.score();
         var leaderboard = playerScore.leaderboard();
-        var map = leaderboard.map();
         var timeSet = score.createdAt().atOffset(ZoneOffset.UTC).toLocalDateTime();
-        var metadata = new LeaderboardMetadata(leaderboard.id(), map.hash(), map.songName(),
-                map.levelAuthorName(), leaderboard.realm().stars());
+        var metadata = mapLeaderboard(leaderboard);
         var event = new ScoreEvent(leaderboard.id(), timeSet, score.createdAt().toEpochMilli(),
-                toPercentage(score.accuracy(), score.modifiedScore(), leaderboard.maxScore()), map.hash());
+                toPercentage(score.accuracy(), score.modifiedScore(), leaderboard.maxScore()), metadata.songHash());
         return new ScoreRecord(event, metadata);
     }
 

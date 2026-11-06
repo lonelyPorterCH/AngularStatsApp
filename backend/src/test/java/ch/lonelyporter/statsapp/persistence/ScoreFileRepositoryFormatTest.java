@@ -72,8 +72,28 @@ class ScoreFileRepositoryFormatTest {
         assertThat(after.timeSet()).isEqualTo(before.timeSet());
         assertThat(after.timeSetMillis()).isEqualTo(before.timeSetMillis());
         assertThat(after.accuracy()).isEqualTo(before.accuracy());
-        assertThat(after.songName()).isEqualTo("renamed song");
+        assertThat(after.songName()).isEqualTo("song");
+        assertThat(after.levelAuthorName()).isEqualTo("author");
         assertThat(after.stars()).isEqualTo(8.1);
+    }
+
+    @Test
+    void addingScoresDoesNotChangeCachedLeaderboardStars() {
+        ScoreFileRepository repository = createRepository();
+        repository.addScores(List.of(scoreRecord(1475, FIRST_DATE, 88.25, 7.2)), "player-1");
+
+        repository.addScores(List.of(new ScoreRecord(
+                new ScoreEvent(1475, FIRST_DATE.plusDays(2), FIRST_DATE.plusDays(2)
+                        .toInstant(java.time.ZoneOffset.UTC).toEpochMilli(), 91.5, HASH),
+                new LeaderboardMetadata(1475, HASH, "changed name", "changed author", 8.1))), "player-1");
+
+        List<Score> scores = repository.loadScores("player-1");
+        assertThat(scores).hasSize(2);
+        assertThat(scores).extracting(Score::stars).containsExactly(7.2, 7.2);
+        assertThat(scores).extracting(Score::songName).containsOnly("song");
+        assertThat(scores).extracting(Score::levelAuthorName).containsOnly("author");
+        assertThat(scores).extracting(Score::timeSet).containsExactly(FIRST_DATE, FIRST_DATE.plusDays(2));
+        assertThat(scores).extracting(Score::accuracy).containsExactly(88.25, 91.5);
     }
 
     @Test

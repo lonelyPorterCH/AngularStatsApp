@@ -4,7 +4,7 @@ import {HttpTestingController, provideHttpClientTesting} from '@angular/common/h
 import {firstValueFrom} from 'rxjs';
 import {ScoreService} from './score-service';
 import {environment} from '../../environments/environment';
-import {Player} from '../models/score';
+import {Player, ScoreUpdateSummary} from '../models/score';
 
 describe('ScoreService', () => {
   let service: ScoreService;
@@ -49,11 +49,18 @@ describe('ScoreService', () => {
     expect(await promise).toEqual({});
   });
 
-  it('posts a score refresh request', async () => {
-    const promise = firstValueFrom(service.updateScores('player one'));
-    const request = httpTesting.expectOne(`${environment.scoresApiBaseUrl}/players/player%20one/scores/update`);
+  it('posts a request to update all tracked players', async () => {
+    const summary: ScoreUpdateSummary = {
+      players: [{playerId: 'player-1', playerName: 'Player One', scoresAdded: 3}],
+      leaderboardStarsRefreshed: false,
+      leaderboardsChanged: 0,
+      leaderboardsChecked: 0
+    };
+    const promise = firstValueFrom(service.updateAllScores(false));
+    const request = httpTesting.expectOne(`${environment.scoresApiBaseUrl}/players/scores/update`);
     expect(request.request.method).toBe('POST');
-    request.flush(3);
-    expect(await promise).toBe(3);
+    expect(request.request.body).toEqual({refreshLeaderboardStars: false});
+    request.flush(summary);
+    expect(await promise).toEqual(summary);
   });
 });

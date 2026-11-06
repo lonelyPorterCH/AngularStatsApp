@@ -2,12 +2,13 @@ package ch.lonelyporter.statsapp.web.api;
 
 import ch.lonelyporter.statsapp.domain.scores.Player;
 import ch.lonelyporter.statsapp.domain.scores.Score;
+import ch.lonelyporter.statsapp.domain.scores.ScoreUpdateSummary;
 import ch.lonelyporter.statsapp.service.PlayerService;
 import ch.lonelyporter.statsapp.service.ScoreService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,10 +57,11 @@ public class ScoresApiController {
         return scoreService.compare(playerId, otherPlayerId);
     }
 
-    @PostMapping("/players/{playerId}/scores/update")
-    public ResponseEntity<Integer> updateScores(@PathVariable String playerId) {
-        int updatedScores = scoreService.updateScores(playerId);
+    @PostMapping("/players/scores/update")
+    public ScoreUpdateSummary updateAllScores(@RequestBody ScoreUpdateRequest request) {
+        ScoreUpdateSummary result = scoreService.updateAllScores(
+                playerService.getAllPlayers(), request.refreshLeaderboardStars());
         playerService.updatePlayers();
-        return ResponseEntity.ok(updatedScores);
+        return result;
     }
 }

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.5] - 2026-11-06
+
+### Added
+
+- Separate update actions for score history only or score history plus leaderboard star refresh.
+- Show per-player score counts and changed/checked leaderboard star counts in the completion popup.
+
+### Changed
+
+- Leaderboard refresh scans paginated player score histories at a paced request interval instead of requesting each leaderboard individually.
+
 ## [2.5.3] - 2026-11-05
 
 ### Added

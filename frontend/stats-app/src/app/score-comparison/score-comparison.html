@@ -5,11 +5,40 @@
       <h2>Beat Saber scores</h2>
       <p>Track one player's ranked results, or compare two players when needed.</p>
     </div>
-    <button matButton="filled" (click)="refreshScores()" [disabled]="refreshing() || !selectedPlayer">
-      <mat-icon>sync</mat-icon>
-      {{ refreshing() ? 'Updating...' : 'Update Scores' }}
-    </button>
+    <div class="comparison-page__actions">
+      <button matButton="outlined" (click)="refreshScores(false)" [disabled]="refreshing() || !players().length">
+        <mat-icon>sync</mat-icon>
+        {{ refreshing() ? 'Updating...' : 'Update scores only' }}
+      </button>
+      <button matButton="filled" (click)="refreshScores(true)" [disabled]="refreshing() || !players().length">
+        <mat-icon>refresh</mat-icon>
+        {{ refreshing() ? 'Updating...' : 'Update everything' }}
+      </button>
+    </div>
   </header>
+
+  @if (updateSummary(); as summary) {
+    <div class="update-summary-backdrop">
+      <section class="update-summary" role="dialog" aria-modal="true" aria-labelledby="update-summary-title">
+        <button matButton="text" class="update-summary__close" aria-label="Close update summary"
+                (click)="dismissUpdateSummary()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <h3 id="update-summary-title">Score update complete</h3>
+        <ul>
+          @for (player of summary.players; track player.playerId) {
+            <li>{{ player.playerName }}: {{ player.scoresAdded }} scores</li>
+          }
+        </ul>
+        @if (summary.leaderboardStarsRefreshed) {
+          <p>Leaderboards: {{ summary.leaderboardsChanged }}/{{ summary.leaderboardsChecked }} star values changed.</p>
+        } @else {
+          <p>Leaderboard star values were not refreshed.</p>
+        }
+        <button matButton="filled" (click)="dismissUpdateSummary()">Close</button>
+      </section>
+    </div>
+  }
 
   <form class="add-player" [formGroup]="addPlayerForm" (ngSubmit)="addPlayer()" [attr.aria-busy]="addingPlayer()">
     <label for="scoresaber-player-id">ScoreSaber player ID

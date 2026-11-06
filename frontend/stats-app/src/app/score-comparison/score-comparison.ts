@@ -3,7 +3,7 @@ import {DatePipe} from '@angular/common';
 import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
-import {Player, Score} from '../models/score';
+import {Player, Score, ScoreUpdateSummary} from '../models/score';
 import {ScoreService} from '../services/score-service';
 import {ScoreScatterPlot} from '../score-scatter-plot/score-scatter-plot';
 
@@ -26,6 +26,7 @@ export class ScoreComparison implements OnInit {
   selectedDateTimestamp = Date.now();
   loading = signal(true);
   refreshing = signal(false);
+  updateSummary = signal<ScoreUpdateSummary | null>(null);
   error = signal('');
   addingPlayer = signal(false);
   addPlayerError = signal('');
@@ -118,19 +119,28 @@ export class ScoreComparison implements OnInit {
     this.loadComparison();
   }
 
-  refreshScores(): void {
-    if (!this.selectedPlayer) {
+  refreshScores(refreshLeaderboardStars: boolean): void {
+    if (!this.players().length || this.refreshing()) {
       return;
     }
+    this.error.set('');
+    this.updateSummary.set(null);
     this.refreshing.set(true);
-    this.scoreService.updateScores(this.selectedPlayer).subscribe({
-      next: () => this.loadComparison(),
+    this.scoreService.updateAllScores(refreshLeaderboardStars).subscribe({
+      next: summary => {
+        this.updateSummary.set(summary);
+        this.loadComparison();
+      },
       error: () => {
         this.refreshing.set(false);
-        this.error.set('Could not refresh scores from ScoreSaber.');
+        this.error.set('Could not complete the ScoreSaber update. Some earlier updates may already have been saved; try again.');
       },
       complete: () => this.refreshing.set(false)
     });
+  }
+
+  dismissUpdateSummary(): void {
+    this.updateSummary.set(null);
   }
 
   private loadPlayers(): void {

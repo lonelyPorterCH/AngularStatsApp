@@ -11,6 +11,8 @@ public interface ScoreRepository {
 
     void refreshLeaderboardMetadata(List<LeaderboardMetadata> leaderboards);
 
+    List<LeaderboardMetadata> getAllLeaderboardMetadata();
+
     Optional<LocalDateTime> mostRecentScoreDate(String playerId);
 
     List<String> getAllPlayerIds();

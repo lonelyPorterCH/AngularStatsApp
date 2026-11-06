@@ -2,15 +2,25 @@ import {TestBed} from '@angular/core/testing';
 import {of, Subject, throwError} from 'rxjs';
 import {ScoreComparison} from './score-comparison';
 import {ScoreService} from '../services/score-service';
-import {Player} from '../models/score';
+import {Player, ScoreUpdateSummary} from '../models/score';
 
 describe('ScoreComparison player registration', () => {
   const player: Player = {id: '76561198000000000', name: 'New player', country: 'CH', rank: 42};
   let component: ScoreComparison;
-  let service: {getPlayers: ReturnType<typeof vi.fn>; getScores: ReturnType<typeof vi.fn>; addPlayer: ReturnType<typeof vi.fn>};
+  let service: {
+    getPlayers: ReturnType<typeof vi.fn>;
+    getScores: ReturnType<typeof vi.fn>;
+    addPlayer: ReturnType<typeof vi.fn>;
+    updateAllScores: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
-    service = {getPlayers: vi.fn().mockReturnValue(of([])), getScores: vi.fn().mockReturnValue(of([])), addPlayer: vi.fn()};
+    service = {
+      getPlayers: vi.fn().mockReturnValue(of([])),
+      getScores: vi.fn().mockReturnValue(of([])),
+      addPlayer: vi.fn(),
+      updateAllScores: vi.fn()
+    };
     TestBed.configureTestingModule({});
     component = TestBed.runInInjectionContext(() => new ScoreComparison(service as unknown as ScoreService));
     component.ngOnInit();
@@ -90,5 +100,24 @@ describe('ScoreComparison player registration', () => {
     component.loadComparison();
     expect(component.loading()).toBe(false);
     expect(component.error()).toContain('Could not load');
+  });
+
+  it('updates all tracked players and shows the per-player popup summary', () => {
+    const summary: ScoreUpdateSummary = {
+      players: [{playerId: player.id, playerName: player.name, scoresAdded: 5}],
+      leaderboardStarsRefreshed: true,
+      leaderboardsChanged: 200,
+      leaderboardsChecked: 2000
+    };
+    component.players.set([player]);
+    component.selectedPlayer = player.id;
+    service.updateAllScores.mockReturnValue(of(summary));
+
+    component.refreshScores(true);
+
+    expect(service.updateAllScores).toHaveBeenCalledWith(true);
+    expect(component.updateSummary()).toEqual(summary);
+    expect(component.refreshing()).toBe(false);
+    expect(service.getScores).toHaveBeenCalledWith(player.id);
   });
 });

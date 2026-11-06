@@ -4,12 +4,61 @@
   padding: 24px 24px 48px;
 }
 
+.update-summary-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 48%);
+}
+
+.update-summary {
+  position: relative;
+  width: min(100%, 560px);
+  max-height: min(80vh, 720px);
+  overflow: auto;
+  padding: 24px;
+  color: var(--mat-sys-on-surface);
+  background: var(--mat-sys-surface-container);
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 24%);
+}
+
+.update-summary h3 {
+  margin: 0 40px 16px 0;
+}
+
+.update-summary ul {
+  max-height: 48vh;
+  overflow: auto;
+  padding-left: 24px;
+}
+
+.update-summary li {
+  padding-block: 4px;
+}
+
+.update-summary__close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
 .comparison-page__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 24px;
   margin-bottom: 28px;
+}
+
+.comparison-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .eyebrow {
@@ -145,6 +194,10 @@ input:focus-visible {
 
   .comparison-page__header {
     flex-direction: column;
+  }
+
+  .comparison-page__actions {
+    justify-content: flex-start;
   }
 
   .comparison-controls {

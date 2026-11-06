@@ -333,16 +333,39 @@ Note: coverUrl & modifierValues were replaced with "..." for better readability
 </tbody>
 </table>
 
-## 5. Refreshing existing scores
+## 5. Updating tracked scores and leaderboard stars
 
-`POST /api/scores/players/{playerId}/scores/update` calls
-[ScoreService.updateScores](backend/src/main/java/ch/lonelyporter/statsapp/service/ScoreService.java):
+The page provides two actions, both of which process every tracked player,
+including players with empty score histories:
 
-1. Find the maximum stored `timeSet` for that player, or `LocalDateTime.MIN` if
-   there are no scores.
-2. Fetch pages using that timestamp as the strict lower bound.
-3. Append the mapped ranked events to the player's history.
-4. Return the number of records fetched and passed to the repository.
+- **Update scores only** calls `POST /api/scores/players/scores/update` with
+  `refreshLeaderboardStars: false`. It uses the existing recent-score
+  pagination behavior and does not change cached stars.
+- **Update everything** sends `refreshLeaderboardStars: true` and scans full
+  player histories to refresh leaderboard stars as well as importing new
+  scores.
+
+For either mode, the backend:
+
+1. Finds the maximum stored `timeSet`, or `LocalDateTime.MIN` if there are no
+   scores.
+2. Reads ScoreSaber pages. In **Update everything**, it reads through the final
+   page; those pages include leaderboard metadata alongside score events,
+   avoiding a separate request for each cached leaderboard.
+3. Appends only ranked score events newer than the stored date.
+4. In **Update everything**, collects current leaderboard metadata and refreshes
+   stars for each cached `(leaderboardId, songHash)`, preserving the cached song
+   name and mapper. The update fails explicitly if any cached leaderboard is
+   absent from the returned player histories.
+
+Score-page and player-profile requests are paced at a minimum 250 ms interval
+(approximately four request starts per second). This is a conservative client
+pace, not a guarantee of ScoreSaber's server-side rate limit. **Update
+everything** reads all score pages for every tracked player, so its request
+count scales with player score-history pages rather than with the number of
+unique cached leaderboards. The UI shows one `<player>: N scores` line per
+tracked player. Full updates also show `Leaderboards: changed/checked star
+values changed.`
 
 Repeated leaderboard IDs are retained as separate events when their date or
 accuracy differs. Score reads and comparisons compose each event with the
