@@ -7,7 +7,7 @@ public record Score(
         String levelAuthorName,
         long timeSetMillis,
         double accuracy,
-        long id,
+        long leaderboardId,
         double stars,
         LocalDateTime timeSet,
         String songHash

@@ -3,7 +3,7 @@
 ## 1. Adding a player
 
 The frontend calls `POST /api/scores/players/{playerId}`.
-[PlayerService](backend/src/main/java/ch/lonelyporter/statsapp/service/PlayerService.java):
+[PlayerService](src/main/java/ch/lonelyporter/statsapp/service/PlayerService.java):
 
 1. Validates that the player ID contains 1 to 20 digits.
 2. Checks whether the score repository already tracks the player. If so, it
@@ -23,8 +23,8 @@ For example, the existing `players.json` associates player ID
 
 ## 2. Fetching pages from ScoreSaber
 
-[ScoresConfiguration](backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresConfiguration.java)
-and [application.properties](backend/src/main/resources/application.properties)
+[ScoresConfiguration](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresConfiguration.java)
+and [application.properties](src/main/resources/application.properties)
 configure these defaults:
 
 | Purpose      | Default                             |
@@ -36,7 +36,7 @@ configure these defaults:
 These are configurable through `SCORESABER_BASE_URL`,
 `SCORESABER_PLAYER_DETAILS_PATH`, and `SCORESABER_SCORES_PATH`.
 
-[ScoresaberApiAdapter](backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresaberApiAdapter.java)
+[ScoresaberApiAdapter](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresaberApiAdapter.java)
 starts at page 1 and requests `page`, `limit=100`, and `sort=recent`.
 For lonelyPorter, the configured default request URL for the first score page is:
 
@@ -66,9 +66,9 @@ empty optional; other HTTP failures propagate. Adding a player translates
 
 ## 3. Mapping API data into score events and leaderboard metadata
 
-[PlayerScoresDto](backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/PlayerScoresDto.java)
+[PlayerScoresDto](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/PlayerScoresDto.java)
 models both a nested API `score` and a nested `leaderboard`.
-[ScoreMapper](backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoreMapper.java)
+[ScoreMapper](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoreMapper.java)
 keeps only entries whose `leaderboard.realm.leaderboardStatus` is `RANKED`,
 then creates a score event and its leaderboard metadata. The metadata is shared
 by the `(leaderboardId, songHash)` pair; a song hash alone is not unique across
@@ -374,66 +374,3 @@ or stars in `leaderboards.json` only; it does not rewrite player event dates or
 accuracies. Difficulty and game mode are not currently stored because no
 application feature uses them. The UI's existing date-based latest-score
 selection is unchanged.
-
-## 6. Storage layout and one-time migration
-
-The configured ScoreSaber storage directory contains:
-
-| File                   | Contents                                                                                                   |
-|------------------------|------------------------------------------------------------------------------------------------------------|
-| `players.json`         | Tracked player profiles                                                                                    |
-| `<playerId>.json`      | An ordered array of score events (`leaderboardId`, `songHash`, `timeSet`, `timeSetMillis`, and `accuracy`) |
-| `leaderboards.json`    | Shared metadata keyed by the `(leaderboardId, songHash)` combination                                       |
-| `migration-report.txt` | Migration summary, including historical star conflicts                                                     |
-
-Use the standalone migration tool on a backup or copy of the legacy directory.
-It reads but never modifies the source, validates all input before publishing,
-and creates its output in a separate directory by staging the complete result
-and renaming it into place. If interrupted before publishing, run the same
-command again. Re-running after a completed migration to the same destination
-is also safe when the source has not changed; an existing unrelated or partial
-destination is never overwritten.
-
-Example PowerShell commands:
-
-```powershell
-Copy-Item -LiteralPath 'C:\Users\fast\Documents\rankedScores' `
-  -Destination 'C:\Users\fast\Documents\rankedScores-backup-20261105' -Recurse
-py tools\migrate_scoresaber_storage.py `
-  --source 'C:\Users\fast\Documents\rankedScores\legacy' `
-  --destination 'C:\Users\fast\Documents\rankedScores\separated'
-```
-
-The migrator preserves all distinct events, including repeated dates/IDs/hashes
-and different accuracies. Only records whose complete legacy JSON values are
-identical are deduplicated. For metadata conflicts in `stars` for the same
-leaderboard/hash pair, the cache uses the most recent event's stars; ties use
-the lexically later player ID and then the later array position. Every conflict
-and selected value is recorded in both command output and
-`migration-report.txt`.
-
-After verifying `players.json`, score-event files, `leaderboards.json`, and the
-migration report in `separated`, stop the backend and set
-`APP_SCORES_STORAGE_PATH` to
-`C:\Users\fast\Documents\rankedScores\separated` before restarting. Keep the
-backup and the `legacy` directory until the new backend has been verified.
-For recovery, stop the new backend and point the previous application version
-back at its original legacy storage directory (or restore the backup); the new
-format is intentionally not written back into legacy files.
-
-The controller then refreshes profiles for **all tracked players**, not only the
-player whose scores were refreshed.
-
-At inspection time, lonelyPorter's latest stored record is:
-
-| Field           | Value                   |
-|-----------------|-------------------------|
-| Song            | ∞Bit Sequencer          |
-| `id`            | 561616                  |
-| `accuracy`      | 55.14930465217882       |
-| `timeSet`       | 2026-10-25T15:15:21.041 |
-| `timeSetMillis` | 1792941321041           |
-
-That timestamp is the refresh watermark for this local file. Entries at exactly
-that time, or earlier, are excluded even if not previously stored. The code does
-not backfill older records missing from the local history.

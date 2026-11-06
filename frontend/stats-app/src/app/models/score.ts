@@ -10,7 +10,7 @@ export interface Score {
   levelAuthorName: string;
   timeSetMillis: number;
   accuracy: number;
-  id: number;
+  leaderboardId: number;
   stars: number;
   timeSet: string;
   songHash: string;

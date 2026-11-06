@@ -6,7 +6,7 @@ import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
 
 Chart.register(...registerables);
 
-export function selectLatestScoresBySongHash(
+export function selectLatestScoresBySongAndLeaderboard(
   scoresByPlayer: Record<string, Score[]>,
   maximumDate?: string
 ): Record<string, Score[]> {
@@ -19,10 +19,10 @@ export function selectLatestScoresBySongHash(
         continue;
       }
 
-      const current = latestScores.get(score.songHash);
-      if (!current || timestamp > Date.parse(current.timeSet) ||
-        (timestamp === Date.parse(current.timeSet) && score.id > current.id)) {
-        latestScores.set(score.songHash, score);
+      const key = `${score.songHash}\u0000${score.leaderboardId}`;
+      const current = latestScores.get(key);
+      if (!current || timestamp > Date.parse(current.timeSet)) {
+        latestScores.set(key, score);
       }
     }
     return [playerId, [...latestScores.values()]];
@@ -61,7 +61,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
 
   private renderChart(): void {
     this.chart?.destroy();
-    const entries = Object.entries(selectLatestScoresBySongHash(this.playerScores, this.maximumDate));
+    const entries = Object.entries(selectLatestScoresBySongAndLeaderboard(this.playerScores, this.maximumDate));
     this.chart = new Chart(this.canvas().nativeElement, {
       type: 'scatter',
       data: {

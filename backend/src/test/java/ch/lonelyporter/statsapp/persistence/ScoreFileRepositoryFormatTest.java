@@ -42,7 +42,7 @@ class ScoreFileRepositoryFormatTest {
         List<Score> scores = reloaded.loadScores("player-1");
 
         assertThat(scores).hasSize(3);
-        assertThat(scores).extracting(Score::id).containsExactly(407243L, 407243L, 407355L);
+        assertThat(scores).extracting(Score::leaderboardId).containsExactly(407243L, 407243L, 407355L);
         assertThat(scores).extracting(Score::songHash).containsOnly(HASH);
         assertThat(scores).extracting(Score::accuracy).containsExactly(54.0, 61.0, 70.0);
         assertThat(scores).extracting(Score::songName).containsOnly("song");
@@ -52,8 +52,8 @@ class ScoreFileRepositoryFormatTest {
 
         String response = new ObjectMapper().writeValueAsString(scores);
         assertThat(response)
-                .contains("\"id\":407243", "\"songName\":\"song\"", "\"accuracy\":54.0", "\"timeSet\":\"2022-01-19T19:09:08\"")
-                .doesNotContain("leaderboardId", "gameMode", "difficulty");
+                .contains("\"leaderboardId\":407243", "\"songName\":\"song\"", "\"accuracy\":54.0", "\"timeSet\":\"2022-01-19T19:09:08\"")
+                .doesNotContain("\"id\"", "gameMode", "difficulty");
     }
 
     @Test
