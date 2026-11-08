@@ -59,8 +59,20 @@
   </mat-form-field>
 
   <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
+  <mat-form-field appearance="outline">
+    <mat-label>Value format</mat-label>
+    <mat-select formControlName="yAxisFormat">
+      <mat-option value="number">Number</mat-option>
+      <mat-option value="pace">Pace (min/km)</mat-option>
+    </mat-select>
+  </mat-form-field>
+  @if (statForm.get('chartType')?.value !== 'bar') {
+  <mat-checkbox formControlName="effortComparison">Dots + trend (centered 7-measurement average)</mat-checkbox>
+  }
   <mat-checkbox formControlName="includeZero">Include zero on Y axis</mat-checkbox>
+  @if (statForm.get('chartType')?.value === 'bar' || !statForm.get('effortComparison')?.value) {
   <mat-checkbox formControlName="stacked">Stacked</mat-checkbox>
+  }
 
   <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>
 

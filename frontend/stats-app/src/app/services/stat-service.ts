@@ -56,6 +56,14 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/smoothing`, {smoothing});
   }
 
+  setEffortComparison(id: string, effortComparison: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/effort-comparison`, {effortComparison});
+  }
+
+  setYAxisFormat(id: string, yAxisFormat: 'number' | 'pace'): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/y-axis-format`, {yAxisFormat});
+  }
+
   setChartType(id: string, chartType: 'line' | 'bar'): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/chart-type`, {chartType});
   }

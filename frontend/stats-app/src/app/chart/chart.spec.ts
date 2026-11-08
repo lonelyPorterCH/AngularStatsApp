@@ -1,6 +1,6 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {chartDataPoints, ChartComponent} from './chart';
+import {chartDataPoints, ChartComponent, effortTrendPoints} from './chart';
 import {Stat} from '../models/stat';
 
 const chartConfig = vi.hoisted(() => vi.fn());
@@ -39,6 +39,112 @@ describe('Chart', () => {
     {label: 'Paid out', index: 0, dataPoints: [{x: '2026-09-30', y: '1000'}]},
     {label: 'Carried forward', index: 1, dataPoints: [{x: '2026-09-30', y: '391'}]}
   ];
+
+  it('centers a seven-effort average with smaller edge windows and leaves measurements unchanged', () => {
+    const points = Array.from({length: 9}, (_, index) => ({x: String(index + 1), y: String(index * 10)})).reverse();
+    const original = JSON.stringify(points);
+    expect(effortTrendPoints(points, {...stat, xAxisScaleType: 'linear', smoothing: true}).map(point => point.y))
+      .toEqual([15, 20, 25, 30, 40, 50, 55, 60, 65]);
+    expect(JSON.stringify(points)).toBe(original);
+    expect(effortTrendPoints([], stat)).toEqual([]);
+    expect(effortTrendPoints([{x: '2026-01-01', y: '42'}], stat)[0].y).toBe(42);
+    const sparse = effortTrendPoints([{x: '2026-01-01', y: '10'}, {x: '2026-09-01', y: 'invalid'},
+      {x: '2026-11-01', y: '30'}], stat);
+    expect(sparse[0].y).toBe(20);
+    expect(sparse[1].y).toBeNaN();
+    expect(sparse[2].y).toBe(20);
+  });
+
+  it('overlays independent trends on raw dots and bypasses smoothing, fill and stacking', () => {
+    const source = [
+      {label: 'Run', index: 0, color: '10 20 30', filled: true,
+        dataPoints: [{x: '2026-11-02', y: '5.11'}, {x: '2026-11-01', y: '4.59'}]},
+      {label: 'Other route', index: 1, dataPoints: [{x: '2026-10-01', y: '6.00'}]}
+    ];
+    const original = JSON.stringify(source);
+    fixture.componentRef.setInput('stat', {...stat, datasets: source, effortComparison: true,
+      yAxisFormat: 'pace', smoothing: true, stacked: true, reverse: true});
+    fixture.detectChanges();
+    const config = chartConfig.mock.lastCall![0];
+    expect(config.data.datasets).toHaveLength(4);
+    const [dots, otherDots, trend, otherTrend] = config.data.datasets;
+    expect(dots.data.map((point: {y: number}) => point.y)).toEqual([299, 311]);
+    expect(dots.showLine).toBe(false);
+    expect(dots.fill).toBe(false);
+    expect(dots.pointRadius).toBe(2);
+    expect(dots.pointHoverRadius).toBe(4);
+    expect(dots.pointHitRadius).toBe(1);
+    expect(dots.pointBackgroundColor).toBe('rgb(10 20 30 / 0.2)');
+    expect(otherDots.data[0].y).toBe(360);
+    expect(trend.data.map((point: {y: number}) => point.y)).toEqual([305, 305]);
+    expect(otherTrend.data[0].y).toBe(360);
+    expect(trend.borderColor).toBe(dots.borderColor);
+    expect(trend.showLine).toBe(true);
+    expect(trend.cubicInterpolationMode).toBe('monotone');
+    expect(trend.pointRadius).toBe(0);
+    expect(trend.fill).toBe(false);
+    expect(config.options.scales.y.stacked).toBe(false);
+    expect(config.options.scales.y.reverse).toBe(true);
+    expect(config.options.scales.y.ticks.callback(305)).toBe('5:05 /km');
+    const tooltip = config.options.plugins.tooltip;
+    expect(tooltip.filter({datasetIndex: 0})).toBe(true);
+    expect(tooltip.filter({datasetIndex: 2})).toBe(false);
+    expect(tooltip.callbacks.label({dataset: {label: 'Run'}, parsed: {y: 299}})).toBe('Run: 4:59 /km');
+    expect(tooltip.callbacks.afterLabel({datasetIndex: 0, dataIndex: 0})).toBe('');
+    expect(tooltip.callbacks.footer).toBeUndefined();
+    const emit = vi.spyOn(component.pointClick, 'emit');
+    config.options.onClick(null, [{datasetIndex: 2, index: 0}]);
+    expect(emit).not.toHaveBeenCalled();
+    config.options.onClick(null, [{datasetIndex: 2, index: 0}, {datasetIndex: 0, index: 0}]);
+    expect(emit).toHaveBeenCalledWith({datasetLabel: 'Run', point: source[0].dataPoints[1]});
+    const legend = config.options.plugins.legend;
+    expect(legend.labels.filter({datasetIndex: 2})).toBe(false);
+    const chart = {isDatasetVisible: vi.fn().mockReturnValue(true), setDatasetVisibility: vi.fn(), update: vi.fn()};
+    legend.onClick(null, {datasetIndex: 0}, {chart});
+    expect(chart.setDatasetVisibility.mock.calls).toEqual([[0, false], [2, false]]);
+    expect(chart.update).toHaveBeenCalledOnce();
+    expect(JSON.stringify(source)).toBe(original);
+  });
+
+  it('keeps the original dot appearance when toggling Dots + trend', () => {
+    for (const color of [undefined, '10 20 30']) {
+      const source = [{label: 'Series', index: 0, color, dataPoints: [{x: '2026-11-01', y: '42'}]}];
+      fixture.componentRef.setInput('stat', {...stat, datasets: source});
+      fixture.detectChanges();
+      const original = chartConfig.mock.lastCall![0].data.datasets[0];
+      fixture.componentRef.setInput('stat', {...stat, datasets: source, effortComparison: true, smoothing: true});
+      fixture.detectChanges();
+      const dots = chartConfig.mock.lastCall![0].data.datasets[0];
+      for (const property of ['pointRadius', 'pointHoverRadius', 'pointHitRadius', 'pointBackgroundColor',
+        'borderColor', 'backgroundColor', 'borderWidth']) {
+        expect(dots[property]).toEqual(original[property]);
+      }
+      expect(dots.showLine).toBe(false);
+    }
+  });
+
+  it('ignores comparison on bars and restores saved line preferences when comparison is off', () => {
+    for (const settings of [{chartType: 'bar' as const, effortComparison: true},
+      {chartType: 'line' as const, effortComparison: false}]) {
+      fixture.componentRef.setInput('stat', {...stat, ...settings, datasets, smoothing: true, stacked: true});
+      fixture.detectChanges();
+      const config = chartConfig.mock.lastCall![0];
+      expect(config.data.datasets).toHaveLength(2);
+      expect(config.options.scales.y.stacked).toBe(settings.chartType === 'bar' ? true : 'single');
+      if (settings.chartType === 'line') expect(config.data.datasets[0].pointRadius).toBe(0);
+    }
+  });
+
+  it('uses seconds for existing pace smoothing and formats recorded tooltip values', () => {
+    fixture.componentRef.setInput('stat', {...stat, yAxisFormat: 'pace', smoothing: true, datasets: [
+      {label: 'Run', index: 0, dataPoints: [{x: '2026-11-01', y: '4.59'}, {x: '2026-11-02', y: '5.11'}]}
+    ]});
+    fixture.detectChanges();
+    const config = chartConfig.mock.lastCall![0];
+    expect(config.data.datasets[0].data[1].y).toBe(305);
+    expect(config.options.plugins.tooltip.callbacks.afterLabel({datasetIndex: 0, dataIndex: 1}))
+      .toBe('Recorded: 5:11 /km');
+  });
 
   it('renders stacked bars with exact contributions even when smoothing is stored', () => {
     fixture.componentRef.setInput('stat', {...stat, chartType: 'bar', stacked: true, smoothing: true,

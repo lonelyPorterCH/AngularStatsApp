@@ -42,6 +42,10 @@ export class StatDetails implements OnInit {
   includeZeroError = signal('');
   chartTypeSaving = signal(false);
   chartTypeError = signal('');
+  effortComparisonSaving = signal(false);
+  effortComparisonError = signal('');
+  yAxisFormatSaving = signal(false);
+  yAxisFormatError = signal('');
 
   constructor(
     private statService: StatService,
@@ -67,6 +71,8 @@ export class StatDetails implements OnInit {
     this.stackedError.set('');
     this.includeZeroError.set('');
     this.chartTypeError.set('');
+    this.effortComparisonError.set('');
+    this.yAxisFormatError.set('');
 
     forkJoin({
       stat: this.statService.getStatById(id),
@@ -112,7 +118,7 @@ export class StatDetails implements OnInit {
 
   onSmoothingChange(smoothing: boolean): void {
     const stat = this.stat();
-    if (!stat || stat.chartType === 'bar' || this.archived() || this.smoothingSaving()) return;
+    if (!stat || stat.chartType === 'bar' || stat.effortComparison || this.archived() || this.smoothingSaving()) return;
     this.smoothingError.set('');
     this.smoothingSaving.set(true);
     this.stat.set({...stat, smoothing});
@@ -128,9 +134,48 @@ export class StatDetails implements OnInit {
     });
   }
 
+  onEffortComparisonChange(effortComparison: boolean): void {
+    const stat = this.stat();
+    if (!stat || stat.chartType === 'bar' || this.archived() || this.effortComparisonSaving()) return;
+    this.effortComparisonError.set('');
+    this.effortComparisonSaving.set(true);
+    this.stat.set({...stat, effortComparison});
+    this.statService.setEffortComparison(stat.id, effortComparison).subscribe({
+      next: () => this.effortComparisonSaving.set(false),
+      error: () => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, effortComparison: stat.effortComparison ?? false} : current);
+          this.effortComparisonError.set('Could not save Dots + trend. The previous setting has been restored.');
+        }
+        this.effortComparisonSaving.set(false);
+      }
+    });
+  }
+
+  onYAxisFormatChange(yAxisFormat: 'number' | 'pace'): void {
+    const stat = this.stat();
+    if (!stat || this.archived() || this.yAxisFormatSaving() || (stat.yAxisFormat ?? 'number') === yAxisFormat) return;
+    this.yAxisFormatError.set('');
+    this.yAxisFormatSaving.set(true);
+    this.stat.set({...stat, yAxisFormat});
+    this.statService.setYAxisFormat(stat.id, yAxisFormat).subscribe({
+      next: () => this.yAxisFormatSaving.set(false),
+      error: error => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, yAxisFormat: stat.yAxisFormat ?? 'number'} : current);
+          const reason = error.status === 400 && typeof error.error === 'string'
+            ? error.error : 'Could not save value format.';
+          this.yAxisFormatError.set(`${reason} The previous setting has been restored.`);
+        }
+        this.yAxisFormatSaving.set(false);
+      }
+    });
+  }
+
   onStackedChange(stacked: boolean): void {
     const stat = this.stat();
-    if (!stat || this.archived() || this.stackedSaving() || (stacked && stat.datasets.length < 2)) return;
+    if (!stat || (stat.chartType !== 'bar' && stat.effortComparison) || this.archived()
+      || this.stackedSaving() || (stacked && stat.datasets.length < 2)) return;
     this.stackedError.set('');
     this.stackedSaving.set(true);
     this.stat.set({...stat, stacked});

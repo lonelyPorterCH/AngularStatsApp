@@ -37,6 +37,41 @@ class StatsApiControllerTest {
     }
 
     @Test
+    void effortComparisonEndpointAcceptsBothSettingsAndRejectsMissingNullAndInvalidValues() throws Exception {
+        for (boolean enabled : new boolean[]{true, false}) {
+            mvc.perform(patch("/api/stats/runs/effort-comparison")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"effortComparison\":" + enabled + "}"))
+                    .andExpect(status().isOk());
+            verify(service).setEffortComparison("runs", enabled);
+        }
+        clearInvocations(service);
+        for (String body : new String[]{"{}", "{\"effortComparison\":null}", "{\"effortComparison\":{}}"}) {
+            mvc.perform(patch("/api/stats/runs/effort-comparison")
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void yAxisFormatEndpointAcceptsBothFormatsAndReportsValidationFailures() throws Exception {
+        for (String format : new String[]{"number", "pace"}) {
+            mvc.perform(patch("/api/stats/runs/y-axis-format")
+                            .contentType(MediaType.APPLICATION_JSON).content("{\"yAxisFormat\":\"" + format + "\"}"))
+                    .andExpect(status().isOk());
+            verify(service).setYAxisFormat("runs", format);
+        }
+        doThrow(new InvalidDataPointException("Y axis format must be number or pace"))
+                .when(service).setYAxisFormat(eq("runs"), nullable(String.class));
+        for (String body : new String[]{"{}", "{\"yAxisFormat\":null}", "{\"yAxisFormat\":\"invalid\"}"}) {
+            mvc.perform(patch("/api/stats/runs/y-axis-format")
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void includeZeroEndpointRejectsMissingNullAndInvalidSettings() throws Exception {
         for (String body : new String[]{"{}", "{\"includeZero\":null}", "{\"includeZero\":{}}"}) {
             mvc.perform(patch("/api/stats/cumulus/include-zero")

@@ -1,12 +1,15 @@
-import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, Output, viewChild} from '@angular/core';
-import {Chart, registerables, TooltipItem} from 'chart.js';
+import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, viewChild} from '@angular/core';
+import {Chart, ChartDataset, registerables, TooltipItem} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {DateTime} from 'luxon';
 import {DataPoint, Stat} from '../models/stat';
 import {compareDataPoints, isLinearXAxis, parseXAxisValue} from '../models/x-axis';
 import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
+import {formatPace, parseYAxisValue} from '../models/y-axis';
 
 Chart.register(...registerables);
+
+type ChartCoordinate = {x: string | number; y: number | null};
 
 export interface ChartPointClickEvent {
   datasetLabel: string;
@@ -15,7 +18,7 @@ export interface ChartPointClickEvent {
 
 export function chartDataPoints(points: DataPoint[], stat: Stat): {x: string | number; y: number}[] {
   const sorted = [...points].sort((first, second) => compareDataPoints(first, second, stat));
-  const values = sorted.map(point => parseFloat(point.y));
+  const values = sorted.map(point => parseYAxisValue(point.y, stat));
   return sorted.map((point, index) => {
     const window = values.slice(Math.max(0, index - 6), index + 1).filter(Number.isFinite);
     const value = stat.chartType !== 'bar' && stat.smoothing && Number.isFinite(values[index])
@@ -25,17 +28,27 @@ export function chartDataPoints(points: DataPoint[], stat: Stat): {x: string | n
   });
 }
 
+export function effortTrendPoints(points: DataPoint[], stat: Stat): {x: string | number; y: number}[] {
+  const raw = chartDataPoints(points, {...stat, smoothing: false});
+  return raw.map((point, index) => {
+    const window = raw.slice(Math.max(0, index - 3), index + 4)
+      .map(value => value.y).filter(Number.isFinite);
+    return {...point, y: Number.isFinite(point.y)
+      ? window.reduce((sum, value) => sum + value, 0) / window.length : NaN};
+  });
+}
+
 @Component({
   selector: 'app-chart',
   template: '<canvas #canvas></canvas>',
   styleUrl: './chart.css'
 })
-export class ChartComponent implements OnChanges, AfterViewInit {
+export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
 
   @Input() stat!: Stat;
   @Output() pointClick = new EventEmitter<ChartPointClickEvent>();
   canvas = viewChild.required<ElementRef>('canvas');
-  private chart?: Chart;
+  private chart?: Chart<'line' | 'bar', ChartCoordinate[]>;
   private viewInitialized = false;
 
   ngAfterViewInit(): void {
@@ -49,15 +62,21 @@ export class ChartComponent implements OnChanges, AfterViewInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.chart?.destroy();
+  }
+
   private buildChart(): void {
     if (!this.stat) {
       return;
     }
     this.chart?.destroy();
     const bar = this.stat.chartType === 'bar';
-    const smoothing = !bar && !!this.stat.smoothing;
+    const comparison = !bar && !!this.stat.effortComparison;
+    const smoothing = !bar && !comparison && !!this.stat.smoothing;
+    const pace = this.stat.yAxisFormat === 'pace';
     const linearXAxis = isLinearXAxis(this.stat);
-    const stacked = !!this.stat.stacked && this.stat.datasets.length >= 2;
+    const stacked = !comparison && !!this.stat.stacked && this.stat.datasets.length >= 2;
     const sortedPoints = this.stat.datasets.map(dataset =>
       [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat)));
     const xValues = [...new Set(sortedPoints.flat().map(point => parseXAxisValue(point.x, this.stat)))]
@@ -78,42 +97,75 @@ export class ChartComponent implements OnChanges, AfterViewInit {
     } : {};
     const xAxisUnit = linearXAxis ? this.stat.xAxisUnit?.trim() ?? '' : '';
     const xAxisTitle = xAxisUnit ? `${this.stat.xAxisName} (${xAxisUnit})` : this.stat.xAxisName;
-    this.chart = new Chart(this.canvas().nativeElement, {
+    const colors = this.stat.datasets.map((ds, i) => ds.color || DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]);
+    const datasets: ChartDataset<'line' | 'bar', ChartCoordinate[]>[] = this.stat.datasets.map((ds, i) => {
+      const color = colors[i];
+      return {
+        label: ds.label,
+        data: (bar ? sourcePoints[i].map((point, index) => ({
+          x: xValues[index], y: point ? parseYAxisValue(point.y, this.stat) : null
+        })) : chartDataPoints(ds.dataPoints, comparison ? {...this.stat, smoothing: false} : this.stat)),
+        ...(!bar ? {
+          showLine: !comparison,
+          fill: !comparison && ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
+          tension: 0,
+          cubicInterpolationMode: smoothing ? 'monotone' as const : 'default' as const,
+          pointRadius: smoothing ? 0 : 2,
+          pointHoverRadius: smoothing ? 0 : 4,
+          pointHitRadius: smoothing ? 6 : 1,
+          pointBackgroundColor: `rgb(${color} / 0.2)`,
+        } : {}),
+        borderWidth: 1,
+        borderColor: `rgb(${color} / 0.85)`,
+        backgroundColor: `rgb(${color} / ${bar ? 0.85 : 0.2})`,
+      };
+    });
+    if (comparison) {
+      datasets.push(...this.stat.datasets.map((ds, i): ChartDataset<'line' | 'bar', ChartCoordinate[]> => ({
+        label: `${ds.label} - trend (7 measurements)`,
+        data: effortTrendPoints(ds.dataPoints, this.stat),
+        borderColor: `rgb(${colors[i]} / 0.85)`,
+        backgroundColor: `rgb(${colors[i]} / 0.2)`,
+        borderWidth: 2,
+        showLine: true,
+        fill: false,
+        cubicInterpolationMode: 'monotone',
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        pointHitRadius: 0,
+        order: 1,
+      })));
+    }
+    this.chart = new Chart<'line' | 'bar', ChartCoordinate[]>(this.canvas().nativeElement, {
       type: bar ? 'bar' : 'line',
       data: {
-        datasets: this.stat.datasets.map((ds, i) => {
-          //Use Dataset Color if present, use predefined color if not
-          const color = ds.color ? {
-            border: `rgb(${ds.color} / 0.85)`,
-            background: `rgb(${ds.color} / 0.2)`
-          } : {
-            border: `rgb(${DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]} / 0.85)`,
-            background: `rgb(${DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]} / 0.2)`
-          };
-          return {
-            label: ds.label,
-            data: (bar ? sourcePoints[i].map((point, index) => ({
-              x: xValues[index], y: point ? parseFloat(point.y) : null
-            })) : chartDataPoints(ds.dataPoints, this.stat)) as any,
-            ...(!bar ? {
-              fill: ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
-              tension: 0,
-              cubicInterpolationMode: smoothing ? 'monotone' as const : 'default' as const,
-              pointRadius: smoothing ? 0 : 2,
-              pointHoverRadius: smoothing ? 0 : 4,
-              pointHitRadius: smoothing ? 6 : 1,
-            } : {}),
-            borderWidth: 1,
-            borderColor: color.border,
-            backgroundColor: bar ? color.border : color.background,
-          };
-        })
+        datasets
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          ...(comparison ? {
+            legend: {
+              labels: {filter: (item: {datasetIndex?: number}) => (item.datasetIndex ?? 0) < this.stat.datasets.length},
+              onClick: (_event: unknown, item: {datasetIndex?: number},
+                legend: {chart: {
+                  isDatasetVisible(index: number): boolean;
+                  setDatasetVisibility(index: number, visible: boolean): void;
+                  update(): void;
+                }}) => {
+                if (item.datasetIndex === undefined) return;
+                const visible = !legend.chart.isDatasetVisible(item.datasetIndex);
+                legend.chart.setDatasetVisibility(item.datasetIndex, visible);
+                legend.chart.setDatasetVisibility(item.datasetIndex + this.stat.datasets.length, visible);
+                legend.chart.update();
+              }
+            }
+          } : {}),
           tooltip: {
+            ...(comparison ? {
+              filter: (item: TooltipItem<'line' | 'bar'>) => item.datasetIndex < this.stat.datasets.length
+            } : {}),
             ...(stacked ? {
               mode: bar ? 'index' as const : 'nearest' as const,
               axis: 'x' as const,
@@ -124,7 +176,12 @@ export class ChartComponent implements OnChanges, AfterViewInit {
             callbacks: {
               ...(stacked ? {
                 footer: (items: {parsed: {y: number | null}}[]) =>
-                  `Total: ${items.reduce((total, item) => total + (item.parsed.y ?? 0), 0)}`
+                  `Total: ${pace ? formatPace(items.reduce((total, item) => total + (item.parsed.y ?? 0), 0))
+                    : items.reduce((total, item) => total + (item.parsed.y ?? 0), 0)}`
+              } : {}),
+              ...(pace ? {
+                label: (item: TooltipItem<'line' | 'bar'>) =>
+                  `${item.dataset.label}: ${item.parsed.y === null ? '' : formatPace(item.parsed.y)} /km`
               } : {}),
               ...(linearXAxis ? {
                 title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
@@ -133,14 +190,16 @@ export class ChartComponent implements OnChanges, AfterViewInit {
                 if (!smoothing) return '';
                 const dataset = this.stat.datasets[item.datasetIndex];
                 const sorted = [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat));
-                return `Recorded: ${sorted[item.dataIndex].y}`;
+                const recorded = sorted[item.dataIndex].y;
+                return `Recorded: ${pace ? `${formatPace(parseYAxisValue(recorded, this.stat))} /km` : recorded}`;
               }
             }
           }
         },
         onClick: (_event, elements) => {
           if (elements.length > 0) {
-            const el = elements[0];
+            const el = elements.find(element => element.datasetIndex < this.stat.datasets.length);
+            if (!el) return;
             const ds = this.stat.datasets[el.datasetIndex];
             const point = sourcePoints[el.datasetIndex]?.[el.index];
             if (ds && point) {
@@ -163,7 +222,8 @@ export class ChartComponent implements OnChanges, AfterViewInit {
             beginAtZero: this.stat.includeZero ?? false,
             stacked: bar ? stacked : stacked ? 'single' : false,
             reverse: this.stat.reverse,
-            title: {display: true, text: this.stat.yAxisName}
+            ...(pace ? {ticks: {callback: (value: string | number) => `${formatPace(Number(value))} /km`}} : {}),
+            title: {display: true, text: pace ? `${this.stat.yAxisName} (min/km)` : this.stat.yAxisName}
           }
         }
       }

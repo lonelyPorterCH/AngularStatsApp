@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.8] - 2026-11-08
+
+### Added
+
+- Saved Dots + trend toggle for line charts: unconnected recorded dots with a separate centered 7-measurement moving-average trend per dataset.
+- Opt-in Pace (min/km) value format that interprets m:ss and legacy M.SS values, calculates averages in seconds, and formats chart axes and tooltips as m:ss.
+
+### Changed
+
+- Dots + trend temporarily bypasses smoothing, stacking and fill while preserving their saved preferences and the original dot size and translucent fill; clicking dots still selects original measurements for editing.
+- Legacy charts retain numeric values and their existing rendering until the new settings are enabled.
+
 ## [2.5.7] - 2026-11-06
 
 ### Added

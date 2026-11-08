@@ -11,6 +11,7 @@ import {StatService} from '../../services/stat-service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../../confirm-dialog/confirm-dialog';
 import {compareDataPoints, isLinearXAxis} from '../../models/x-axis';
+import {parseYAxisValue} from '../../models/y-axis';
 
 @Component({
   selector: 'app-edit-delete-form',
@@ -35,6 +36,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
   editPointForm!: FormGroup;
 
   selectedDatasetLabel = signal<string | null>(null);
+  submissionError = signal('');
 
   sortedDataPoints = computed(() => {
     const label = this.selectedDatasetLabel();
@@ -93,6 +95,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
 
   onEditPoint(): void {
     if (this.editPointForm.get('selectedPoint')?.invalid || !this.stat) return;
+    this.submissionError.set('');
 
     const datasetLabel: string = this.editPointForm.get('dataset')?.value;
     const selected: DataPoint = this.editPointForm.get('selectedPoint')?.value;
@@ -106,7 +109,11 @@ export class EditDeleteForm implements OnInit, OnChanges {
         }
       });
     } else {
-      this.replacePoint(datasetLabel, selected, newValue);
+      if (this.stat.yAxisFormat === 'pace' && !Number.isFinite(parseYAxisValue(String(newValue), this.stat))) {
+        this.submissionError.set('Enter pace as m:ss or M.SS with seconds between 00 and 59.');
+        return;
+      }
+      this.replacePoint(datasetLabel, selected, this.stat.yAxisFormat === 'pace' ? String(newValue) : newValue);
     }
   }
 

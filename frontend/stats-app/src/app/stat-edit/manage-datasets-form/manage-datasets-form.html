@@ -59,7 +59,7 @@
                   (change)="onSetDatasetColor(ds.label, $event)"
                   [title]="'Dataset color'"
                 />
-                @if (stat.chartType !== 'bar') {
+                @if (stat.chartType !== 'bar' && !stat.effortComparison) {
                 <mat-checkbox
                   [ngModel]="ds.filled ?? false"
                   [ngModelOptions]="{standalone: true}"
@@ -105,4 +105,3 @@
     </button>
   </form>
 </div>
-

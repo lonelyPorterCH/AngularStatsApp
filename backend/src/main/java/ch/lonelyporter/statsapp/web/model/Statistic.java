@@ -18,6 +18,9 @@ public class Statistic {
     @Getter(AccessLevel.NONE)
     private Boolean smoothing = false;
     @Getter(AccessLevel.NONE)
+    private Boolean effortComparison = false;
+    private String yAxisFormat = "number";
+    @Getter(AccessLevel.NONE)
     private Boolean stacked = false;
     @Getter(AccessLevel.NONE)
     private Boolean includeZero = false;
@@ -33,6 +36,14 @@ public class Statistic {
 
     public boolean isSmoothing() {
         return Boolean.TRUE.equals(smoothing);
+    }
+
+    public boolean isEffortComparison() {
+        return Boolean.TRUE.equals(effortComparison);
+    }
+
+    public String getYAxisFormat() {
+        return yAxisFormat == null ? "number" : yAxisFormat;
     }
 
     public boolean isStacked() {

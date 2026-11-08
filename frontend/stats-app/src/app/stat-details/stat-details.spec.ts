@@ -46,6 +46,74 @@ describe('StatDetails', () => {
 
   const stat: Stat = {id: 'weight', title: 'Weight', xAxisName: 'Date', yAxisName: 'kg', reverse: false, datasets: []};
 
+  it('saves comparison once, blocks incompatible controls, and preserves their saved preferences', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set({...stat, smoothing: true, stacked: true});
+    component.onEffortComparisonChange(true);
+    component.onEffortComparisonChange(false);
+    component.onSmoothingChange(false);
+    component.onStackedChange(false);
+    expect(component.stat()?.effortComparison).toBe(true);
+    expect(component.effortComparisonSaving()).toBe(true);
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/effort-comparison`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({effortComparison: true});
+    request.flush(null);
+    expect(component.effortComparisonSaving()).toBe(false);
+    expect(component.stat()?.smoothing).toBe(true);
+    expect(component.stat()?.stacked).toBe(true);
+    component.onEffortComparisonChange(false);
+    http.expectOne(`${environment.apiBaseUrl}/weight/effort-comparison`).flush(null);
+    expect(component.stat()?.effortComparison).toBe(false);
+    http.verify();
+  });
+
+  it('rolls comparison back after failure without losing concurrent settings', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.onEffortComparisonChange(true);
+    component.stat.update(current => ({...current!, includeZero: true}));
+    http.expectOne(`${environment.apiBaseUrl}/weight/effort-comparison`)
+      .flush('Failed', {status: 500, statusText: 'Error'});
+    expect(component.stat()?.effortComparison).toBe(false);
+    expect(component.stat()?.includeZero).toBe(true);
+    expect(component.effortComparisonError()).toContain('previous setting');
+    expect(component.effortComparisonSaving()).toBe(false);
+    http.verify();
+  });
+
+  it('saves pace format and explains validation failures while restoring the previous format', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.onYAxisFormatChange('pace');
+    component.onYAxisFormatChange('number');
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/y-axis-format`);
+    expect(request.request.body).toEqual({yAxisFormat: 'pace'});
+    request.flush(null);
+    expect(component.stat()?.yAxisFormat).toBe('pace');
+    component.onYAxisFormatChange('number');
+    http.expectOne(`${environment.apiBaseUrl}/weight/y-axis-format`).flush(null);
+    component.onYAxisFormatChange('pace');
+    http.expectOne(`${environment.apiBaseUrl}/weight/y-axis-format`)
+      .flush('Pace must have seconds between 00 and 59', {status: 400, statusText: 'Bad Request'});
+    expect(component.stat()?.yAxisFormat).toBe('number');
+    expect(component.yAxisFormatError()).toContain('seconds between');
+    expect(component.yAxisFormatSaving()).toBe(false);
+    http.verify();
+  });
+
+  it('does not save archived comparison or value format settings or enable comparison on bars', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set(stat);
+    component.archived.set(true);
+    component.onEffortComparisonChange(true);
+    component.onYAxisFormatChange('pace');
+    component.archived.set(false);
+    component.stat.set({...stat, chartType: 'bar'});
+    component.onEffortComparisonChange(true);
+    http.verify();
+  });
+
   it('saves chart type once and preserves the data and line preferences', () => {
     const http = TestBed.inject(HttpTestingController);
     component.stat.set({...stat, smoothing: true});

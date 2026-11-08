@@ -36,7 +36,8 @@
 
   <mat-form-field appearance="outline">
     <mat-label>{{ stat!.yAxisName }}</mat-label>
-    <input formControlName="y" matInput type="text" matTooltip="Enter a number (e.g., 100) or +number to increment the latest value (e.g., +10)"/>
+    <input formControlName="y" matInput type="text"
+      [matTooltip]="stat.yAxisFormat === 'pace' ? 'Enter pace as m:ss or M.SS (5.1 means 5:10). No increments.' : 'Enter a number (e.g., 100) or +number to increment the latest value (e.g., +10)'"/>
     @if (addPointForm.get('y')?.errors?.['required']) {
       <mat-error>Value is required</mat-error>
     }

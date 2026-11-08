@@ -32,13 +32,16 @@ describe('CreateForm', () => {
     expect(component.statForm.get('includeZero')?.value).toBe(false);
     component.statForm.setValue({
       id: 'cumulus', title: 'Cumulus points', chartType: 'line', xAxisName: 'Date', yAxisName: 'Points',
-      reverse: false, stacked: true, includeZero: true, xAxisScaleType: 'time', xAxisUnit: ''
+      reverse: false, stacked: true, includeZero: true, xAxisScaleType: 'time', xAxisUnit: '',
+      effortComparison: true, yAxisFormat: 'pace'
     });
     http.expectOne(`${environment.apiBaseUrl}/cumulus`).flush('Not found', {status: 404, statusText: 'Not Found'});
     fixture.debugElement.query(element => element.name === 'form').triggerEventHandler('ngSubmit');
     const request = http.expectOne(environment.apiBaseUrl);
     expect(request.request.body.stacked).toBe(true);
     expect(request.request.body.includeZero).toBe(true);
+    expect(request.request.body.effortComparison).toBe(true);
+    expect(request.request.body.yAxisFormat).toBe('pace');
     expect(request.request.body.datasets).toEqual([]);
     request.flush(null);
     http.verify();

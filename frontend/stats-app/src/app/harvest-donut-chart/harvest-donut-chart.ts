@@ -13,7 +13,7 @@ export class HarvestDonutChart implements OnChanges, AfterViewInit {
   @Input() totals: HarvestPlantTotal[] = [];
   @Input() compact = false;
   canvas = viewChild.required<ElementRef>('canvas');
-  private chart?: Chart;
+  private chart?: Chart<'doughnut', number[], string>;
   private viewInitialized = false;
 
   ngAfterViewInit(): void {

@@ -22,10 +22,8 @@
   max-width: 100%;
 }
 
-.setting-hint {
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 12px;
-  margin: 0 0 8px;
+.chart-settings .value-format {
+  width: 180px;
 }
 
 .setting-error {

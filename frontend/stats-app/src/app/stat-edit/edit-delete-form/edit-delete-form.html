@@ -25,7 +25,7 @@
 
   <mat-form-field appearance="outline">
     <mat-label>Value</mat-label>
-    <input formControlName="value" matInput type="number"/>
+    <input formControlName="value" matInput [type]="stat.yAxisFormat === 'pace' ? 'text' : 'number'"/>
   </mat-form-field>
 
   <button mat-flat-button type="submit">
@@ -33,3 +33,6 @@
     Save
   </button>
 </form>
+@if (submissionError()) {
+  <p role="alert">{{ submissionError() }}</p>
+}

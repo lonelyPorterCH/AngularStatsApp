@@ -15,7 +15,7 @@ export class HarvestLineChart implements OnChanges, AfterViewInit {
   @Input() globalSeries: HarvestChartPoint[] = [];
   @Input() showGlobal = false;
   canvas = viewChild.required<ElementRef>('canvas');
-  private chart?: Chart;
+  private chart?: Chart<'line', {x: number; y: number}[]>;
   private viewInitialized = false;
 
   ngAfterViewInit(): void {

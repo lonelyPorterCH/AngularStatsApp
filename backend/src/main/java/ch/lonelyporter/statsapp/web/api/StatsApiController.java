@@ -30,6 +30,12 @@ public class StatsApiController {
     public record SmoothingRequest(Boolean smoothing) {
     }
 
+    public record EffortComparisonRequest(Boolean effortComparison) {
+    }
+
+    public record YAxisFormatRequest(String yAxisFormat) {
+    }
+
     public record StackedRequest(Boolean stacked) {
     }
 
@@ -131,6 +137,21 @@ public class StatsApiController {
     @PatchMapping("/{id}/chart-type")
     public ResponseEntity<Void> setChartType(@PathVariable String id, @RequestBody ChartTypeRequest request) {
         statisticService.setChartType(id, request.chartType());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/effort-comparison")
+    public ResponseEntity<Void> setEffortComparison(@PathVariable String id, @RequestBody EffortComparisonRequest request) {
+        if (request.effortComparison() == null) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Effort comparison must be true or false");
+        }
+        statisticService.setEffortComparison(id, request.effortComparison());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/y-axis-format")
+    public ResponseEntity<Void> setYAxisFormat(@PathVariable String id, @RequestBody YAxisFormatRequest request) {
+        statisticService.setYAxisFormat(id, request.yAxisFormat());
         return ResponseEntity.ok().build();
     }
 

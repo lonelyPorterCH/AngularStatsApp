@@ -74,6 +74,10 @@ export class AddPointForm implements OnInit, OnChanges {
     const x = isLinearXAxis(this.stat) ? String(xValue) : xValue.toFormat('yyyy-MM-dd');
 
     if (yInput.startsWith('+')) {
+      if (this.stat.yAxisFormat === 'pace') {
+        this.submissionError.set('Enter an absolute pace as m:ss or M.SS; pace increments are not supported.');
+        return;
+      }
       // Increment mode: add the amount to the latest value
       this.handleIncrement(datasetLabel, x, yInput);
     } else {

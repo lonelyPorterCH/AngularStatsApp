@@ -171,6 +171,80 @@ class StatisticServiceTest {
     }
 
     @Test
+    void effortComparisonAndPacePersistIndependentlyWithoutRewritingMeasurements() {
+        Statistic runs = createStatistic("runs", "Runs");
+        runs.setSmoothing(true);
+        runs.getDatasets().getFirst().getDataPoints().addAll(List.of(
+                new Statistic.DataPoint("2026-11-01", "4.59"),
+                new Statistic.DataPoint("2026-11-02", "5.1")));
+        repository.save(runs);
+        repository.save(createStatistic("other", "Other"));
+        service.setEffortComparison("runs", true);
+        service.setYAxisFormat("runs", "pace");
+        Statistic loaded = repository.findById("runs");
+        assertThat(loaded.isEffortComparison()).isTrue();
+        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getYAxisFormat()).isEqualTo("pace");
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).isEqualTo(runs.getDatasets().getFirst().getDataPoints());
+        assertThat(repository.findById("other").isEffortComparison()).isFalse();
+        assertThat(repository.findById("other").getYAxisFormat()).isEqualTo("number");
+        service.setEffortComparison("runs", false);
+        service.setYAxisFormat("runs", "number");
+        assertThat(repository.findById("runs").isEffortComparison()).isFalse();
+        assertThat(repository.findById("runs").getYAxisFormat()).isEqualTo("number");
+    }
+
+    @Test
+    void newSettingsDefaultForMissingAndNullPropertiesAndRejectArchivedChanges() throws Exception {
+        for (String properties : List.of("", ",\"effortComparison\":null,\"yAxisFormat\":null")) {
+            Files.writeString(tempDir.resolve("legacy.json"),
+                    "{\"id\":\"legacy\",\"title\":\"Legacy\",\"reverse\":false,\"datasets\":[]" + properties + "}");
+            assertThat(repository.findById("legacy").isEffortComparison()).isFalse();
+            assertThat(repository.findById("legacy").getYAxisFormat()).isEqualTo("number");
+        }
+        repository.toggleArchive("legacy");
+        assertThatThrownBy(() -> service.setEffortComparison("legacy", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThatThrownBy(() -> service.setYAxisFormat("legacy", "pace"))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById("legacy").isEffortComparison()).isFalse();
+        assertThat(repository.findById("legacy").getYAxisFormat()).isEqualTo("number");
+    }
+
+    @Test
+    void paceValidationRejectsInvalidSettingsAndMeasurementsWithoutSaving() throws Exception {
+        Statistic runs = createStatistic("runs", "Runs");
+        repository.save(runs);
+        String original = Files.readString(tempDir.resolve("runs.json"));
+        for (String format : new String[]{null, "duration", ""}) {
+            assertThatThrownBy(() -> service.setYAxisFormat("runs", format))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            assertThat(Files.readString(tempDir.resolve("runs.json"))).isEqualTo(original);
+        }
+        service.setYAxisFormat("runs", "pace");
+        for (String value : List.of("4.59", "5.1", "5:09", "5:1", "5", "0.00")) {
+            service.addDataPoint("runs", "Series", new Statistic.DataPoint("2026-11-01", value));
+        }
+        String valid = Files.readString(tempDir.resolve("runs.json"));
+        for (String value : List.of("5.60", "5:60", "5.123", "-1", "NaN", "invalid")) {
+            assertThatThrownBy(() -> service.addDataPoint("runs", "Series", new Statistic.DataPoint("2026-11-02", value)))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            assertThat(Files.readString(tempDir.resolve("runs.json"))).isEqualTo(valid);
+        }
+        Statistic invalid = createStatistic("invalid", "Invalid");
+        invalid.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-01", "5.99"));
+        repository.save(invalid);
+        assertThatThrownBy(() -> service.setYAxisFormat("invalid", "pace"))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(repository.findById("invalid").getYAxisFormat()).isEqualTo("number");
+        invalid.setYAxisFormat("pace");
+        invalid.setId("new-invalid");
+        assertThatThrownBy(() -> service.createStatistic(invalid))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(tempDir.resolve("new-invalid.json")).doesNotExist();
+    }
+
+    @Test
     void setSmoothingRejectsArchivedGraphs() {
         repository.save(createStatistic("weight", "Weight"));
         repository.toggleArchive("weight");

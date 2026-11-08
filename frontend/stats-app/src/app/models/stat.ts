@@ -8,6 +8,8 @@ export interface Stat {
   xAxisUnit?: string;
   reverse: boolean;
   smoothing?: boolean;
+  effortComparison?: boolean;
+  yAxisFormat?: 'number' | 'pace';
   stacked?: boolean;
   includeZero?: boolean;
   datasets: Dataset[];

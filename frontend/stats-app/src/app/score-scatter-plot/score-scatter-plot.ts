@@ -51,7 +51,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
   private nextColorIndex = 0;
   canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
   tooltip = viewChild.required<ElementRef<HTMLDivElement>>('tooltip');
-  private chart?: Chart;
+  private chart?: Chart<'scatter'>;
   private viewInitialized = false;
 
   ngAfterViewInit(): void {
@@ -138,7 +138,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
       }) : []);
     this.exportError.set('');
     this.tooltip().nativeElement.style.opacity = '0';
-    this.chart = new Chart(this.canvas().nativeElement, {
+    this.chart = new Chart<'scatter'>(this.canvas().nativeElement, {
       type: 'scatter',
       data: {
         datasets: entries.map<ChartDataset<'scatter'>>(([playerId, scores], index) => {

@@ -76,6 +76,16 @@ describe('AddPointForm', () => {
     expect(emitted).toBe(false);
   });
 
+  it('rejects pace increments rather than adding decimal-looking pace numbers', () => {
+    fixture.componentRef.setInput('stat', {...MOCK_STAT, yAxisFormat: 'pace', xAxisScaleType: 'linear',
+      datasets: [{label: 'Run', index: 0, dataPoints: [{x: '1', y: '4.59'}]}]});
+    fixture.detectChanges();
+    component.addPointForm.setValue({dataset: 'Run', x: '2', y: '+0.10'});
+    component.onAddPoint();
+    expect(component.submissionError()).toContain('pace increments are not supported');
+    httpTesting.expectNone(`${environment.apiBaseUrl}/test-stat/datapoint`);
+  });
+
   it('shows duplicate bar-point validation errors and retains the input for correction', () => {
     fixture.componentRef.setInput('stat', {...MOCK_STAT, chartType: 'bar', xAxisScaleType: 'linear',
       datasets: [{label: 'Series', index: 0, dataPoints: [{x: '2', y: '100'}]}]});

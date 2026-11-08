@@ -35,6 +35,7 @@ public class StatisticService {
      */
     public void createStatistic(Statistic statistic) {
         validateChartType(statistic.getChartType());
+        validateYAxisFormat(statistic);
         validateBarDatasets(statistic);
         int nextStatisticIndex = repository.findAll().stream()
                 .map(Statistic::getIndex)
@@ -115,6 +116,44 @@ public class StatisticService {
         repository.save(statistic);
     }
 
+    public void setEffortComparison(String id, boolean effortComparison) {
+        Statistic statistic = repository.findById(id);
+        statistic.setEffortComparison(effortComparison);
+        repository.save(statistic);
+    }
+
+    public void setYAxisFormat(String id, String yAxisFormat) {
+        Statistic statistic = repository.findById(id);
+        statistic.setYAxisFormat(yAxisFormat);
+        if (yAxisFormat == null) {
+            throw new InvalidDataPointException("Y axis format must be number or pace");
+        }
+        validateYAxisFormat(statistic);
+        repository.save(statistic);
+    }
+
+    private void validateYAxisFormat(Statistic statistic) {
+        if (!"number".equals(statistic.getYAxisFormat()) && !"pace".equals(statistic.getYAxisFormat())) {
+            throw new InvalidDataPointException("Y axis format must be number or pace");
+        }
+        if ("pace".equals(statistic.getYAxisFormat())) {
+            statistic.getDatasets().forEach(dataset -> dataset.getDataPoints().forEach(this::validatePace));
+        }
+    }
+
+    private void validatePace(Statistic.DataPoint point) {
+        String value = point.getY() == null ? "" : point.getY().strip();
+        if (!value.matches("\\d+(?:[.:]\\d{1,2})?")) {
+            throw new InvalidDataPointException("Pace must use m:ss or M.SS (e.g. 5:09 or 5.09)");
+        }
+        String[] parts = value.split("[.:]");
+        String seconds = parts.length == 1 ? "0" : parts[1];
+        if (value.contains(".") && seconds.length() == 1) seconds += "0";
+        if (Integer.parseInt(seconds) >= 60 || !Double.isFinite(Double.parseDouble(parts[0]) * 60)) {
+            throw new InvalidDataPointException("Pace must have finite minutes and seconds between 00 and 59");
+        }
+    }
+
     public void setChartType(String id, String chartType) {
         validateChartType(chartType);
         Statistic statistic = repository.findById(id);
@@ -185,6 +224,7 @@ public class StatisticService {
     }
 
     private void validateDataPoint(Statistic statistic, Statistic.DataPoint dataPoint) {
+        if ("pace".equals(statistic.getYAxisFormat())) validatePace(dataPoint);
         if (!LINEAR.equals(statistic.getXAxisScaleType())) {
             return;
         }
