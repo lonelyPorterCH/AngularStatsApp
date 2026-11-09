@@ -14,6 +14,12 @@ These instructions apply to every Copilot session in this repository.
 
 Whenever a new feature is implemented, **all three of the following must be done in the same change**:
 
+**Version per change set, not per prompt.** Related follow-up requests, refinements, and
+UI adjustments to the same unreleased feature share one patch version and one changelog
+entry. If that change set already has a version bump, keep the version and update its
+existing changelog entry instead of bumping again. Start a new patch version for a
+separate feature/change set, a change after release, or when explicitly requested.
+
 1. **Bump the patch version** in `frontend/stats-app/src/app/app.html`:
    ```html
    <span class="version">vX.Y.Z</span>
@@ -49,4 +55,3 @@ If a new HTTP method is introduced, add it to the `allowedMethods` list.
 - Use `FormBuilder` with `{updateOn: 'blur'}` for forms.
 - Backend: use Lombok (`@Getter`, `@Setter`, `@RequiredArgsConstructor`, etc.) — avoid boilerplate.
 - Backend endpoints live under `/api/stats/**`.
-

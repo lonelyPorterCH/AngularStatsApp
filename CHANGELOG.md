@@ -2,30 +2,68 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.10] - 2026-11-09
+
+### Added
+
+- Dedicated Manage data page for datasets and adding, editing or deleting data points, with chart-click point selection.
+- Navigation between the chart, chart settings and data management pages.
+- Back to chart navigation from the edit page to the normal view of the same chart.
+
+### Changed
+
+- Moved chart type, value format, Dots + trend, smoothing, stacking and optional Y-axis bounds from the normal chart
+  view to the edit page, keeping save behavior and live chart previews.
+- The Edit page now focuses on the chart title and display settings; data management tabs live on the separate page.
+- Simplified axis field labels across chart creation, settings and data management: required fields use the standard
+  asterisk, while optional fields have no asterisk or "(optional)" suffix.
+
+## [2.5.9] - 2026-11-09
+
+### Added
+
+- Optional, saved Y-axis minimum and maximum values for new and existing charts, with finite-number and range
+  validation.
+
+### Changed
+
+- Replaced the zero-baseline control with axis-bound inputs. Either bound can be left blank for automatic scaling;
+  clearing both restores automatic scaling.
+- Removed the old zero-baseline setting and API; saved zero-baseline preferences are no longer supported. Pace chart
+  bounds use seconds; custom bounds apply to line, bar, stacked, reversed and Dots + trend charts.
+
 ## [2.5.8] - 2026-11-08
 
 ### Added
 
-- Saved Dots + trend toggle for line charts: unconnected recorded dots with a separate centered 7-measurement moving-average trend per dataset.
-- Opt-in Pace (min/km) value format that interprets m:ss and legacy M.SS values, calculates averages in seconds, and formats chart axes and tooltips as m:ss.
+- Saved Dots + trend toggle for line charts: unconnected recorded dots with a separate centered 7-measurement
+  moving-average trend per dataset.
+- Opt-in Pace (min/km) value format that interprets m:ss and legacy M.SS values, calculates averages in seconds, and
+  formats chart axes and tooltips as m:ss.
 
 ### Changed
 
-- Dots + trend temporarily bypasses smoothing, stacking and fill while preserving their saved preferences and the original dot size and translucent fill; clicking dots still selects original measurements for editing.
+- Dots + trend temporarily bypasses smoothing, stacking and fill while preserving their saved preferences and the
+  original dot size and translucent fill; clicking dots still selects original measurements for editing.
 - Legacy charts retain numeric values and their existing rendering until the new settings are enabled.
 
 ## [2.5.7] - 2026-11-06
 
 ### Added
 
-- Click-to-toggle song/difficulty selection in the single-player Beat Saber scatterplot, with stable per-selection colors and removable detail cards in a scrollable panel.
-- Export selected maps and difficulties as a Beat Saber `.bplist` playlist, combining difficulties belonging to the same song hash.
-- Resumable, non-destructive Python enrichment of existing leaderboard metadata with playlist difficulty names and characteristics.
+- Click-to-toggle song/difficulty selection in the single-player Beat Saber scatterplot, with stable per-selection
+  colors and removable detail cards in a scrollable panel.
+- Export selected maps and difficulties as a Beat Saber `.bplist` playlist, combining difficulties belonging to the same
+  song hash.
+- Resumable, non-destructive Python enrichment of existing leaderboard metadata with playlist difficulty names and
+  characteristics.
 
 ### Changed
 
-- ScoreSaber imports and regular metadata refreshes now retain difficulty information and expose it in score responses; older files remain readable.
-- Selections follow the date slider's latest eligible score, and selections no longer visible after date or player changes are removed. Comparison and compact previews remain non-selectable.
+- ScoreSaber imports and regular metadata refreshes now retain difficulty information and expose it in score responses;
+  older files remain readable.
+- Selections follow the date slider's latest eligible score, and selections no longer visible after date or player
+  changes are removed. Comparison and compact previews remain non-selectable.
 
 ## [2.5.6] - 2026-11-06
 
@@ -38,7 +76,8 @@ All notable changes to this project are documented in this file.
 
 - Bar charts show exact recorded values without smoothing and align sparse datasets by date or numeric X value.
 - Line-only smoothing and fill controls are hidden for bar charts; existing line charts retain their settings.
-- Bar charts reject duplicate X values within a dataset with validation feedback instead of silently hiding measurements.
+- Bar charts reject duplicate X values within a dataset with validation feedback instead of silently hiding
+  measurements.
 
 ## [2.5.5] - 2026-11-06
 
@@ -49,7 +88,8 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
-- Leaderboard refresh scans paginated player score histories at a paced request interval instead of requesting each leaderboard individually.
+- Leaderboard refresh scans paginated player score histories at a paced request interval instead of requesting each
+  leaderboard individually.
 
 ## [2.5.3] - 2026-11-05
 
@@ -65,18 +105,21 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- Saved "Include zero on Y axis" option for all statistics charts, including independent and stacked lines, with automatic scaling retained when off.
+- Saved "Include zero on Y axis" option for all statistics charts, including independent and stacked lines, with
+  automatic scaling retained when off.
 
 ### Changed
 
-- Chart display settings use smaller switches, shorter labels and a spaced, wrapping row while retaining accessible names and touch targets.
+- Chart display settings use smaller switches, shorter labels and a spaced, wrapping row while retaining accessible
+  names and touch targets.
 
 ## [2.5.1] - 2026-11-02
 
 ### Added
 
 - Saved stacked-line chart option for new charts and existing charts with at least two datasets.
-- Stacked charts show cumulative dataset heights and a combined total in tooltips without changing recorded measurements.
+- Stacked charts show cumulative dataset heights and a combined total in tooltips without changing recorded
+  measurements.
 
 ## [2.5.0] - 2026-10-30
 
@@ -87,7 +130,8 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - JSON-backed repositories now use staged writes to avoid leaving partially written data files.
-- Score and player file loading now fails startup when stored data cannot be read, preventing later overwrites from incomplete state.
+- Score and player file loading now fails startup when stored data cannot be read, preventing later overwrites from
+  incomplete state.
 - Score persistence now safely handles concurrent updates and rolls back in-memory changes if a write fails.
 - Dataset mutations now report missing dataset labels instead of silently succeeding.
 - Simplified storage error responses and removed redundant sorting from harvest totals calculation.
@@ -144,7 +188,8 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
-- Production deployment continues to use the existing storage environment variables; no Harvest-specific container variable is required.
+- Production deployment continues to use the existing storage environment variables; no Harvest-specific container
+  variable is required.
 
 ## [2.3.0] - 2026-10-25
 

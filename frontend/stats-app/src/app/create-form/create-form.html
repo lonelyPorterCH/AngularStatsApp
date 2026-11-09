@@ -54,7 +54,7 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Numeric X Axis Unit (optional)</mat-label>
+    <mat-label>Numeric X Axis Unit</mat-label>
     <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
   </mat-form-field>
 
@@ -69,7 +69,18 @@
   @if (statForm.get('chartType')?.value !== 'bar') {
   <mat-checkbox formControlName="effortComparison">Dots + trend (centered 7-measurement average)</mat-checkbox>
   }
-  <mat-checkbox formControlName="includeZero">Include zero on Y axis</mat-checkbox>
+  <mat-form-field appearance="outline">
+    <mat-label>Y-axis minimum</mat-label>
+    <input formControlName="yAxisMin" matInput type="number" step="any" placeholder="Automatic"/>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Y-axis maximum</mat-label>
+    <input formControlName="yAxisMax" matInput type="number" step="any" placeholder="Automatic"/>
+  </mat-form-field>
+  <p>Leave bounds blank for automatic scaling. For Pace, enter bounds in seconds (e.g. 300 = 5:00).</p>
+  @if (statForm.errors?.['yAxisBounds']) {
+  <p role="alert">{{ statForm.errors?.['yAxisBounds'] }}</p>
+  }
   @if (statForm.get('chartType')?.value === 'bar' || !statForm.get('effortComparison')?.value) {
   <mat-checkbox formControlName="stacked">Stacked</mat-checkbox>
   }

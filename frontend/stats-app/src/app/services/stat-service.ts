@@ -76,8 +76,8 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/stacked`, {stacked});
   }
 
-  setIncludeZero(id: string, includeZero: boolean): Observable<void> {
-    return this.http.patch<void>(`${this.baseUrl}/${id}/include-zero`, {includeZero});
+  setYAxisBounds(id: string, yAxisMin: number | null, yAxisMax: number | null): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/y-axis-bounds`, {yAxisMin, yAxisMax});
   }
 
   addDataset(id: string, label: string): Observable<void> {

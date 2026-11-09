@@ -22,8 +22,8 @@ public class Statistic {
     private String yAxisFormat = "number";
     @Getter(AccessLevel.NONE)
     private Boolean stacked = false;
-    @Getter(AccessLevel.NONE)
-    private Boolean includeZero = false;
+    private Double yAxisMin;
+    private Double yAxisMax;
     private String xAxisName;
     private String yAxisName;
     private String xAxisScaleType = "time";
@@ -48,10 +48,6 @@ public class Statistic {
 
     public boolean isStacked() {
         return Boolean.TRUE.equals(stacked);
-    }
-
-    public boolean isIncludeZero() {
-        return Boolean.TRUE.equals(includeZero);
     }
 
     public String getXAxisScaleType() {

@@ -1,0 +1,31 @@
+@if (stat()) {
+<h2>Manage data - {{ stat()!.title }}</h2>
+<nav aria-label="Chart pages">
+  <a [routerLink]="['/stats', stat()!.id]" matButton="outlined">
+    <mat-icon>arrow_back</mat-icon>Back to chart
+  </a>
+  <a [routerLink]="['/stats', stat()!.id, 'edit']" matButton="outlined">
+    <mat-icon>settings</mat-icon>Chart settings
+  </a>
+</nav>
+<div class="chart-container">
+  <app-chart [stat]="stat()!" (pointClick)="onChartPointClick($event)"></app-chart>
+</div>
+<p>Click a recorded point in the chart to edit or delete it.</p>
+<mat-tab-group #tabGroup>
+  <mat-tab label="Manage Datasets">
+    <app-manage-datasets-form (datasetsChanged)="reloadStat()" [stat]="stat()!"></app-manage-datasets-form>
+  </mat-tab>
+  <mat-tab label="Add Data Point">
+    <app-add-point-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-add-point-form>
+  </mat-tab>
+  <mat-tab label="Edit / Delete Point">
+    <app-edit-delete-form #editDeleteForm (pointChanged)="reloadStat()" [stat]="stat()!"></app-edit-delete-form>
+  </mat-tab>
+</mat-tab-group>
+} @else if (!error()) {
+<p>Loading...</p>
+}
+@if (error()) {
+<p class="data-error" role="alert">{{ error() }}</p>
+}

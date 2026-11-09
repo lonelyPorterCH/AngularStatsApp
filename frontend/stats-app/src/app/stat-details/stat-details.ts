@@ -9,43 +9,18 @@ import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../confirm-dialog/confirm-dialog';
 import {Title} from '@angular/platform-browser';
 import {forkJoin} from 'rxjs';
-import {MatSlideToggle} from '@angular/material/slide-toggle';
-import {MatFormField, MatLabel} from '@angular/material/form-field';
-import {MatOption, MatSelect} from '@angular/material/select';
 
 @Component({
   selector: 'app-stat-details',
-  imports: [
-    MatButton,
-    RouterLink,
-    ChartComponent,
-    MatIcon,
-    MatSlideToggle,
-    MatFormField,
-    MatLabel,
-    MatSelect,
-    MatOption
-  ],
+  imports: [MatButton, RouterLink, ChartComponent, MatIcon],
   templateUrl: './stat-details.html',
   styleUrl: './stat-details.css',
 })
 export class StatDetails implements OnInit {
   stat = signal<Stat | undefined>(undefined);
-  archived = signal<boolean>(false);
-  loading = signal<boolean>(true);
-  notFound = signal<boolean>(false);
-  smoothingSaving = signal(false);
-  smoothingError = signal('');
-  stackedSaving = signal(false);
-  stackedError = signal('');
-  includeZeroSaving = signal(false);
-  includeZeroError = signal('');
-  chartTypeSaving = signal(false);
-  chartTypeError = signal('');
-  effortComparisonSaving = signal(false);
-  effortComparisonError = signal('');
-  yAxisFormatSaving = signal(false);
-  yAxisFormatError = signal('');
+  archived = signal(false);
+  loading = signal(true);
+  notFound = signal(false);
 
   constructor(
     private statService: StatService,
@@ -58,22 +33,13 @@ export class StatDetails implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
-      if (id) {
-        this.loadStatById(id);
-      }
-    })
+      if (id) this.loadStatById(id);
+    });
   }
 
-  loadStatById(id: string) {
+  loadStatById(id: string): void {
     this.loading.set(true);
     this.notFound.set(false);
-    this.smoothingError.set('');
-    this.stackedError.set('');
-    this.includeZeroError.set('');
-    this.chartTypeError.set('');
-    this.effortComparisonError.set('');
-    this.yAxisFormatError.set('');
-
     forkJoin({
       stat: this.statService.getStatById(id),
       archived: this.statService.isArchived(id)
@@ -86,135 +52,15 @@ export class StatDetails implements OnInit {
       },
       error: err => {
         this.loading.set(false);
-
-        if (err.status === 404) {
-          this.notFound.set(true);
-        } else {
-          console.error(err);
-        }
-      }
-    });
-  }
-
-  onChartTypeChange(chartType: 'line' | 'bar'): void {
-    const stat = this.stat();
-    if (!stat || this.archived() || this.chartTypeSaving() || (stat.chartType ?? 'line') === chartType) return;
-    this.chartTypeError.set('');
-    this.chartTypeSaving.set(true);
-    this.stat.set({...stat, chartType});
-    this.statService.setChartType(stat.id, chartType).subscribe({
-      next: () => this.chartTypeSaving.set(false),
-      error: error => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, chartType: stat.chartType ?? 'line'} : current);
-          const reason = error.status === 400 && typeof error.error === 'string'
-            ? error.error : 'Could not save chart type.';
-          this.chartTypeError.set(`${reason} The previous setting has been restored.`);
-        }
-        this.chartTypeSaving.set(false);
-      }
-    });
-  }
-
-  onSmoothingChange(smoothing: boolean): void {
-    const stat = this.stat();
-    if (!stat || stat.chartType === 'bar' || stat.effortComparison || this.archived() || this.smoothingSaving()) return;
-    this.smoothingError.set('');
-    this.smoothingSaving.set(true);
-    this.stat.set({...stat, smoothing});
-    this.statService.setSmoothing(stat.id, smoothing).subscribe({
-      next: () => this.smoothingSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, smoothing: stat.smoothing ?? false} : current);
-          this.smoothingError.set('Could not save smoothing. The previous setting has been restored.');
-        }
-        this.smoothingSaving.set(false);
-      }
-    });
-  }
-
-  onEffortComparisonChange(effortComparison: boolean): void {
-    const stat = this.stat();
-    if (!stat || stat.chartType === 'bar' || this.archived() || this.effortComparisonSaving()) return;
-    this.effortComparisonError.set('');
-    this.effortComparisonSaving.set(true);
-    this.stat.set({...stat, effortComparison});
-    this.statService.setEffortComparison(stat.id, effortComparison).subscribe({
-      next: () => this.effortComparisonSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, effortComparison: stat.effortComparison ?? false} : current);
-          this.effortComparisonError.set('Could not save Dots + trend. The previous setting has been restored.');
-        }
-        this.effortComparisonSaving.set(false);
-      }
-    });
-  }
-
-  onYAxisFormatChange(yAxisFormat: 'number' | 'pace'): void {
-    const stat = this.stat();
-    if (!stat || this.archived() || this.yAxisFormatSaving() || (stat.yAxisFormat ?? 'number') === yAxisFormat) return;
-    this.yAxisFormatError.set('');
-    this.yAxisFormatSaving.set(true);
-    this.stat.set({...stat, yAxisFormat});
-    this.statService.setYAxisFormat(stat.id, yAxisFormat).subscribe({
-      next: () => this.yAxisFormatSaving.set(false),
-      error: error => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, yAxisFormat: stat.yAxisFormat ?? 'number'} : current);
-          const reason = error.status === 400 && typeof error.error === 'string'
-            ? error.error : 'Could not save value format.';
-          this.yAxisFormatError.set(`${reason} The previous setting has been restored.`);
-        }
-        this.yAxisFormatSaving.set(false);
-      }
-    });
-  }
-
-  onStackedChange(stacked: boolean): void {
-    const stat = this.stat();
-    if (!stat || (stat.chartType !== 'bar' && stat.effortComparison) || this.archived()
-      || this.stackedSaving() || (stacked && stat.datasets.length < 2)) return;
-    this.stackedError.set('');
-    this.stackedSaving.set(true);
-    this.stat.set({...stat, stacked});
-    this.statService.setStacked(stat.id, stacked).subscribe({
-      next: () => this.stackedSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, stacked: stat.stacked ?? false} : current);
-          this.stackedError.set('Could not save stacking. The previous setting has been restored.');
-        }
-        this.stackedSaving.set(false);
-      }
-    });
-  }
-
-  onIncludeZeroChange(includeZero: boolean): void {
-    const stat = this.stat();
-    if (!stat || this.archived() || this.includeZeroSaving()) return;
-    this.includeZeroError.set('');
-    this.includeZeroSaving.set(true);
-    this.stat.set({...stat, includeZero});
-    this.statService.setIncludeZero(stat.id, includeZero).subscribe({
-      next: () => this.includeZeroSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, includeZero: stat.includeZero ?? false} : current);
-          this.includeZeroError.set('Could not save the Y axis setting. The previous setting has been restored.');
-        }
-        this.includeZeroSaving.set(false);
+        if (err.status === 404) this.notFound.set(true);
+        else console.error(err);
       }
     });
   }
 
   onArchiveToggle(): void {
     const stat = this.stat();
-    if (!stat) {
-      return;
-    }
-
+    if (!stat) return;
     this.statService.toggleArchive(stat.id).subscribe({
       next: () => this.loadStatById(stat.id),
       error: err => console.error(err)
@@ -223,7 +69,6 @@ export class StatDetails implements OnInit {
 
   onDelete(): void {
     const dialogRef = this.dialog.open(ConfirmDialog);
-
     dialogRef.afterClosed().subscribe(confirmed => {
       if (confirmed) {
         this.statService.deleteStat(this.stat()!.id).subscribe({

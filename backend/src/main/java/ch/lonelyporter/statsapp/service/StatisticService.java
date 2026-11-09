@@ -36,6 +36,7 @@ public class StatisticService {
     public void createStatistic(Statistic statistic) {
         validateChartType(statistic.getChartType());
         validateYAxisFormat(statistic);
+        validateYAxisBounds(statistic.getYAxisMin(), statistic.getYAxisMax());
         validateBarDatasets(statistic);
         int nextStatisticIndex = repository.findAll().stream()
                 .map(Statistic::getIndex)
@@ -184,10 +185,21 @@ public class StatisticService {
         }
     }
 
-    public void setIncludeZero(String id, boolean includeZero) {
+    public void setYAxisBounds(String id, Double yAxisMin, Double yAxisMax) {
+        validateYAxisBounds(yAxisMin, yAxisMax);
         Statistic statistic = repository.findById(id);
-        statistic.setIncludeZero(includeZero);
+        statistic.setYAxisMin(yAxisMin);
+        statistic.setYAxisMax(yAxisMax);
         repository.save(statistic);
+    }
+
+    private void validateYAxisBounds(Double min, Double max) {
+        if ((min != null && !Double.isFinite(min)) || (max != null && !Double.isFinite(max))) {
+            throw new InvalidDataPointException("Y-axis bounds must be finite numbers");
+        }
+        if (min != null && max != null && min >= max) {
+            throw new InvalidDataPointException("Y-axis minimum must be less than maximum");
+        }
     }
 
     public void setStacked(String id, boolean stacked) {

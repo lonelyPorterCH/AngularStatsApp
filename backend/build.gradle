@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'ch.lonelyporter'
-version = '2.5.8-SNAPSHOT'
+version = '2.5.10-SNAPSHOT'
 description = 'StatsApp'
 
 java {

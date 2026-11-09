@@ -358,7 +358,7 @@ class StatisticServiceTest {
     }
 
     @Test
-    void includeZeroPersistsIndependentlyPerChartWithoutChangingDataOrOtherSettings() {
+    void yAxisBoundsPersistIndependentlyAndCanBeClearedWithoutChangingOtherSettings() throws Exception {
         Statistic statistic = createStatistic("chart", "Chart");
         statistic.setReverse(true);
         statistic.setSmoothing(true);
@@ -366,41 +366,84 @@ class StatisticServiceTest {
         repository.save(statistic);
         repository.save(createStatistic("other", "Other"));
 
-        service.setIncludeZero("chart", true);
-
+        service.setYAxisBounds("chart", -100.5, 0.0);
         Statistic loaded = service.getStatisticById("chart");
-        assertThat(loaded.isIncludeZero()).isTrue();
+        assertThat(loaded.getYAxisMin()).isEqualTo(-100.5);
+        assertThat(loaded.getYAxisMax()).isEqualTo(0.0);
+        assertThat(Files.readString(tempDir.resolve("chart.json")))
+                .contains("\"yAxisMin\"", "\"yAxisMax\"");
         assertThat(loaded.isReverse()).isTrue();
         assertThat(loaded.isSmoothing()).isTrue();
-        assertThat(loaded.isStacked()).isFalse();
         assertThat(loaded.getDatasets().getFirst().getDataPoints())
                 .containsExactly(new Statistic.DataPoint("2026-11-02", "-50"));
-        assertThat(repository.findById("other").isIncludeZero()).isFalse();
-        service.setIncludeZero("chart", false);
-        assertThat(repository.findById("chart").isIncludeZero()).isFalse();
+        assertThat(repository.findById("other").getYAxisMin()).isNull();
+        assertThat(repository.findById("other").getYAxisMax()).isNull();
+
+        service.setYAxisBounds("chart", null, -5.0);
+        assertThat(repository.findById("chart").getYAxisMin()).isNull();
+        assertThat(repository.findById("chart").getYAxisMax()).isEqualTo(-5.0);
+        service.setYAxisBounds("chart", 0.0, null);
+        assertThat(repository.findById("chart").getYAxisMin()).isEqualTo(0.0);
+        assertThat(repository.findById("chart").getYAxisMax()).isNull();
+        service.setYAxisBounds("chart", null, null);
+        assertThat(repository.findById("chart").getYAxisMin()).isNull();
+        assertThat(repository.findById("chart").getYAxisMax()).isNull();
     }
 
     @Test
-    void includeZeroRejectsArchivedAndMissingCharts() {
-        repository.save(createStatistic("chart", "Chart"));
-        repository.toggleArchive("chart");
-        assertThatThrownBy(() -> service.setIncludeZero("chart", true))
+    void yAxisBoundsValidateCreationAndUpdatesBeforeSaving() {
+        Statistic statistic = createStatistic("chart", "Chart");
+        statistic.setYAxisMin(-10.0);
+        statistic.setYAxisMax(10.0);
+        service.createStatistic(statistic);
+        assertThat(repository.findById("chart").getYAxisMin()).isEqualTo(-10.0);
+        assertThat(repository.findById("chart").getYAxisMax()).isEqualTo(10.0);
+        for (Double[] bounds : new Double[][]{
+                {5.0, 5.0}, {10.0, 5.0}, {Double.NaN, null},
+                {null, Double.POSITIVE_INFINITY}, {Double.NEGATIVE_INFINITY, 0.0}}) {
+            assertThatThrownBy(() -> service.setYAxisBounds("chart", bounds[0], bounds[1]))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            Statistic invalid = createStatistic("invalid", "Invalid");
+            invalid.setYAxisMin(bounds[0]);
+            invalid.setYAxisMax(bounds[1]);
+            assertThatThrownBy(() -> service.createStatistic(invalid))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            assertThat(repository.findById("chart").getYAxisMin()).isEqualTo(-10.0);
+            assertThat(repository.findById("chart").getYAxisMax()).isEqualTo(10.0);
+            assertThatThrownBy(() -> repository.findById("invalid"))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class);
+        }
+    }
+
+    @Test
+    void yAxisBoundsRejectArchivedAndMissingChartsAndLegacyFilesHaveNoBounds() throws Exception {
+        Files.writeString(tempDir.resolve("legacy.json"),
+                "{\"id\":\"legacy\",\"reverse\":false,\"datasets\":[]}");
+        assertThat(repository.findById("legacy").getYAxisMin()).isNull();
+        assertThat(repository.findById("legacy").getYAxisMax()).isNull();
+        repository.toggleArchive("legacy");
+        assertThatThrownBy(() -> service.setYAxisBounds("legacy", 0.0, 100.0))
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
-        assertThat(repository.findById("chart").isIncludeZero()).isFalse();
-        assertThatThrownBy(() -> service.setIncludeZero("missing", true))
+        assertThat(repository.findById("legacy").getYAxisMin()).isNull();
+        assertThatThrownBy(() -> service.setYAxisBounds("missing", null, null))
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class);
     }
 
     @Test
-    void includeZeroCanBeSelectedAtCreationAndMissingOrNullDefaultsToOff() throws Exception {
-        Statistic statistic = createStatistic("chart", "Chart");
-        statistic.setIncludeZero(true);
+    void yAxisBoundsAcceptJsonNumbersAndNullUsingTheApiPropertyNames() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Statistic statistic = mapper.readValue(
+                "{\"id\":\"chart\",\"reverse\":false,\"yAxisMin\":-10.5,\"yAxisMax\":100,\"datasets\":[]}",
+                Statistic.class);
         service.createStatistic(statistic);
-        assertThat(repository.findById("chart").isIncludeZero()).isTrue();
-        for (String property : List.of("", ",\"includeZero\":null")) {
-            Files.writeString(tempDir.resolve("legacy.json"), "{\"id\":\"legacy\",\"reverse\":false,\"datasets\":[]" + property + "}");
-            assertThat(repository.findById("legacy").isIncludeZero()).isFalse();
-        }
+        assertThat(repository.findById("chart").getYAxisMin()).isEqualTo(-10.5);
+        assertThat(repository.findById("chart").getYAxisMax()).isEqualTo(100.0);
+        Statistic automatic = mapper.readValue(
+                "{\"id\":\"automatic\",\"reverse\":false,\"yAxisMin\":null,\"yAxisMax\":null,\"datasets\":[]}",
+                Statistic.class);
+        service.createStatistic(automatic);
+        assertThat(repository.findById("automatic").getYAxisMin()).isNull();
+        assertThat(repository.findById("automatic").getYAxisMax()).isNull();
     }
 
         @Test

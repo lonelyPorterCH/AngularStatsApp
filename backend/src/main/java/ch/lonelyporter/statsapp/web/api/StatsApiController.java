@@ -39,7 +39,7 @@ public class StatsApiController {
     public record StackedRequest(Boolean stacked) {
     }
 
-    public record IncludeZeroRequest(Boolean includeZero) {
+    public record YAxisBoundsRequest(Double yAxisMin, Double yAxisMax) {
     }
 
     public record TitleRequest(String title) {
@@ -155,12 +155,9 @@ public class StatsApiController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{id}/include-zero")
-    public ResponseEntity<Void> setIncludeZero(@PathVariable String id, @RequestBody IncludeZeroRequest request) {
-        if (request.includeZero() == null) {
-            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Include zero must be true or false");
-        }
-        statisticService.setIncludeZero(id, request.includeZero());
+    @PatchMapping("/{id}/y-axis-bounds")
+    public ResponseEntity<Void> setYAxisBounds(@PathVariable String id, @RequestBody YAxisBoundsRequest request) {
+        statisticService.setYAxisBounds(id, request.yAxisMin(), request.yAxisMax());
         return ResponseEntity.ok().build();
     }
 

@@ -148,7 +148,7 @@ describe('Chart', () => {
 
   it('renders stacked bars with exact contributions even when smoothing is stored', () => {
     fixture.componentRef.setInput('stat', {...stat, chartType: 'bar', stacked: true, smoothing: true,
-      includeZero: true, datasets: [
+      yAxisMin: 0, datasets: [
         {label: 'Main unsuccessful', index: 0, dataPoints: [{x: '2026-11-03', y: '100'}, {x: '2026-11-10', y: '300'}]},
         {label: 'Small unsuccessful', index: 1, dataPoints: [{x: '2026-11-10', y: '200'}]},
         {label: 'Shinies', index: 2, dataPoints: [{x: '2026-11-10', y: '5'}]}
@@ -215,22 +215,43 @@ describe('Chart', () => {
     }
   });
 
-  it('includes zero independently of stacking, smoothing, axis direction and X axis type', () => {
+  it('uses automatic bounds independently of stacking, smoothing, axis direction and X axis type', () => {
     for (const stacked of [false, true]) {
       for (const reverse of [false, true]) {
         for (const xAxisScaleType of ['time', 'linear'] as const) {
-          for (const includeZero of [undefined, true, false]) {
-            const source = datasets.map(ds => ({...ds, dataPoints: [{x: xAxisScaleType === 'linear' ? '1' : '2026-09-30', y: '-50'}]}));
-            fixture.componentRef.setInput('stat', {...stat, datasets: source, stacked, reverse, xAxisScaleType,
-              smoothing: true, includeZero});
+          const source = datasets.map(ds => ({...ds, dataPoints: [{x: xAxisScaleType === 'linear' ? '1' : '2026-09-30', y: '-50'}]}));
+          fixture.componentRef.setInput('stat', {...stat, datasets: source, stacked, reverse, xAxisScaleType,
+            smoothing: true});
+          fixture.detectChanges();
+          const config = chartConfig.mock.lastCall![0];
+          expect(config.options.scales.y.beginAtZero).toBe(false);
+          expect(config.options.scales.y.reverse).toBe(reverse);
+          expect(config.options.scales.y.stacked).toBe(stacked ? 'single' : false);
+          expect(config.options.scales.y.min).toBeUndefined();
+          expect(config.options.scales.y.max).toBeUndefined();
+          expect(config.data.datasets[0].data[0].y).toBe(-50);
+        }
+      }
+    }
+  });
+
+  it('applies optional fixed bounds across chart types, direction, stacking and pace without altering data', () => {
+    for (const chartType of ['line', 'bar'] as const) {
+      for (const reverse of [false, true]) {
+        for (const effortComparison of [false, true]) {
+          for (const bounds of [{}, {yAxisMin: null, yAxisMax: null}, {yAxisMin: 0},
+            {yAxisMax: -5}, {yAxisMin: -100, yAxisMax: 500}]) {
+            const source: Stat = {...stat, chartType, reverse, effortComparison, stacked: true,
+              smoothing: true, yAxisFormat: 'pace', datasets, ...bounds};
+            const original = JSON.stringify(source);
+            fixture.componentRef.setInput('stat', source);
             fixture.detectChanges();
-            const config = chartConfig.mock.lastCall![0];
-            expect(config.options.scales.y.beginAtZero).toBe(includeZero ?? false);
-            expect(config.options.scales.y.reverse).toBe(reverse);
-            expect(config.options.scales.y.stacked).toBe(stacked ? 'single' : false);
-            expect(config.options.scales.y.min).toBeUndefined();
-            expect(config.options.scales.y.max).toBeUndefined();
-            expect(config.data.datasets[0].data[0].y).toBe(-50);
+            const scale = chartConfig.mock.lastCall![0].options.scales.y;
+            expect(scale.min).toBe(source.yAxisMin ?? undefined);
+            expect(scale.max).toBe(source.yAxisMax ?? undefined);
+            expect(scale.beginAtZero).toBe(false);
+            expect(scale.reverse).toBe(reverse);
+            expect(JSON.stringify(source)).toBe(original);
           }
         }
       }

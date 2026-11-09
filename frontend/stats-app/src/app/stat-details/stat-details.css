@@ -3,34 +3,6 @@
   height: 500px;
 }
 
-.chart-settings {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 24px;
-  margin-bottom: 8px;
-}
-
-.chart-settings mat-slide-toggle {
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-}
-
-.chart-settings mat-form-field {
-  width: 140px;
-  max-width: 100%;
-}
-
-.chart-settings .value-format {
-  width: 180px;
-}
-
-.setting-error {
-  color: var(--mat-sys-error, #b3261e);
-  margin: 0 0 8px;
-}
-
 button {
   margin-left: 10px;
 }

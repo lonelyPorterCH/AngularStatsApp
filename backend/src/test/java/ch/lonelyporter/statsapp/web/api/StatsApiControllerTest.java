@@ -26,14 +26,39 @@ class StatsApiControllerTest {
     }
 
     @Test
-    void includeZeroEndpointAcceptsBothBooleanSettings() throws Exception {
-        for (boolean includeZero : new boolean[]{true, false}) {
-            mvc.perform(patch("/api/stats/cumulus/include-zero")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"includeZero\":" + includeZero + "}"))
-                    .andExpect(status().isOk());
-            verify(service).setIncludeZero("cumulus", includeZero);
+    void yAxisBoundsEndpointAcceptsOptionalBoundsAndClearingBoth() throws Exception {
+        mvc.perform(patch("/api/stats/chart/y-axis-bounds")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"yAxisMin\":-10.5,\"yAxisMax\":0}"))
+                .andExpect(status().isOk());
+        verify(service).setYAxisBounds("chart", -10.5, 0.0);
+        mvc.perform(patch("/api/stats/chart/y-axis-bounds")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"yAxisMax\":100}"))
+                .andExpect(status().isOk());
+        verify(service).setYAxisBounds("chart", null, 100.0);
+        mvc.perform(patch("/api/stats/chart/y-axis-bounds")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"yAxisMin\":0}"))
+                .andExpect(status().isOk());
+        verify(service).setYAxisBounds("chart", 0.0, null);
+        mvc.perform(patch("/api/stats/chart/y-axis-bounds")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"yAxisMin\":null,\"yAxisMax\":null}"))
+                .andExpect(status().isOk());
+        verify(service).setYAxisBounds("chart", null, null);
+    }
+
+    @Test
+    void yAxisBoundsEndpointRejectsInvalidTypesAndReportsRangeValidation() throws Exception {
+        for (String body : new String[]{"{\"yAxisMin\":{}}", "{\"yAxisMax\":\"invalid\"}"}) {
+            mvc.perform(patch("/api/stats/chart/y-axis-bounds")
+                            .contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
         }
+        verifyNoInteractions(service);
+        doThrow(new InvalidDataPointException("Y-axis minimum must be less than maximum"))
+                .when(service).setYAxisBounds("chart", 10.0, 5.0);
+        mvc.perform(patch("/api/stats/chart/y-axis-bounds")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"yAxisMin\":10,\"yAxisMax\":5}"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -69,16 +94,6 @@ class StatsApiControllerTest {
                             .contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isBadRequest());
         }
-    }
-
-    @Test
-    void includeZeroEndpointRejectsMissingNullAndInvalidSettings() throws Exception {
-        for (String body : new String[]{"{}", "{\"includeZero\":null}", "{\"includeZero\":{}}"}) {
-            mvc.perform(patch("/api/stats/cumulus/include-zero")
-                            .contentType(MediaType.APPLICATION_JSON).content(body))
-                    .andExpect(status().isBadRequest());
-        }
-        verifyNoInteractions(service);
     }
 
     @Test

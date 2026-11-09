@@ -219,7 +219,9 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
             title: {display: true, text: xAxisTitle}
           },
           y: {
-            beginAtZero: this.stat.includeZero ?? false,
+            beginAtZero: false,
+            min: this.stat.yAxisMin ?? undefined,
+            max: this.stat.yAxisMax ?? undefined,
             stacked: bar ? stacked : stacked ? 'single' : false,
             reverse: this.stat.reverse,
             ...(pace ? {ticks: {callback: (value: string | number) => `${formatPace(Number(value))} /km`}} : {}),

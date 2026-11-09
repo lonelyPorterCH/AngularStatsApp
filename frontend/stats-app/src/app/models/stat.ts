@@ -11,7 +11,8 @@ export interface Stat {
   effortComparison?: boolean;
   yAxisFormat?: 'number' | 'pace';
   stacked?: boolean;
-  includeZero?: boolean;
+  yAxisMin?: number | null;
+  yAxisMax?: number | null;
   datasets: Dataset[];
 }
 

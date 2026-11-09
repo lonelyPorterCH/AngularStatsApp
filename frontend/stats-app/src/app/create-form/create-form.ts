@@ -9,6 +9,7 @@ import {Stat} from '../models/stat';
 import {Router} from '@angular/router';
 import {MatOption} from '@angular/material/core';
 import {MatSelect} from '@angular/material/select';
+import {yAxisBoundsValidator} from '../validators/y-axis-bounds.validator';
 
 @Component({
   selector: 'app-create-form',
@@ -44,18 +45,17 @@ export class CreateForm implements OnInit {
       yAxisName: ['', Validators.required],
       reverse: [false, Validators.required],
       stacked: [false],
-      includeZero: [false],
+      yAxisMin: [null],
+      yAxisMax: [null],
       xAxisScaleType: ['time', Validators.required],
       xAxisUnit: ['']
-    }, {updateOn: 'blur'});
+    }, {updateOn: 'blur', validators: yAxisBoundsValidator});
   }
 
   onChartTypeChange(chartType: 'line' | 'bar'): void {
     if (chartType !== 'bar') return;
-    for (const setting of ['stacked', 'includeZero']) {
-      const control = this.statForm.get(setting);
-      if (control?.pristine) control.setValue(true);
-    }
+    const control = this.statForm.get('stacked');
+    if (control?.pristine) control.setValue(true);
   }
 
   protected onSubmit(): void {
@@ -73,7 +73,8 @@ export class CreateForm implements OnInit {
       yAxisName: this.statForm.value.yAxisName,
       reverse: this.statForm.value.reverse,
       stacked: this.statForm.value.stacked,
-      includeZero: this.statForm.value.includeZero,
+      yAxisMin: this.statForm.value.yAxisMin,
+      yAxisMax: this.statForm.value.yAxisMax,
       xAxisScaleType: this.statForm.value.xAxisScaleType,
       xAxisUnit: this.statForm.value.xAxisUnit?.trim(),
       datasets: []

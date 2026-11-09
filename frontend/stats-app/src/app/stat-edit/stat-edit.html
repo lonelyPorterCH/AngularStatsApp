@@ -1,36 +1,84 @@
 @if (stat()) {
-  <h2>Edit - {{ stat()!.title }}</h2>
-
-  <form class="rename-form" [formGroup]="titleForm" (ngSubmit)="renameGraph()">
-    <mat-form-field appearance="outline">
-      <mat-label>Graph Title</mat-label>
-      <input matInput formControlName="title">
-      @if (titleForm.controls.title.invalid) { <mat-error>A graph title is required.</mat-error> }
-    </mat-form-field>
-    <button mat-flat-button type="submit" [disabled]="renaming()">
-      <mat-icon>drive_file_rename_outline</mat-icon>{{ renaming() ? 'Saving...' : 'Rename Graph' }}
-    </button>
-  </form>
-  @if (renameError()) { <p class="rename-error" role="alert">{{ renameError() }}</p> }
-  @if (renameSaved()) { <p role="status">Graph renamed.</p> }
-
-  <div class="chart-container">
-    <app-chart [stat]="stat()!" (pointClick)="onChartPointClick($event)"></app-chart>
-  </div>
-
-  <mat-tab-group #tabGroup>
-    <mat-tab label="Manage Datasets">
-      <app-manage-datasets-form (datasetsChanged)="reloadStat()" [stat]="stat()!"></app-manage-datasets-form>
-    </mat-tab>
-
-    <mat-tab label="Add Data Point">
-      <app-add-point-form (pointChanged)="reloadStat()" [stat]="stat()!"></app-add-point-form>
-    </mat-tab>
-
-    <mat-tab label="Edit / Delete Point">
-      <app-edit-delete-form #editDeleteForm (pointChanged)="reloadStat()" [stat]="stat()!"></app-edit-delete-form>
-    </mat-tab>
-  </mat-tab-group>
+<h2>Edit - {{ stat()!.title }}</h2>
+<nav aria-label="Chart pages">
+<a [routerLink]="['/stats', stat()!.id]" matButton="outlined">
+  <mat-icon>arrow_back</mat-icon>
+  Back to chart
+</a>
+<a [routerLink]="['/stats', stat()!.id, 'data']" matButton="outlined">
+  <mat-icon>table_chart</mat-icon>
+  Manage data
+</a>
+</nav>
+<form class="rename-form" [formGroup]="titleForm" (ngSubmit)="renameGraph()">
+  <mat-form-field appearance="outline">
+    <mat-label>Graph Title</mat-label>
+    <input matInput formControlName="title">
+    @if (titleForm.controls.title.invalid) { <mat-error>A graph title is required.</mat-error> }
+  </mat-form-field>
+  <button mat-flat-button type="submit" [disabled]="renaming()">
+    <mat-icon>drive_file_rename_outline</mat-icon>{{ renaming() ? 'Saving...' : 'Rename Graph' }}
+  </button>
+</form>
+@if (renameError()) { <p class="rename-error" role="alert">{{ renameError() }}</p> }
+@if (renameSaved()) { <p role="status">Graph renamed.</p> }
+<div class="chart-settings" role="group" aria-label="Chart display settings">
+  <mat-form-field appearance="outline">
+    <mat-label>Chart type</mat-label>
+    <mat-select [value]="stat()!.chartType ?? 'line'" [disabled]="archived() || chartTypeSaving()"
+      (selectionChange)="onChartTypeChange($event.value)">
+      <mat-option value="line">Line</mat-option>
+      <mat-option value="bar">Bar</mat-option>
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline" class="value-format">
+    <mat-label>Value format</mat-label>
+    <mat-select [value]="stat()!.yAxisFormat ?? 'number'" [disabled]="archived() || yAxisFormatSaving()"
+      (selectionChange)="onYAxisFormatChange($event.value)">
+      <mat-option value="number">Number</mat-option>
+      <mat-option value="pace">Pace (min/km)</mat-option>
+    </mat-select>
+  </mat-form-field>
+  @if (stat()!.chartType !== 'bar') {
+  <mat-slide-toggle [hideIcon]="true" aria-label="Dots + trend" title="Recorded dots and a centered 7-measurement average"
+    [checked]="stat()!.effortComparison ?? false" [disabled]="archived() || effortComparisonSaving()"
+    (change)="onEffortComparisonChange($event.checked)">Dots + trend</mat-slide-toggle>
+  @if (!stat()!.effortComparison) {
+  <mat-slide-toggle [hideIcon]="true" aria-label="Smooth trend (7 measurements)" title="Smooth trend (7 measurements)"
+    [checked]="stat()!.smoothing ?? false" [disabled]="archived() || smoothingSaving()"
+    (change)="onSmoothingChange($event.checked)">Smooth trend</mat-slide-toggle>
+  }
+  }
+  <mat-slide-toggle [hideIcon]="true" aria-label="Stacked chart" title="Stacked chart"
+    [checked]="stat()!.stacked ?? false"
+    [disabled]="archived() || stackedSaving() || (stat()!.chartType !== 'bar' && !!stat()!.effortComparison) || (!stat()!.stacked && stat()!.datasets.length < 2)"
+    (change)="onStackedChange($event.checked)">Stacked</mat-slide-toggle>
+</div>
+<form class="chart-settings" [formGroup]="yAxisBoundsForm" (ngSubmit)="onYAxisBoundsSave()">
+  <mat-form-field appearance="outline">
+    <mat-label>Y-axis minimum</mat-label>
+    <input matInput type="number" step="any" formControlName="yAxisMin" placeholder="Automatic"/>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Y-axis maximum</mat-label>
+    <input matInput type="number" step="any" formControlName="yAxisMax" placeholder="Automatic"/>
+  </mat-form-field>
+  <button matButton="outlined" type="submit"
+    [disabled]="archived() || yAxisBoundsSaving() || yAxisBoundsForm.invalid">Save bounds</button>
+</form>
+<p>Leave bounds blank for automatic scaling. For Pace, enter bounds in seconds (e.g. 300 = 5:00).</p>
+@if (yAxisBoundsForm.errors?.['yAxisBounds']) {
+<p class="setting-error" role="alert">{{ yAxisBoundsForm.errors?.['yAxisBounds'] }}</p>
+}
+@if (effortComparisonError()) { <p class="setting-error" role="alert">{{ effortComparisonError() }}</p> }
+@if (yAxisFormatError()) { <p class="setting-error" role="alert">{{ yAxisFormatError() }}</p> }
+@if (chartTypeError()) { <p class="setting-error" role="alert">{{ chartTypeError() }}</p> }
+@if (yAxisBoundsError()) { <p class="setting-error" role="alert">{{ yAxisBoundsError() }}</p> }
+@if (smoothingError()) { <p class="setting-error" role="alert">{{ smoothingError() }}</p> }
+@if (stackedError()) { <p class="setting-error" role="alert">{{ stackedError() }}</p> }
+<div class="chart-container">
+  <app-chart [stat]="stat()!"></app-chart>
+</div>
 } @else {
-  <p>Loading...</p>
+<p>Loading...</p>
 }

@@ -4,8 +4,10 @@
   margin-bottom: 24px;
 }
 
-mat-tab-group {
-  max-width: 500px;
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 form {
@@ -21,6 +23,7 @@ form {
   flex-wrap: wrap;
   gap: 12px;
   padding-top: 0;
+  margin-top: 16px;
   margin-bottom: 16px;
 }
 
@@ -38,7 +41,28 @@ form {
   color: var(--mat-sys-error, #b3261e);
 }
 
-/*Fix Scrollbars appearing inside the tabs*/
-::ng-deep .mat-mdc-tab-body-content {
-  overflow: hidden !important;
+.chart-settings {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  margin-bottom: 8px;
+  padding-top: 0;
+}
+
+.chart-settings mat-slide-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+}
+
+.chart-settings mat-form-field {
+  width: 180px;
+  max-width: 100%;
+}
+
+.setting-error {
+  color: var(--mat-sys-error, #b3261e);
+  margin: 0 0 8px;
 }
