@@ -30,7 +30,7 @@ class ScoreServiceTest {
         LeaderboardMetadata currentMetadata = new LeaderboardMetadata(1475, "hash", "song", "mapper", 7.0, null);
         LocalDateTime scoreDate = LocalDateTime.of(2026, 11, 5, 12, 0);
         ScoreRecord newScore = new ScoreRecord(
-                new ScoreEvent(1475, scoreDate, 1, 99.0, "hash"),
+                new ScoreEvent(1475, scoreDate, 1, 99.0, "hash", false),
                 currentMetadata);
         when(scoreRepository.mostRecentScoreDate(first.id())).thenReturn(Optional.empty());
         when(scoreRepository.mostRecentScoreDate(second.id())).thenReturn(Optional.of(scoreDate));

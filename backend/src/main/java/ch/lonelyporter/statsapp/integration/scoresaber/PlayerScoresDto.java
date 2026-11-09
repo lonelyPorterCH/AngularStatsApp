@@ -10,7 +10,7 @@ public record PlayerScoresDto(List<PlayerScore> data, Metadata metadata) {
     public record PlayerScore(Score score, Leaderboard leaderboard) {
     }
 
-    public record Score(long id, Double accuracy, long modifiedScore, Instant createdAt) {
+    public record Score(long id, Double accuracy, long modifiedScore, Instant createdAt, List<String> mods) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

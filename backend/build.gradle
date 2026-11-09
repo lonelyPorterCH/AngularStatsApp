@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'ch.lonelyporter'
-version = '2.5.10-SNAPSHOT'
+version = '2.5.11-SNAPSHOT'
 description = 'StatsApp'
 
 java {
@@ -28,6 +28,14 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
+}
+
+tasks.named('bootJar') {
+    archiveFileName = 'app.jar'
+}
+
+tasks.named('jar') {
+    enabled = false
 }
 
 tasks.named('test') {

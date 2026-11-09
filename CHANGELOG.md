@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.11] - 2026-11-09
+
+### Added
+
+- Off-by-default "Highlight NF scores" toggle in single-player Beat Saber charts: NF dots turn orange without creating song selections.
+- Per-play No Fail status in score storage and responses, sourced from ScoreSaber's `mods` array.
+- Non-destructive Python enrichment for existing player files, with explicit reporting of historical plays whose modifiers cannot be recovered.
+
+### Changed
+
+- Selected dots retain their selection colors over NF highlighting; deselecting restores orange when NF highlighting is enabled.
+- Comparison and compact previews keep their existing player colors. Old scores with unavailable NF status remain readable and keep their normal color without displaying a migration notice.
+
 ## [2.5.10] - 2026-11-09
 
 ### Added
@@ -17,6 +30,11 @@ All notable changes to this project are documented in this file.
 - The Edit page now focuses on the chart title and display settings; data management tabs live on the separate page.
 - Simplified axis field labels across chart creation, settings and data management: required fields use the standard
   asterisk, while optional fields have no asterisk or "(optional)" suffix.
+
+### Fixed
+
+- Docker image could package a stale local backend JAR without the frontend, causing 404 errors on every page.
+  Local build output is now excluded from the build context and the boot JAR has a fixed name.
 
 ## [2.5.9] - 2026-11-09
 

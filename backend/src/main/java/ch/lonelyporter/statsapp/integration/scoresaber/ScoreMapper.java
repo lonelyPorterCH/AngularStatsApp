@@ -54,8 +54,16 @@ final class ScoreMapper {
         var timeSet = score.createdAt().atOffset(ZoneOffset.UTC).toLocalDateTime();
         var metadata = mapLeaderboard(leaderboard);
         var event = new ScoreEvent(leaderboard.id(), timeSet, score.createdAt().toEpochMilli(),
-                toPercentage(score.accuracy(), score.modifiedScore(), leaderboard.maxScore()), metadata.songHash());
+                toPercentage(score.accuracy(), score.modifiedScore(), leaderboard.maxScore()), metadata.songHash(),
+                mapNoFail(score.mods()));
         return new ScoreRecord(event, metadata);
+    }
+
+    static boolean mapNoFail(List<String> mods) {
+        if (mods == null || mods.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("ScoreSaber omitted valid score modifiers");
+        }
+        return mods.contains("NF");
     }
 
     private static double toPercentage(Double accuracy, long modifiedScore, int maxScore) {

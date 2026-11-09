@@ -82,7 +82,7 @@ class ScoreFileRepositoryTest {
         String hash = "hash-" + id;
         var date = LocalDateTime.of(2026, 10, 30, 12, 0).plusSeconds(id);
         return new ScoreRecord(
-                new ScoreEvent(id, date, id, 100, hash),
+                new ScoreEvent(id, date, id, 100, hash, false),
                 new LeaderboardMetadata(id, hash, "song", "author", 1.0, null));
     }
 }

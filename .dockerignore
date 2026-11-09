@@ -1,0 +1,15 @@
+.git
+.github
+.idea
+.vscode
+*.tar
+
+backend/build
+backend/bin
+backend/.gradle
+backend/.idea
+backend/*.iml
+
+frontend/stats-app/node_modules
+frontend/stats-app/dist
+frontend/stats-app/.angular

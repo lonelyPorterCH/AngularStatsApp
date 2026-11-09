@@ -79,6 +79,11 @@
           }
         </select>
       </label>
+    } @else {
+      <label class="compare-toggle">
+        <input type="checkbox" [(ngModel)]="highlightNoFail">
+        Highlight NF scores
+      </label>
     }
   </div>
 
@@ -91,7 +96,7 @@
   } @else {
     <div class="comparison-chart">
       <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [maximumDate]="maximumDate"
-                             [selectionEnabled]="!compareMode"></app-score-scatter-plot>
+                             [selectionEnabled]="!compareMode" [highlightNoFail]="!compareMode && highlightNoFail"></app-score-scatter-plot>
     </div>
     <label class="date-slider">
       <span>Show scores up to {{ selectedDateTimestamp | date: 'dd.MM.yyyy' }}</span>

@@ -31,6 +31,10 @@ describe('ScoreComparison player registration', () => {
     expect(component.players()).toEqual([]);
   });
 
+  it('starts NF highlighting disabled', () => {
+    expect(component.highlightNoFail).toBe(false);
+  });
+
   it('adds and selects a player and loads their scores', () => {
     service.addPlayer.mockReturnValue(of(player));
     component.addPlayerForm.controls.playerId.setValue(` ${player.id} `);

@@ -20,6 +20,7 @@ export class ScoreComparison implements OnInit {
   selectedPlayer = '';
   selectedOtherPlayer = '';
   compareMode = false;
+  highlightNoFail = false;
   maximumDate = '';
   earliestScoreTimestamp = Date.now();
   latestScoreTimestamp = Date.now();

@@ -3,10 +3,24 @@ package ch.lonelyporter.statsapp.integration.scoresaber;
 import ch.lonelyporter.statsapp.domain.scores.SongDifficulty;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ScoreMapperTest {
+    @Test
+    void mapsNoFailOnlyWhenExactNfModifierIsPresent() {
+        assertThat(ScoreMapper.mapNoFail(List.of("NF"))).isTrue();
+        assertThat(ScoreMapper.mapNoFail(List.of("FS", "NF"))).isTrue();
+        assertThat(ScoreMapper.mapNoFail(List.of())).isFalse();
+        assertThat(ScoreMapper.mapNoFail(List.of("FS", "NFS"))).isFalse();
+        assertThatThrownBy(() -> ScoreMapper.mapNoFail(null)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> ScoreMapper.mapNoFail(Arrays.asList("NF", null)))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     @Test
     void mapsEveryDifficultyToPlaylistNamesAndStripsOnlyTheSoloPrefix() {
         int[] values = {1, 3, 5, 7, 9};

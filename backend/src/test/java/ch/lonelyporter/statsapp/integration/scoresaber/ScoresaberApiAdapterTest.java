@@ -32,6 +32,7 @@ class ScoresaberApiAdapterTest {
         server.verify();
         assertThat(result.newScores()).hasSize(1);
         assertThat(result.newScores().getFirst().event().accuracy()).isEqualTo(95.0);
+        assertThat(result.newScores().getFirst().event().noFail()).isTrue();
         assertThat(result.leaderboards()).hasSize(2);
         assertThat(result.leaderboards()).extracting(LeaderboardMetadata::leaderboardId)
                 .containsExactly(1475L, 2000L);
@@ -45,7 +46,7 @@ class ScoresaberApiAdapterTest {
         return """
                 {
                   "data": [{
-                    "score": {"id": 10, "accuracy": 0.90, "modifiedScore": 900, "createdAt": "2022-01-19T19:09:08Z"},
+                    "score": {"id": 10, "accuracy": 0.90, "modifiedScore": 900, "createdAt": "2022-01-19T19:09:08Z", "mods": []},
                     "leaderboard": {
                       "id": 1475,
                       "difficulty": {"difficulty": 5, "gameMode": "SoloStandard", "rawDifficulty": "_Hard_SoloStandard"},
@@ -64,7 +65,7 @@ class ScoresaberApiAdapterTest {
                 {
                   "data": [
                     {
-                      "score": {"id": 11, "accuracy": 0.95, "modifiedScore": 950, "createdAt": "2022-01-21T19:09:08Z"},
+                      "score": {"id": 11, "accuracy": 0.95, "modifiedScore": 950, "createdAt": "2022-01-21T19:09:08Z", "mods": ["FS", "NF"]},
                       "leaderboard": {
                         "id": 1475,
                         "difficulty": {"difficulty": 5, "gameMode": "SoloStandard"},
@@ -74,7 +75,7 @@ class ScoresaberApiAdapterTest {
                       }
                     },
                     {
-                      "score": {"id": 12, "accuracy": 0.80, "modifiedScore": 800, "createdAt": "2022-01-22T19:09:08Z"},
+                      "score": {"id": 12, "accuracy": 0.80, "modifiedScore": 800, "createdAt": "2022-01-22T19:09:08Z", "mods": []},
                       "leaderboard": {
                         "id": 2000,
                         "difficulty": {"difficulty": 9, "gameMode": "SoloOneSaber"},

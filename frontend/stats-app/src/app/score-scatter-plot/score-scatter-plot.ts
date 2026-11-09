@@ -45,6 +45,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
   @Input() maximumDate?: string;
   @Input() compact = false;
   @Input() selectionEnabled = false;
+  @Input() highlightNoFail = false;
   readonly selectedSongs = signal<{key: string; score: Score; color: string}[]>([]);
   readonly exportError = signal('');
   private readonly selectionByKey = computed(() => new Map(this.selectedSongs().map(item => [item.key, item])));
@@ -63,6 +64,8 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     if (this.viewInitialized && (changes['playerScores'] || changes['playerNames'] || changes['maximumDate']
       || changes['compact'] || changes['selectionEnabled'])) {
       this.renderChart();
+    } else if (this.viewInitialized && changes['highlightNoFail']) {
+      this.chart?.update('none');
     }
   }
 
@@ -126,6 +129,19 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     return `${playerId}\u0000${score.songHash}\u0000${score.leaderboardId}`;
   }
 
+  private pointColor(playerId: string, score: Score | undefined, defaultColor: string): string {
+    if (score) {
+      const selectedColor = this.selectionByKey().get(this.selectionKey(playerId, score))?.color;
+      if (selectedColor) {
+        return selectedColor;
+      }
+      if (this.canSelect && this.highlightNoFail && score.noFail === true) {
+        return 'rgb(255 140 0 / 0.85)';
+      }
+    }
+    return defaultColor;
+  }
+
   private renderChart(): void {
     this.chart?.destroy();
     const entries = Object.entries(selectLatestScoresBySongAndLeaderboard(this.playerScores, this.maximumDate));
@@ -146,16 +162,9 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
           return {
             label: this.playerNames[playerId] ?? playerId,
             data: scores.map(score => ({x: score.stars, y: score.accuracy})),
-            backgroundColor: context => {
-              const score = scores[context.dataIndex];
-              return (score && this.selectionByKey().get(this.selectionKey(playerId, score))?.color)
-                || `rgb(${color} / ${this.compact ? '0.2' : '0.85'})`;
-            },
-            borderColor: context => {
-              const score = scores[context.dataIndex];
-              return (score && this.selectionByKey().get(this.selectionKey(playerId, score))?.color)
-                || `rgb(${color} / 0.85)`;
-            },
+            backgroundColor: context => this.pointColor(playerId, scores[context.dataIndex],
+              `rgb(${color} / ${this.compact ? '0.2' : '0.85'})`),
+            borderColor: context => this.pointColor(playerId, scores[context.dataIndex], `rgb(${color} / 0.85)`),
             pointRadius: context => {
               const score = scores[context.dataIndex];
               return score && this.selectionByKey().has(this.selectionKey(playerId, score)) ? 6 : 2;

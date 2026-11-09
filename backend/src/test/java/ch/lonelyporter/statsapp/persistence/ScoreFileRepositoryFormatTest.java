@@ -48,6 +48,7 @@ class ScoreFileRepositoryFormatTest {
         assertThat(scores).extracting(Score::songName).containsOnly("song");
         assertThat(scores).extracting(Score::stars).containsExactly(6.14, 6.14, 4.65);
         assertThat(scores).extracting(Score::difficulty).containsOnly(new SongDifficulty("Standard", "Hard"));
+        assertThat(scores).extracting(Score::noFail).containsOnly(true);
         assertThat(reloaded.mostRecentScoreDate("player-1")).contains(FIRST_DATE.plusDays(3));
         assertThat(reloaded.getAllPlayerIds()).containsExactly("player-1");
 
@@ -55,6 +56,7 @@ class ScoreFileRepositoryFormatTest {
         assertThat(response)
                 .contains("\"leaderboardId\":407243", "\"songName\":\"song\"", "\"accuracy\":54.0", "\"timeSet\":\"2022-01-19T19:09:08\"")
                 .contains("\"difficulty\":{\"characteristic\":\"Standard\",\"name\":\"Hard\"}")
+                .contains("\"noFail\":true")
                 .doesNotContain("\"id\"", "gameMode");
     }
 
@@ -74,6 +76,7 @@ class ScoreFileRepositoryFormatTest {
         assertThat(after.timeSet()).isEqualTo(before.timeSet());
         assertThat(after.timeSetMillis()).isEqualTo(before.timeSetMillis());
         assertThat(after.accuracy()).isEqualTo(before.accuracy());
+        assertThat(after.noFail()).isTrue();
         assertThat(after.songName()).isEqualTo("song");
         assertThat(after.levelAuthorName()).isEqualTo("author");
         assertThat(after.stars()).isEqualTo(8.1);
@@ -86,7 +89,7 @@ class ScoreFileRepositoryFormatTest {
 
         repository.addScores(List.of(new ScoreRecord(
                 new ScoreEvent(1475, FIRST_DATE.plusDays(2), FIRST_DATE.plusDays(2)
-                        .toInstant(java.time.ZoneOffset.UTC).toEpochMilli(), 91.5, HASH),
+                        .toInstant(java.time.ZoneOffset.UTC).toEpochMilli(), 91.5, HASH, false),
                 new LeaderboardMetadata(1475, HASH, "changed name", "changed author", 8.1, null))), "player-1");
 
         List<Score> scores = repository.loadScores("player-1");
@@ -97,6 +100,24 @@ class ScoreFileRepositoryFormatTest {
         assertThat(scores).extracting(Score::timeSet).containsExactly(FIRST_DATE, FIRST_DATE.plusDays(2));
         assertThat(scores).extracting(Score::accuracy).containsExactly(88.25, 91.5);
         assertThat(scores).extracting(Score::difficulty).containsOnly(new SongDifficulty("Standard", "Hard"));
+        assertThat(scores).extracting(Score::noFail).containsExactly(true, false);
+    }
+
+    @Test
+    void oldEventsWithoutNoFailRemainUnknownRatherThanBecomingFalse() throws Exception {
+        Files.writeString(tempDir.resolve("leaderboards.json"), """
+                [{"leaderboardId":1475,"songHash":"%s","songName":"song","levelAuthorName":"author","stars":7.2}]
+                """.formatted(HASH));
+        Files.writeString(tempDir.resolve("123.json"), """
+                [{"leaderboardId":1475,"songHash":"%s","timeSet":"2022-01-19T19:09:08",
+                  "timeSetMillis":1642619348000,"accuracy":80}]
+                """.formatted(HASH));
+        ScoreFileRepository repository = createRepository();
+        repository.readScores();
+
+        assertThat(repository.loadScores("123").getFirst().noFail()).isNull();
+        assertThat(new ObjectMapper().writeValueAsString(repository.loadScores("123")))
+                .contains("\"noFail\":null");
     }
 
     @Test
@@ -107,7 +128,7 @@ class ScoreFileRepositoryFormatTest {
         ScoreFileRepository repository = createRepository();
         repository.readScores();
         repository.addScores(List.of(new ScoreRecord(
-                new ScoreEvent(1475, FIRST_DATE, 123, 80, HASH),
+                new ScoreEvent(1475, FIRST_DATE, 123, 80, HASH, null),
                 new LeaderboardMetadata(1475, HASH, "song", "author", 7.2, null))), "player-1");
         assertThat(repository.loadScores("player-1").getFirst().difficulty()).isNull();
         String originalEvents = Files.readString(tempDir.resolve("player-1.json"));
@@ -127,7 +148,7 @@ class ScoreFileRepositoryFormatTest {
     @Test
     void addingNewScoresBackfillsDifficultyButDoesNotRefreshStars() {
         ScoreFileRepository repository = createRepository();
-        repository.addScores(List.of(new ScoreRecord(new ScoreEvent(1475, FIRST_DATE, 123, 80, HASH),
+        repository.addScores(List.of(new ScoreRecord(new ScoreEvent(1475, FIRST_DATE, 123, 80, HASH, null),
                 new LeaderboardMetadata(1475, HASH, "song", "author", 7.2, null))), "player-1");
 
         repository.addScores(List.of(scoreRecord(1475, FIRST_DATE.plusDays(1), 90, 8.1)), "player-1");
@@ -154,7 +175,7 @@ class ScoreFileRepositoryFormatTest {
     private static ScoreRecord scoreRecord(long leaderboardId, LocalDateTime date, double accuracy, double stars) {
         return new ScoreRecord(
                 new ScoreEvent(leaderboardId, date, date.toInstant(java.time.ZoneOffset.UTC).toEpochMilli(),
-                        accuracy, HASH),
+                        accuracy, HASH, true),
                 new LeaderboardMetadata(leaderboardId, HASH, "song", "author", stars, new SongDifficulty("Standard", "Hard")));
     }
 }

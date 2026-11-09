@@ -80,6 +80,7 @@ difficulties. Reads join those values into the existing API `Score` shape.
 | `timeSetMillis`   | score event     | `score.createdAt.toEpochMilli()`                               |
 | `timeSet`         | score event     | `score.createdAt` converted to UTC `LocalDateTime`             |
 | `accuracy`        | score event     | Percentage conversion described below                          |
+| `noFail`          | score event     | `score.mods` contains the exact `"NF"` modifier                |
 | `songHash`        | event and cache | `leaderboard.map.hash`; paired with leaderboard ID             |
 | `songName`        | leaderboard     | `leaderboard.map.songName`                                     |
 | `levelAuthorName` | leaderboard     | `leaderboard.map.levelAuthorName`                              |

@@ -58,6 +58,86 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
       vi.unstubAllGlobals();
     });
 
+    it('highlights only NF dots when enabled without creating song selections or rebuilding the chart', () => {
+      fixture.componentRef.setInput('playerScores', {
+        player: [{...first, noFail: true}, {...second, noFail: false}, {...first, leaderboardId: 3, noFail: null}]
+      });
+      fixture.detectChanges();
+      const dataset = chartConfig.mock.lastCall![0].data.datasets[0];
+      const normalColor = dataset.backgroundColor({dataIndex: 0});
+      expect(normalColor).toBe('rgb(0 119 255 / 0.85)');
+      const builds = chartConfig.mock.calls.length;
+      fixture.componentRef.setInput('highlightNoFail', true);
+      fixture.detectChanges();
+      expect(chartConfig.mock.calls.length).toBe(builds);
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(255 140 0 / 0.85)');
+      expect(dataset.borderColor({dataIndex: 0})).toBe('rgb(255 140 0 / 0.85)');
+      expect(dataset.backgroundColor({dataIndex: 1})).toBe(normalColor);
+      expect(dataset.backgroundColor({dataIndex: 2})).toBe(normalColor);
+      expect(dataset.pointRadius({dataIndex: 0})).toBe(2);
+      expect(component.selectedSongs()).toEqual([]);
+      expect(fixture.nativeElement.querySelector('.song-selection')).toBeNull();
+      fixture.componentRef.setInput('highlightNoFail', false);
+      fixture.detectChanges();
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe(normalColor);
+    });
+
+    it('preserves selection colors over NF highlighting and restores orange after deselection', () => {
+      const nfScore = {...first, noFail: true};
+      fixture.componentRef.setInput('playerScores', {player: [nfScore]});
+      fixture.componentRef.setInput('highlightNoFail', true);
+      fixture.detectChanges();
+      const dataset = chartConfig.mock.lastCall![0].data.datasets[0];
+      component.toggleScore('player', nfScore);
+      const color = component.selectedSongs()[0].color;
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe(color);
+      fixture.componentRef.setInput('highlightNoFail', false);
+      fixture.detectChanges();
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe(color);
+      fixture.componentRef.setInput('highlightNoFail', true);
+      fixture.detectChanges();
+      component.removeSelection(component.selectedSongs()[0].key);
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(255 140 0 / 0.85)');
+    });
+
+    it('never applies NF orange to comparison or compact previews even if the input is enabled', () => {
+      fixture.componentRef.setInput('playerScores', {player: [{...first, noFail: true}]});
+      fixture.componentRef.setInput('highlightNoFail', true);
+      fixture.componentRef.setInput('selectionEnabled', false);
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.85)');
+      fixture.componentRef.setInput('selectionEnabled', true);
+      fixture.componentRef.setInput('compact', true);
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.2)');
+      fixture.componentRef.setInput('compact', false);
+      fixture.componentRef.setInput('playerScores', {
+        player: [{...first, noFail: true}], other: [{...second, noFail: true}]
+      });
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.85)');
+      expect(chartConfig.mock.lastCall![0].data.datasets[1].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(255 99 132 / 0.85)');
+    });
+
+    it('uses the NF flag from the latest eligible play at the slider date', () => {
+      fixture.componentRef.setInput('highlightNoFail', true);
+      fixture.componentRef.setInput('playerScores', {player: [
+        {...first, noFail: true},
+        {...first, noFail: false, timeSet: '2026-02-01T12:00:00Z'}
+      ]});
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.85)');
+      fixture.componentRef.setInput('maximumDate', '2026-01-02T00:00:00Z');
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(255 140 0 / 0.85)');
+    });
+
     it('toggles dots independently and retains the other dots highlight and color', () => {
       const config = chartConfig.mock.lastCall![0];
       const dataset = config.data.datasets[0];

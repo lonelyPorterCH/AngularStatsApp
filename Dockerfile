@@ -13,7 +13,7 @@ RUN gradle bootJar
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-COPY --from=backend /app/build/libs/*.jar app.jar
+COPY --from=backend /app/build/libs/app.jar app.jar
 VOLUME /data
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]

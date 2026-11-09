@@ -20,6 +20,7 @@ export interface Score {
   timeSet: string;
   songHash: string;
   difficulty?: SongDifficulty | null;
+  noFail?: boolean | null;
 }
 
 export interface PlayerScoreUpdate {

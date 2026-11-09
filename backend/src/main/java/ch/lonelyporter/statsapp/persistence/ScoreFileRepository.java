@@ -179,7 +179,8 @@ public class ScoreFileRepository implements ScoreRepository {
                     + event.leaderboardId() + "/" + event.songHash());
         }
         return new Score(metadata.songName(), metadata.levelAuthorName(), event.timeSetMillis(), event.accuracy(),
-                event.leaderboardId(), metadata.stars(), event.timeSet(), event.songHash(), metadata.difficulty());
+                event.leaderboardId(), metadata.stars(), event.timeSet(), event.songHash(), metadata.difficulty(),
+                event.noFail());
     }
 
     private void persistNewLeaderboards(List<LeaderboardMetadata> additions) {

@@ -7,6 +7,7 @@ public record ScoreEvent(
         LocalDateTime timeSet,
         long timeSetMillis,
         double accuracy,
-        String songHash
+        String songHash,
+        Boolean noFail
 ) {
 }

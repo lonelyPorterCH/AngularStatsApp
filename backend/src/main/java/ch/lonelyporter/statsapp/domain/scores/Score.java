@@ -11,6 +11,7 @@ public record Score(
         double stars,
         LocalDateTime timeSet,
         String songHash,
-        SongDifficulty difficulty
+        SongDifficulty difficulty,
+        Boolean noFail
 ) {
 }
