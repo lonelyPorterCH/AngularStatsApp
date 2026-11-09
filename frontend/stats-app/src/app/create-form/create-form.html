@@ -1,90 +1,112 @@
 <h1>Create New Chart</h1>
 
 <form (ngSubmit)="onSubmit()" [formGroup]="statForm">
+  <div class="form-grid">
+    <fieldset class="form-section">
+      <legend>General</legend>
+      <mat-form-field appearance="outline">
+        <mat-label>ID</mat-label>
+        <input formControlName="id" matInput/>
+        @if (statForm.get('id')?.errors?.['required']) {
+        <mat-error>ID is required</mat-error>
+        }
+        @if (statForm.get('id')?.errors?.['idExists']) {
+        <mat-error>This ID already exists</mat-error>
+        }
+      </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>ID</mat-label>
-    <input formControlName="id" matInput/>
-    @if (statForm.get('id')?.errors?.['required']) {
-    <mat-error>ID is required</mat-error>
-    }
-    @if (statForm.get('id')?.errors?.['idExists']) {
-    <mat-error>This ID already exists</mat-error>
-    }
-  </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Title</mat-label>
+        <input formControlName="title" matInput/>
+        @if (statForm.get('title')?.errors?.['required']) {
+        <mat-error>Title is required</mat-error>
+        }
+      </mat-form-field>
+    </fieldset>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Title</mat-label>
-    <input formControlName="title" matInput/>
-    @if (statForm.get('title')?.errors?.['required']) {
-    <mat-error>Title is required</mat-error>
-    }
-  </mat-form-field>
+    <fieldset class="form-section">
+      <legend>Chart display</legend>
+      <mat-form-field appearance="outline">
+        <mat-label>Chart type</mat-label>
+        <mat-select formControlName="chartType" (selectionChange)="onChartTypeChange($event.value)">
+          <mat-option value="line">Line</mat-option>
+          <mat-option value="bar">Bar</mat-option>
+        </mat-select>
+      </mat-form-field>
+      @if (statForm.get('chartType')?.value !== 'bar') {
+      <mat-checkbox formControlName="effortComparison">Dots + trend (centered 7-measurement average)</mat-checkbox>
+      }
+      @if (statForm.get('chartType')?.value === 'bar' || !statForm.get('effortComparison')?.value) {
+      <mat-checkbox formControlName="stacked">Stacked</mat-checkbox>
+      }
+    </fieldset>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Chart type</mat-label>
-    <mat-select formControlName="chartType" (selectionChange)="onChartTypeChange($event.value)">
-      <mat-option value="line">Line</mat-option>
-      <mat-option value="bar">Bar</mat-option>
-    </mat-select>
-  </mat-form-field>
+    <fieldset class="form-section">
+      <legend>X axis</legend>
+      <mat-form-field appearance="outline">
+        <mat-label>X Axis Name (Date)</mat-label>
+        <input formControlName="xAxisName" matInput/>
+        @if (statForm.get('xAxisName')?.errors?.['required']) {
+        <mat-error>X Axis Name is required</mat-error>
+        }
+      </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>X Axis Name (Date)</mat-label>
-    <input formControlName="xAxisName" matInput/>
-    @if (statForm.get('xAxisName')?.errors?.['required']) {
-    <mat-error>X Axis Name is required</mat-error>
-    }
-  </mat-form-field>
+      <div class="field-row">
+        <mat-form-field appearance="outline">
+          <mat-label>X Axis Scale</mat-label>
+          <mat-select formControlName="xAxisScaleType">
+            <mat-option value="time">Date / time</mat-option>
+            <mat-option value="linear">Numeric</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Y Axis Name (Value)</mat-label>
-    <input formControlName="yAxisName" matInput/>
-    @if (statForm.get('yAxisName')?.errors?.['required']) {
-    <mat-error>Y Axis Name is required</mat-error>
-    }
-  </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Numeric X Axis Unit</mat-label>
+          <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
+        </mat-form-field>
+      </div>
+    </fieldset>
 
-  <mat-form-field appearance="outline">
-    <mat-label>X Axis Scale</mat-label>
-    <mat-select formControlName="xAxisScaleType">
-      <mat-option value="time">Date / time</mat-option>
-      <mat-option value="linear">Numeric</mat-option>
-    </mat-select>
-  </mat-form-field>
+    <fieldset class="form-section">
+      <legend>Y axis</legend>
+      <mat-form-field appearance="outline">
+        <mat-label>Y Axis Name (Value)</mat-label>
+        <input formControlName="yAxisName" matInput/>
+        @if (statForm.get('yAxisName')?.errors?.['required']) {
+        <mat-error>Y Axis Name is required</mat-error>
+        }
+      </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>Numeric X Axis Unit</mat-label>
-    <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
-  </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Value format</mat-label>
+        <mat-select formControlName="yAxisFormat">
+          <mat-option value="number">Number</mat-option>
+          <mat-option value="pace">Pace (min/km)</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-  <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
-  <mat-form-field appearance="outline">
-    <mat-label>Value format</mat-label>
-    <mat-select formControlName="yAxisFormat">
-      <mat-option value="number">Number</mat-option>
-      <mat-option value="pace">Pace (min/km)</mat-option>
-    </mat-select>
-  </mat-form-field>
-  @if (statForm.get('chartType')?.value !== 'bar') {
-  <mat-checkbox formControlName="effortComparison">Dots + trend (centered 7-measurement average)</mat-checkbox>
-  }
-  <mat-form-field appearance="outline">
-    <mat-label>Y-axis minimum</mat-label>
-    <input formControlName="yAxisMin" matInput type="number" step="any" placeholder="Automatic"/>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>Y-axis maximum</mat-label>
-    <input formControlName="yAxisMax" matInput type="number" step="any" placeholder="Automatic"/>
-  </mat-form-field>
-  <p>Leave bounds blank for automatic scaling. For Pace, enter bounds in seconds (e.g. 300 = 5:00).</p>
-  @if (statForm.errors?.['yAxisBounds']) {
-  <p role="alert">{{ statForm.errors?.['yAxisBounds'] }}</p>
-  }
-  @if (statForm.get('chartType')?.value === 'bar' || !statForm.get('effortComparison')?.value) {
-  <mat-checkbox formControlName="stacked">Stacked</mat-checkbox>
-  }
+      <div class="field-row">
+        <mat-form-field appearance="outline">
+          <mat-label>Y-axis minimum</mat-label>
+          <input formControlName="yAxisMin" matInput type="number" step="any" placeholder="Automatic"/>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Y-axis maximum</mat-label>
+          <input formControlName="yAxisMax" matInput type="number" step="any" placeholder="Automatic"/>
+        </mat-form-field>
+      </div>
+      @if (statForm.get('yAxisFormat')?.value === 'pace') {
+      <p class="hint pace-bounds-hint">Leave bounds blank for automatic scaling. For Pace, enter bounds in seconds (e.g. 300 = 5:00).</p>
+      }
+      @if (statForm.errors?.['yAxisBounds']) {
+      <p class="error" role="alert">{{ statForm.errors?.['yAxisBounds'] }}</p>
+      }
 
-  <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>
+      <mat-checkbox formControlName="reverse">Reverse (lower = better)</mat-checkbox>
+    </fieldset>
+  </div>
 
+  <div class="form-actions">
+    <button [disabled]="statForm.invalid" mat-flat-button type="submit">Create</button>
+  </div>
 </form>

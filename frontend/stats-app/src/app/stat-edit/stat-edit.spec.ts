@@ -59,10 +59,12 @@ describe('StatEdit', () => {
     const page: HTMLElement = fixture.nativeElement;
     const settings = page.querySelector('[aria-label="Chart display settings"]')!;
     expect(settings).toBeTruthy();
-    expect(settings.querySelectorAll('mat-select')).toHaveLength(2);
+    expect(settings.querySelectorAll('mat-select')).toHaveLength(1);
     expect(settings.querySelectorAll('mat-slide-toggle')).toHaveLength(3);
-    expect(page.querySelector('input[formControlName="yAxisMin"]')).toBeTruthy();
-    expect(page.querySelector('input[formControlName="yAxisMax"]')).toBeTruthy();
+    const yAxis = page.querySelector('[aria-label="Y axis settings"]')!;
+    expect(yAxis.querySelectorAll('mat-select')).toHaveLength(1);
+    expect(yAxis.querySelector('input[formControlName="yAxisMin"]')).toBeTruthy();
+    expect(yAxis.querySelector('input[formControlName="yAxisMax"]')).toBeTruthy();
     for (const name of ['yAxisMin', 'yAxisMax']) {
       const field = page.querySelector(`[formControlName="${name}"]`)!.closest('mat-form-field')!;
       expect(field.querySelector('.mat-mdc-form-field-required-marker')).toBeNull();
@@ -78,6 +80,16 @@ describe('StatEdit', () => {
     back!.click();
     expect(navigate).toHaveBeenCalled();
     expect(navigate.mock.calls[0][0].toString()).toBe('/stats/weight');
+  });
+
+  it('shows the pace bounds hint only for pace charts', () => {
+    const hint = () => fixture.nativeElement.querySelector('.pace-bounds-hint');
+    component.stat.set(stat);
+    fixture.detectChanges();
+    expect(hint()).toBeNull();
+    component.stat.set({...stat, yAxisFormat: 'pace'});
+    fixture.detectChanges();
+    expect(hint()?.textContent).toContain('300 = 5:00');
   });
 
   it('saves bounds entered in the edit form after blur and reflects them in the preview', () => {

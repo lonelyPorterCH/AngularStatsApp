@@ -38,6 +38,17 @@ describe('CreateForm', () => {
     }
   });
 
+  it('shows the pace bounds hint only when pace format is selected', async () => {
+    const hint = () => fixture.nativeElement.querySelector('.pace-bounds-hint');
+    expect(hint()).toBeNull();
+    component.statForm.patchValue({yAxisFormat: 'pace'});
+    fixture.detectChanges();
+    expect(hint()?.textContent).toContain('300 = 5:00');
+    component.statForm.patchValue({yAxisFormat: 'number'});
+    fixture.detectChanges();
+    expect(hint()).toBeNull();
+  });
+
   it('creates a chart with the selected stacking setting before datasets are added', () => {
     const http = TestBed.inject(HttpTestingController);
     vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);

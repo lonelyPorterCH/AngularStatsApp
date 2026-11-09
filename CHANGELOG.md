@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.14] - 2026-11-09
+
+### Changed
+
+- Reorganized the Create New Chart form into General, Chart display, X axis and Y axis sections in a two-column layout
+  (single column on narrow screens). Dots + trend and Stacked now sit together with the chart type, and the Y-axis
+  bounds share one row.
+- Reorganized the Edit page the same way: a full-width General section for the title, with Chart display (chart type,
+  Dots + trend, Smooth trend, Stacked) and Y axis (value format, bounds, Save bounds) side by side. Setting errors appear
+  in their section.
+- The Y-axis bounds hint on the Create New Chart form and the Edit page is shown only when the Pace value format is
+  selected.
+
 ## [2.5.13] - 2026-11-09
 
 ### Added

@@ -1,4 +1,2 @@
 /statsapp*.tar
-/tools/*
-!/tools/enrich_scoresaber_no_fail.py
-!/tools/test_enrich_scoresaber_no_fail.py
+/tools/
