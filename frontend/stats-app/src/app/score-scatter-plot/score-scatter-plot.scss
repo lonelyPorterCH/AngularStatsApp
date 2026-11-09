@@ -144,6 +144,18 @@ canvas {
   border-radius: 2px;
 }
 
+.score-tooltip--comparison {
+  width: 340px;
+  max-width: calc(100% - 16px);
+  height: auto;
+  min-height: 100px;
+}
+
+.score-tooltip.score-tooltip--comparison span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .score-tooltip div {
   display: grid;
   gap: 3px;

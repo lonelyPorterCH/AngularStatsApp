@@ -35,6 +35,10 @@ describe('ScoreComparison player registration', () => {
     expect(component.highlightNoFail).toBe(false);
   });
 
+  it('starts the shared-song comparison filter disabled', () => {
+    expect(component.sharedSongsOnly).toBe(false);
+  });
+
   it('adds and selects a player and loads their scores', () => {
     service.addPlayer.mockReturnValue(of(player));
     component.addPlayerForm.controls.playerId.setValue(` ${player.id} `);

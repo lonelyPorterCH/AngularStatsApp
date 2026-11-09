@@ -2,7 +2,7 @@ import {AfterViewInit, Component, computed, ElementRef, Input, OnChanges, OnDest
 import {DatePipe, DecimalPipe} from '@angular/common';
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
-import {Chart, ChartDataset, registerables, TooltipModel} from 'chart.js';
+import {Chart, ChartDataset, Plugin, registerables, TooltipModel} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {Score} from '../models/score';
 import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
@@ -10,12 +10,92 @@ import {buildBeatSaberPlaylist} from './beatsaber-playlist';
 
 Chart.register(...registerables);
 
+interface ScoreLocation {
+  datasetIndex: number;
+  index: number;
+}
+
+export function matchingScoreLocations(
+  entries: [string, Score[]][], datasetIndex: number, dataIndex: number
+): ScoreLocation[] {
+  const hovered = entries[datasetIndex]?.[1][dataIndex];
+  if (!hovered) {
+    return [];
+  }
+  return entries.flatMap(([, scores], index) => {
+    const match = scores.findIndex(score =>
+      score.songHash === hovered.songHash && score.leaderboardId === hovered.leaderboardId);
+    return match < 0 ? [] : [{datasetIndex: index, index: match}];
+  });
+}
+
+export function comparisonHoverPlugin(entries: [string, Score[]][]): Plugin<'scatter'> {
+  let highlighted: ScoreLocation[] = [];
+  return {
+    id: 'comparisonHover',
+    afterEvent: (chart, args) => {
+      const hovered = args.event.type !== 'mouseout' && args.event.native
+        ? chart.getElementsAtEventForMode(args.event.native, 'nearest', {intersect: true}, false)[0]
+        : undefined;
+      const matches = hovered
+        ? matchingScoreLocations(entries, hovered.datasetIndex, hovered.index)
+          .filter(location => chart.isDatasetVisible(location.datasetIndex))
+        : [];
+      const next = matches.length > 1 ? matches : [];
+      if (JSON.stringify(next) !== JSON.stringify(highlighted)) {
+        highlighted = next;
+        args.changed = true;
+      }
+    },
+    afterDatasetsDraw: chart => {
+      if (highlighted.length < 2) {
+        return;
+      }
+      const points = highlighted.map(location => ({
+        ...location,
+        point: chart.getDatasetMeta(location.datasetIndex).data[location.index]
+      })).filter(location => location.point && chart.isDatasetVisible(location.datasetIndex));
+      if (points.length < 2) {
+        return;
+      }
+      const {ctx, chartArea} = chart;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+      ctx.clip();
+      ctx.beginPath();
+      ctx.moveTo(points[0].point.x, points[0].point.y);
+      for (const {point} of points.slice(1)) {
+        ctx.lineTo(point.x, point.y);
+      }
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      for (const {point, datasetIndex} of points) {
+        const color = DEFAULT_DATASET_COLORS[datasetIndex % DEFAULT_DATASET_COLORS.length];
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 7 + datasetIndex * 2, 0, Math.PI * 2);
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.strokeStyle = `rgb(${color})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  };
+}
+
 export function selectLatestScoresBySongAndLeaderboard(
   scoresByPlayer: Record<string, Score[]>,
-  maximumDate?: string
+  maximumDate?: string,
+  sharedSongsOnly = false
 ): Record<string, Score[]> {
   const maximumTimestamp = maximumDate ? Date.parse(maximumDate) : Number.POSITIVE_INFINITY;
-  return Object.fromEntries(Object.entries(scoresByPlayer).map(([playerId, scores]) => {
+  const latestByPlayer = Object.entries(scoresByPlayer).map(([playerId, scores]): [string, Score[]] => {
     const latestScores = new Map<string, Score>();
     for (const score of scores) {
       const timestamp = Date.parse(score.timeSet);
@@ -30,7 +110,16 @@ export function selectLatestScoresBySongAndLeaderboard(
       }
     }
     return [playerId, [...latestScores.values()]];
-  }));
+  });
+  if (!sharedSongsOnly || latestByPlayer.length < 2) {
+    return Object.fromEntries(latestByPlayer);
+  }
+  const keysByPlayer = latestByPlayer.map(([, scores]) =>
+    new Set(scores.map(score => `${score.songHash}\u0000${score.leaderboardId}`)));
+  return Object.fromEntries(latestByPlayer.map(([playerId, scores]) => [
+    playerId,
+    scores.filter(score => keysByPlayer.every(keys => keys.has(`${score.songHash}\u0000${score.leaderboardId}`)))
+  ]));
 }
 
 @Component({
@@ -46,6 +135,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
   @Input() compact = false;
   @Input() selectionEnabled = false;
   @Input() highlightNoFail = false;
+  @Input() sharedSongsOnly = false;
   readonly selectedSongs = signal<{key: string; score: Score; color: string}[]>([]);
   readonly exportError = signal('');
   private readonly selectionByKey = computed(() => new Map(this.selectedSongs().map(item => [item.key, item])));
@@ -62,7 +152,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.viewInitialized && (changes['playerScores'] || changes['playerNames'] || changes['maximumDate']
-      || changes['compact'] || changes['selectionEnabled'])) {
+      || changes['compact'] || changes['selectionEnabled'] || changes['sharedSongsOnly'])) {
       this.renderChart();
     } else if (this.viewInitialized && changes['highlightNoFail']) {
       this.chart?.update('none');
@@ -144,7 +234,8 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
 
   private renderChart(): void {
     this.chart?.destroy();
-    const entries = Object.entries(selectLatestScoresBySongAndLeaderboard(this.playerScores, this.maximumDate));
+    const entries = Object.entries(selectLatestScoresBySongAndLeaderboard(
+      this.playerScores, this.maximumDate, this.sharedSongsOnly && !this.compact));
     const available = new Map(entries.flatMap(([playerId, scores]) =>
       scores.map(score => [this.selectionKey(playerId, score), score] as const)));
     this.selectedSongs.update(items => this.canSelect
@@ -156,6 +247,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     this.tooltip().nativeElement.style.opacity = '0';
     this.chart = new Chart<'scatter'>(this.canvas().nativeElement, {
       type: 'scatter',
+      plugins: !this.compact && entries.length > 1 ? [comparisonHoverPlugin(entries)] : [],
       data: {
         datasets: entries.map<ChartDataset<'scatter'>>(([playerId, scores], index) => {
           const color = DEFAULT_DATASET_COLORS[index % DEFAULT_DATASET_COLORS.length];
@@ -242,6 +334,8 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     }
 
     tooltipElement.replaceChildren();
+    const comparing = entries.length > 1;
+    tooltipElement.classList.toggle('score-tooltip--comparison', comparing);
     const cover = document.createElement('img');
     cover.src = `https://cdn.scoresaber.com/covers/${score.songHash}.png`;
     cover.alt = '';
@@ -272,13 +366,31 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     metadata.style.textOverflow = 'ellipsis';
     metadata.style.whiteSpace = 'nowrap';
     details.append(title, stats, metadata);
+    if (comparing && item) {
+      const matches = matchingScoreLocations(entries, item.datasetIndex, item.dataIndex)
+        .filter(location => chart.isDatasetVisible(location.datasetIndex))
+        .sort((left, right) =>
+          entries[right.datasetIndex][1][right.index].accuracy - entries[left.datasetIndex][1][left.index].accuracy);
+      for (const {datasetIndex, index} of matches) {
+        const [playerId, scores] = entries[datasetIndex];
+        const row = document.createElement('span');
+        row.textContent = `${this.playerNames[playerId] ?? playerId}: ${scores[index].accuracy.toFixed(2)}%`;
+        row.style.color = `rgb(${DEFAULT_DATASET_COLORS[datasetIndex % DEFAULT_DATASET_COLORS.length]})`;
+        details.append(row);
+      }
+      if (matches.length < 2) {
+        const missing = document.createElement('span');
+        missing.textContent = 'No matching score from the other player at this date.';
+        details.append(missing);
+      }
+    }
     tooltipElement.append(cover, details);
 
     const parent = chart.canvas.parentElement;
-    const left = Math.min(tooltip.caretX + 12, (parent?.clientWidth ?? tooltip.caretX) - 240);
-    const top = Math.max(tooltip.caretY - 32, 8);
+    const left = Math.min(tooltip.caretX + 12, (parent?.clientWidth ?? tooltip.caretX) - tooltipElement.offsetWidth);
+    const top = Math.min(tooltip.caretY - 32, (parent?.clientHeight ?? tooltip.caretY) - tooltipElement.offsetHeight);
     tooltipElement.style.left = `${Math.max(left, 8)}px`;
-    tooltipElement.style.top = `${top}px`;
+    tooltipElement.style.top = `${Math.max(top, 8)}px`;
     tooltipElement.style.opacity = '1';
   }
 

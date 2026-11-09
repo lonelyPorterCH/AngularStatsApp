@@ -1,6 +1,6 @@
 import {Score} from '../models/score';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {ScoreScatterPlot, selectLatestScoresBySongAndLeaderboard} from './score-scatter-plot';
+import {matchingScoreLocations, ScoreScatterPlot, selectLatestScoresBySongAndLeaderboard} from './score-scatter-plot';
 
 const chartConfig = vi.hoisted(() => vi.fn());
 const chartUpdate = vi.hoisted(() => vi.fn());
@@ -56,6 +56,131 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
     afterEach(() => {
       vi.restoreAllMocks();
       vi.unstubAllGlobals();
+    });
+
+    it('draws matching comparison rings and a line, then clears them on empty hover and mouseout', () => {
+      fixture.componentRef.setInput('selectionEnabled', false);
+      fixture.componentRef.setInput('playerScores', {player: [second, first], other: [{...first, accuracy: 80}]});
+      fixture.detectChanges();
+      const plugin = chartConfig.mock.lastCall![0].plugins[0];
+      const context = {
+        save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), rect: vi.fn(), clip: vi.fn(),
+        moveTo: vi.fn(), lineTo: vi.fn(), stroke: vi.fn(), setLineDash: vi.fn(), arc: vi.fn(),
+        strokeStyle: '', lineWidth: 0
+      };
+      const chart = {
+        ctx: context, chartArea: {left: 0, top: 0, right: 500, bottom: 400},
+        isDatasetVisible: vi.fn().mockReturnValue(true),
+        getElementsAtEventForMode: vi.fn().mockReturnValue([{datasetIndex: 0, index: 1}]),
+        getDatasetMeta: vi.fn((index: number) => ({data: index === 0
+          ? [{x: 90, y: 90}, {x: 100, y: 120}] : [{x: 100, y: 220}]}))
+      };
+      const args = {event: {type: 'mousemove', native: new MouseEvent('mousemove')}, changed: false};
+      plugin.afterEvent(chart, args);
+      expect(args.changed).toBe(true);
+      plugin.afterDatasetsDraw(chart);
+      expect(context.moveTo).toHaveBeenCalledWith(100, 120);
+      expect(context.lineTo).toHaveBeenCalledWith(100, 220);
+      expect(context.arc).toHaveBeenCalledWith(100, 120, 7, 0, Math.PI * 2);
+      expect(context.arc).toHaveBeenCalledWith(100, 220, 9, 0, Math.PI * 2);
+      expect(context.arc).toHaveBeenCalledTimes(2);
+      expect(context.restore).toHaveBeenCalledOnce();
+      context.arc.mockClear();
+      chart.getElementsAtEventForMode.mockReturnValue([]);
+      plugin.afterEvent(chart, {event: args.event, changed: false});
+      plugin.afterDatasetsDraw(chart);
+      expect(context.arc).not.toHaveBeenCalled();
+      chart.getElementsAtEventForMode.mockReturnValue([{datasetIndex: 1, index: 0}]);
+      plugin.afterEvent(chart, {event: args.event, changed: false});
+      const leave = {event: {type: 'mouseout'}, changed: false};
+      plugin.afterEvent(chart, leave);
+      plugin.afterDatasetsDraw(chart);
+      expect(leave.changed).toBe(true);
+      expect(context.arc).not.toHaveBeenCalled();
+      chart.isDatasetVisible.mockImplementation((index: number) => index === 0);
+      chart.getElementsAtEventForMode.mockReturnValue([{datasetIndex: 0, index: 1}]);
+      plugin.afterEvent(chart, {event: args.event, changed: false});
+      plugin.afterDatasetsDraw(chart);
+      expect(context.arc).not.toHaveBeenCalled();
+    });
+
+    it('shows both accuracies in comparison tooltips and explains missing date-eligible matches', () => {
+      fixture.componentRef.setInput('selectionEnabled', false);
+      fixture.componentRef.setInput('playerNames', {player: 'Player One', other: 'Player Two'});
+      fixture.componentRef.setInput('playerScores', {player: [second, first], other: [{...first, accuracy: 81.23}]});
+      fixture.detectChanges();
+      let config = chartConfig.mock.lastCall![0];
+      const chart = {canvas: fixture.nativeElement.querySelector('canvas'), isDatasetVisible: () => true};
+      const tooltip = {opacity: 1, caretX: 100, caretY: 100, dataPoints: [{datasetIndex: 0, dataIndex: 1}]};
+      config.options.plugins.tooltip.external({chart, tooltip});
+      const element: HTMLElement = fixture.nativeElement.querySelector('.score-tooltip');
+      expect(element.textContent).toContain('Player One: 90.00%');
+      expect(element.textContent).toContain('Player Two: 81.23%');
+      expect(element.classList.contains('score-tooltip--comparison')).toBe(true);
+      tooltip.dataPoints[0].dataIndex = 0;
+      config.options.plugins.tooltip.external({chart, tooltip});
+      expect(element.textContent).toContain('Player One: 90.00%');
+      expect(element.textContent).not.toContain('Player Two:');
+      expect(element.textContent).toContain('No matching score');
+      fixture.componentRef.setInput('playerScores', {player: [first], other: [
+        {...first, timeSet: '2026-03-01T12:00:00Z'}
+      ]});
+      fixture.componentRef.setInput('maximumDate', '2026-02-01T00:00:00Z');
+      fixture.detectChanges();
+      config = chartConfig.mock.lastCall![0];
+      config.options.plugins.tooltip.external({chart, tooltip});
+      expect(element.textContent).toContain('No matching score');
+      config.options.plugins.tooltip.external({chart, tooltip: {...tooltip, opacity: 0}});
+      expect(element.style.opacity).toBe('0');
+    });
+
+    it('does not install comparison hover overlays in single-player or compact charts', () => {
+      expect(chartConfig.mock.lastCall![0].plugins).toEqual([]);
+      fixture.componentRef.setInput('playerScores', {player: [first], other: [first]});
+      fixture.componentRef.setInput('compact', true);
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].plugins).toEqual([]);
+    });
+
+    it('orders comparison tooltip scores by descending accuracy regardless of player or hovered dot', () => {
+      fixture.componentRef.setInput('selectionEnabled', false);
+      fixture.componentRef.setInput('playerNames', {player: 'Player One', other: 'Player Two'});
+      const chart = {canvas: fixture.nativeElement.querySelector('canvas'), isDatasetVisible: () => true};
+      const rows = () => [...fixture.nativeElement.querySelectorAll('.score-tooltip span')]
+        .map((row: Element) => row.textContent)
+        .filter((text: string | null) => text?.startsWith('Player '));
+      for (const otherAccuracy of [95, 80, 90]) {
+        fixture.componentRef.setInput('playerScores', {player: [first], other: [{...first, accuracy: otherAccuracy}]});
+        fixture.detectChanges();
+        const config = chartConfig.mock.lastCall![0];
+        for (const datasetIndex of [0, 1]) {
+          config.options.plugins.tooltip.external({chart, tooltip: {
+            opacity: 1, caretX: 100, caretY: 100, dataPoints: [{datasetIndex, dataIndex: 0}]
+          }});
+          expect(rows()).toEqual(otherAccuracy > first.accuracy
+            ? [`Player Two: ${otherAccuracy.toFixed(2)}%`, 'Player One: 90.00%']
+            : ['Player One: 90.00%', `Player Two: ${otherAccuracy.toFixed(2)}%`]);
+        }
+      }
+    });
+
+    it('redraws comparison datasets on shared-song toggles with correct tooltip indices and player colors', () => {
+      const common = {...first, accuracy: 80};
+      fixture.componentRef.setInput('selectionEnabled', false);
+      fixture.componentRef.setInput('playerScores', {player: [second, first], other: [common]});
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].data).toHaveLength(2);
+      fixture.componentRef.setInput('sharedSongsOnly', true);
+      fixture.detectChanges();
+      const config = chartConfig.mock.lastCall![0];
+      expect(config.data.datasets[0].data).toEqual([{x: first.stars, y: first.accuracy}]);
+      expect(config.data.datasets[1].data).toEqual([{x: common.stars, y: common.accuracy}]);
+      expect(config.options.plugins.tooltip.callbacks.title([{datasetIndex: 0, dataIndex: 0}])).toBe(first.songName);
+      expect(config.data.datasets[0].backgroundColor({dataIndex: 0})).toBe('rgb(0 119 255 / 0.85)');
+      expect(config.data.datasets[1].backgroundColor({dataIndex: 0})).toBe('rgb(255 99 132 / 0.85)');
+      fixture.componentRef.setInput('sharedSongsOnly', false);
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].data).toHaveLength(2);
     });
 
     it('highlights only NF dots when enabled without creating song selections or rebuilding the chart', () => {
@@ -303,6 +428,55 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
     const later = makeScore('song-a', '2026-02-01T12:00:00Z', 72);
 
     expect(selectLatestScoresBySongAndLeaderboard({player: [first, later]})['player']).toEqual([first]);
+  });
+
+  it('filters shared songs by both hash and leaderboard while keeping each players latest score', () => {
+    const older = makeScore('song-a', '2026-01-01T12:00:00Z', 70, 1);
+    const newer = makeScore('song-a', '2026-02-01T12:00:00Z', 85, 1);
+    const otherPlayer = makeScore('song-a', '2026-01-02T12:00:00Z', 90, 1);
+    const differentDifficulty = makeScore('song-a', '2026-01-01T12:00:00Z', 80, 2);
+    const differentHash = makeScore('song-b', '2026-01-01T12:00:00Z', 80, 2);
+    const source = {one: [older, differentDifficulty, newer], two: [differentHash, otherPlayer]};
+    const original = JSON.stringify(source);
+
+    expect(selectLatestScoresBySongAndLeaderboard(source, undefined, true))
+      .toEqual({one: [newer], two: [otherPlayer]});
+    expect(JSON.stringify(source)).toBe(original);
+  });
+
+  it('requires both players to have played the shared difficulty by the selected date', () => {
+    const first = makeScore('song-a', '2026-01-01T12:00:00Z', 70, 1);
+    const second = makeScore('song-a', '2026-02-01T12:00:00Z', 80, 1);
+    const source = {one: [first], two: [second]};
+
+    expect(selectLatestScoresBySongAndLeaderboard(source, '2026-02-01T11:59:59Z', true))
+      .toEqual({one: [], two: []});
+    expect(selectLatestScoresBySongAndLeaderboard(source, second.timeSet, true))
+      .toEqual({one: [first], two: [second]});
+  });
+
+  it('finds matching song and leaderboard locations independently of dot order', () => {
+    const first = makeScore('song-a', '2026-01-01T12:00:00Z', 70, 1);
+    const differentHash = {...first, songHash: 'song-b'};
+    const differentDifficulty = {...first, leaderboardId: 2};
+    const entries: [string, Score[]][] = [
+      ['one', [differentHash, first]],
+      ['two', [differentDifficulty, {...first, accuracy: 90}]]
+    ];
+    expect(matchingScoreLocations(entries, 0, 1)).toEqual([
+      {datasetIndex: 0, index: 1}, {datasetIndex: 1, index: 1}
+    ]);
+    expect(matchingScoreLocations(entries, 0, 0)).toEqual([{datasetIndex: 0, index: 0}]);
+    expect(matchingScoreLocations(entries, 0, 50)).toEqual([]);
+  });
+
+  it('returns empty datasets when a comparison player has no eligible scores and leaves single-player data intact', () => {
+    const first = makeScore('song-a', '2026-01-01T12:00:00Z', 70);
+    expect(selectLatestScoresBySongAndLeaderboard({one: [first], two: []}, undefined, true))
+      .toEqual({one: [], two: []});
+    expect(selectLatestScoresBySongAndLeaderboard({one: [first]}, undefined, true))
+      .toEqual({one: [first]});
+    expect(selectLatestScoresBySongAndLeaderboard({}, undefined, true)).toEqual({});
   });
 
   it('includes scores exactly on the selected-date boundary and excludes later scores', () => {
