@@ -4,11 +4,30 @@ import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {Chart, ChartDataset, Plugin, registerables, TooltipModel} from 'chart.js';
 import 'chartjs-adapter-luxon';
-import {Score} from '../models/score';
+import {Score, TopScore} from '../models/score';
 import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
 import {buildBeatSaberPlaylist} from './beatsaber-playlist';
 
 Chart.register(...registerables);
+
+function utcTimestamp(timeSet: string): number {
+  return Date.parse(/(?:Z|[+-]\d{2}:\d{2})$/i.test(timeSet) ? timeSet : `${timeSet}Z`);
+}
+
+export function isExactTopScore(score: Score, topScores: TopScore[], maximumDate?: string): boolean {
+  const timestamp = utcTimestamp(score.timeSet);
+  const cutoff = maximumDate ? Date.parse(maximumDate) : Number.POSITIVE_INFINITY;
+  return topScores.some(top => {
+    const topTimestamp = utcTimestamp(top.timeSet);
+    // Older event files retained only whole seconds in timeSet; their epoch field can have legacy timezone offsets.
+    const sameTime = timestamp === topTimestamp
+      || (timestamp % 1000 === 0 && Math.floor(timestamp / 1000) === Math.floor(topTimestamp / 1000));
+    return Number.isFinite(timestamp) && Number.isFinite(topTimestamp) && topTimestamp <= cutoff
+      && top.songHash.toUpperCase() === score.songHash.toUpperCase()
+      && top.leaderboardId === score.leaderboardId
+      && sameTime && Math.abs(top.accuracy - score.accuracy) < 0.000001;
+  });
+}
 
 interface ScoreLocation {
   datasetIndex: number;
@@ -136,6 +155,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
   @Input() selectionEnabled = false;
   @Input() highlightNoFail = false;
   @Input() sharedSongsOnly = false;
+  @Input() topScores: TopScore[] = [];
   readonly selectedSongs = signal<{key: string; score: Score; color: string}[]>([]);
   readonly exportError = signal('');
   private readonly selectionByKey = computed(() => new Map(this.selectedSongs().map(item => [item.key, item])));
@@ -154,7 +174,7 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
     if (this.viewInitialized && (changes['playerScores'] || changes['playerNames'] || changes['maximumDate']
       || changes['compact'] || changes['selectionEnabled'] || changes['sharedSongsOnly'])) {
       this.renderChart();
-    } else if (this.viewInitialized && changes['highlightNoFail']) {
+    } else if (this.viewInitialized && (changes['highlightNoFail'] || changes['topScores'])) {
       this.chart?.update('none');
     }
   }
@@ -224,6 +244,9 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
       const selectedColor = this.selectionByKey().get(this.selectionKey(playerId, score))?.color;
       if (selectedColor) {
         return selectedColor;
+      }
+      if (this.canSelect && isExactTopScore(score, this.topScores, this.maximumDate)) {
+        return 'rgb(0 168 107 / 0.95)';
       }
       if (this.canSelect && this.highlightNoFail && score.noFail === true) {
         return 'rgb(255 140 0 / 0.85)';

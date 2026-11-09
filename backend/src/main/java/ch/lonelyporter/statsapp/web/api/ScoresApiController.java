@@ -3,6 +3,9 @@ package ch.lonelyporter.statsapp.web.api;
 import ch.lonelyporter.statsapp.domain.scores.Player;
 import ch.lonelyporter.statsapp.domain.scores.Score;
 import ch.lonelyporter.statsapp.domain.scores.ScoreUpdateSummary;
+import ch.lonelyporter.statsapp.domain.scores.TopScore;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import ch.lonelyporter.statsapp.service.PlayerService;
 import ch.lonelyporter.statsapp.service.ScoreService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,6 +58,11 @@ public class ScoresApiController {
     public Map<String, List<Score>> compareScores(@PathVariable String playerId,
                                                    @PathVariable String otherPlayerId) {
         return scoreService.compare(playerId, otherPlayerId);
+    }
+
+    @GetMapping("/players/{playerId}/scores/top")
+    public ResponseEntity<List<TopScore>> getTopScores(@PathVariable String playerId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(scoreService.getTopScores(playerId));
     }
 
     @PostMapping("/players/scores/update")

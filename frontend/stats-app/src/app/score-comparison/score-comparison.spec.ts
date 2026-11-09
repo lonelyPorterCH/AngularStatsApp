@@ -2,7 +2,7 @@ import {TestBed} from '@angular/core/testing';
 import {of, Subject, throwError} from 'rxjs';
 import {ScoreComparison} from './score-comparison';
 import {ScoreService} from '../services/score-service';
-import {Player, ScoreUpdateSummary} from '../models/score';
+import {Player, ScoreUpdateSummary, TopScore} from '../models/score';
 
 describe('ScoreComparison player registration', () => {
   const player: Player = {id: '76561198000000000', name: 'New player', country: 'CH', rank: 42};
@@ -10,6 +10,7 @@ describe('ScoreComparison player registration', () => {
   let service: {
     getPlayers: ReturnType<typeof vi.fn>;
     getScores: ReturnType<typeof vi.fn>;
+    getTopScores: ReturnType<typeof vi.fn>;
     addPlayer: ReturnType<typeof vi.fn>;
     updateAllScores: ReturnType<typeof vi.fn>;
   };
@@ -18,6 +19,7 @@ describe('ScoreComparison player registration', () => {
     service = {
       getPlayers: vi.fn().mockReturnValue(of([])),
       getScores: vi.fn().mockReturnValue(of([])),
+      getTopScores: vi.fn().mockReturnValue(of([])),
       addPlayer: vi.fn(),
       updateAllScores: vi.fn()
     };
@@ -37,6 +39,71 @@ describe('ScoreComparison player registration', () => {
 
   it('starts the shared-song comparison filter disabled', () => {
     expect(component.sharedSongsOnly).toBe(false);
+  });
+
+  it('fetches top scores only on demand and refetches on player changes and re-enabling', () => {
+    component.selectedPlayer = player.id;
+    expect(component.highlightTopScores).toBe(false);
+    component.refreshTopScores();
+    expect(service.getTopScores).not.toHaveBeenCalled();
+    component.highlightTopScores = true;
+    component.refreshTopScores();
+    component.refreshTopScores();
+    expect(service.getTopScores).toHaveBeenCalledTimes(2);
+    component.selectedPlayer = '456';
+    component.loadComparison();
+    expect(service.getTopScores).toHaveBeenLastCalledWith('456');
+    component.highlightTopScores = false;
+    component.refreshTopScores();
+    expect(component.topScores()).toEqual([]);
+    component.highlightTopScores = true;
+    component.refreshTopScores();
+    expect(service.getTopScores).toHaveBeenCalledTimes(4);
+    component.compareMode = true;
+    component.onCompareModeChange();
+    expect(component.topScores()).toEqual([]);
+    expect(service.getTopScores).toHaveBeenCalledTimes(4);
+  });
+
+  it('cancels stale top-score requests when switching players, disabling the toggle, or destroying the view', () => {
+    const first = new Subject<TopScore[]>();
+    const second = new Subject<TopScore[]>();
+    service.getTopScores.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    component.selectedPlayer = '123';
+    component.highlightTopScores = true;
+    component.refreshTopScores();
+    component.selectedPlayer = '456';
+    component.refreshTopScores();
+    const top: TopScore = {leaderboardId: 1, songHash: 'hash', timeSet: '2026-01-01T12:00:00', accuracy: 90};
+    first.next([top]);
+    first.complete();
+    expect(component.topScores()).toEqual([]);
+    second.next([top]);
+    second.complete();
+    expect(component.topScores()).toEqual([top]);
+    component.highlightTopScores = false;
+    component.refreshTopScores();
+    expect(component.topScores()).toEqual([]);
+    const last = new Subject<TopScore[]>();
+    service.getTopScores.mockReturnValue(last);
+    component.highlightTopScores = true;
+    component.refreshTopScores();
+    component.ngOnDestroy();
+    last.next([top]);
+    expect(component.topScores()).toEqual([]);
+  });
+
+  it('reports top-score failures without hiding the chart and allows a fresh retry', () => {
+    component.selectedPlayer = player.id;
+    component.highlightTopScores = true;
+    service.getTopScores.mockReturnValue(throwError(() => new Error('Unavailable')));
+    component.refreshTopScores();
+    expect(component.topScoresError()).toContain('Could not load');
+    expect(component.error()).toBe('');
+    expect(component.topScores()).toEqual([]);
+    service.getTopScores.mockReturnValue(of([]));
+    component.refreshTopScores();
+    expect(component.topScoresError()).toBe('');
   });
 
   it('adds and selects a player and loads their scores', () => {

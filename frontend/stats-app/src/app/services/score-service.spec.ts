@@ -49,6 +49,17 @@ describe('ScoreService', () => {
     expect(await promise).toEqual({});
   });
 
+  it('fetches current top scores on every call with caching disabled', async () => {
+    for (let index = 0; index < 2; index++) {
+      const promise = firstValueFrom(service.getTopScores('player one'));
+      const request = httpTesting.expectOne(`${environment.scoresApiBaseUrl}/players/player%20one/scores/top`);
+      expect(request.request.method).toBe('GET');
+      expect(request.request.headers.get('Cache-Control')).toBe('no-cache, no-store');
+      request.flush([]);
+      expect(await promise).toEqual([]);
+    }
+  });
+
   it('posts a request to update all tracked players', async () => {
     const summary: ScoreUpdateSummary = {
       players: [{playerId: 'player-1', playerName: 'Player One', scoresAdded: 3}],

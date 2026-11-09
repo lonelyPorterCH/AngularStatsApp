@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.15] - 2026-11-09
+
+### Added
+
+- Off-by-default single-player "Highlight top 10" (by PP) toggle below "Highlight NF scores"; checking it fetches the current top ten and highlights them green.
+- Live top-ten ScoreSaber requests using `page=1&limit=10&sort=top`, with request/response caching disabled and no PP persistence.
+
+### Changed
+
+- Only exact top-ten plays already displayed at the selected date are highlighted, matching song, difficulty, timestamp and accuracy.
+- Selected-song colors take precedence over top-ten green, which takes precedence over NF orange. Comparison and previews remain unchanged.
+- Top-ten results are fetched anew when enabled, reloading scores or changing players; stale requests are cancelled and errors are shown without hiding the chart (re-check the option to retry).
+
 ## [2.5.14] - 2026-11-09
 
 ### Changed

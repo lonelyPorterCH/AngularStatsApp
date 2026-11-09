@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {environment} from '../../environments/environment';
-import {Player, Score, ScoreUpdateSummary} from '../models/score';
+import {Player, Score, ScoreUpdateSummary, TopScore} from '../models/score';
 
 @Injectable({providedIn: 'root'})
 export class ScoreService {
@@ -21,6 +21,12 @@ export class ScoreService {
 
   getScores(playerId: string): Observable<Score[]> {
     return this.http.get<Score[]>(`${this.baseUrl}/players/${encodeURIComponent(playerId)}/scores`);
+  }
+
+  getTopScores(playerId: string): Observable<TopScore[]> {
+    return this.http.get<TopScore[]>(`${this.baseUrl}/players/${encodeURIComponent(playerId)}/scores/top`, {
+      headers: {'Cache-Control': 'no-cache, no-store'}
+    });
   }
 
   compareScores(playerId: string, otherPlayerId: string): Observable<Record<string, Score[]>> {

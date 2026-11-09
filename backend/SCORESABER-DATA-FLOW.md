@@ -388,3 +388,35 @@ or stars in `leaderboards.json` only; it does not rewrite player event dates or
 accuracies. Difficulty and game mode are not currently stored because no
 application feature uses them. The UI's existing date-based latest-score
 selection is unchanged.
+
+## Live top-ten PP highlighting
+
+Single-player view offers **Highlight top 10** (top ten by PP, shown green), off by default,
+directly below **Highlight NF scores**. Checking it fetches the top ten. The frontend calls
+`GET /api/scores/players/{playerId}/scores/top`; each request immediately calls
+ScoreSaber's configured player scores path with `page=1&limit=10&sort=top`.
+Ranking is performed by ScoreSaber, not by locally cached stars, accuracy or PP.
+The backend response contains only leaderboard ID, song hash, UTC play time and
+accuracy. PP values are neither stored nor returned.
+
+The outbound request and frontend request disable caching; the endpoint returns
+`Cache-Control: no-store`. No repository is read or written for this endpoint.
+Only the currently enabled view keeps the returned play identities in memory.
+Turning off the option or entering comparison clears them and cancels any
+pending request. Enabling again, switching players,
+returning from comparison or reloading scores always issues a fresh request.
+Failures appear beside the controls without hiding the chart; uncheck and
+recheck the option to retry.
+
+Green applies only to exact top-ten plays already displayed by the chart at the
+date slider's cutoff. Matching uses song hash, leaderboard, UTC `timeSet` and
+accuracy, not merely the map/difficulty. Older plays of a now-top-ten song do not
+become green. Legacy files with whole-second `timeSet` can match an API play's
+fractional seconds in the same second when accuracy agrees; precise timestamps
+must match exactly. Legacy timezone-shifted `timeSetMillis` is not used to match.
+The API play itself must be at or before the cutoff, including fractional seconds.
+Top plays absent from local history are not inserted into the plot.
+
+Explicit song-selection colors override top-ten green; green overrides NF orange.
+Comparison mode and compact previews do not apply top-ten highlighting. No data
+migration or additional persisted fields are required.

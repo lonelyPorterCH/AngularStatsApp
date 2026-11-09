@@ -6,6 +6,9 @@ import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -23,6 +26,17 @@ public class ScoreService {
 
     public List<Score> getScores(String playerId) {
         return scoreRepository.loadScores(playerId);
+    }
+
+    public List<TopScore> getTopScores(String playerId) {
+        if (playerId == null || !playerId.matches("\\d{1,20}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A numeric ScoreSaber player ID is required");
+        }
+        try {
+            return apiAdapter.loadTopScores(playerId);
+        } catch (RestClientException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Could not load top scores from ScoreSaber", exception);
+        }
     }
 
     public Map<String, List<Score>> compare(String playerOneId, String playerTwoId) {

@@ -11,6 +11,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ScoreMapperTest {
     @Test
+    void rejectsMissingTopScoreOrLeaderboardWithAnExplicitError() {
+        var score = new PlayerScoresDto.Score(1, 0.9, 900, java.time.Instant.EPOCH, List.of());
+        assertThatThrownBy(() -> ScoreMapper.mapTopScore(null))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("top score");
+        assertThatThrownBy(() -> ScoreMapper.mapTopScore(new PlayerScoresDto.PlayerScore(null, null)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("top score");
+        assertThatThrownBy(() -> ScoreMapper.mapTopScore(new PlayerScoresDto.PlayerScore(score, null)))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("leaderboard");
+    }
+
+    @Test
     void mapsNoFailOnlyWhenExactNfModifierIsPresent() {
         assertThat(ScoreMapper.mapNoFail(List.of("NF"))).isTrue();
         assertThat(ScoreMapper.mapNoFail(List.of("FS", "NF"))).isTrue();

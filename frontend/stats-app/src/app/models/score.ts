@@ -29,6 +29,13 @@ export interface PlayerScoreUpdate {
   scoresAdded: number;
 }
 
+export interface TopScore {
+  leaderboardId: number;
+  songHash: string;
+  timeSet: string;
+  accuracy: number;
+}
+
 export interface ScoreUpdateSummary {
   players: PlayerScoreUpdate[];
   leaderboardStarsRefreshed: boolean;

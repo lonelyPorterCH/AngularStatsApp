@@ -1,9 +1,10 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit, signal} from '@angular/core';
+import {Subscription} from 'rxjs';
 import {DatePipe} from '@angular/common';
 import {FormBuilder, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
-import {Player, Score, ScoreUpdateSummary} from '../models/score';
+import {Player, Score, ScoreUpdateSummary, TopScore} from '../models/score';
 import {ScoreService} from '../services/score-service';
 import {ScoreScatterPlot} from '../score-scatter-plot/score-scatter-plot';
 
@@ -13,7 +14,7 @@ import {ScoreScatterPlot} from '../score-scatter-plot/score-scatter-plot';
   templateUrl: './score-comparison.html',
   styleUrl: './score-comparison.scss'
 })
-export class ScoreComparison implements OnInit {
+export class ScoreComparison implements OnInit, OnDestroy {
   players = signal<Player[]>([]);
   playerNames = signal<Record<string, string>>({});
   scores = signal<Record<string, Score[]>>({});
@@ -22,6 +23,10 @@ export class ScoreComparison implements OnInit {
   compareMode = false;
   sharedSongsOnly = false;
   highlightNoFail = false;
+  highlightTopScores = false;
+  readonly topScores = signal<TopScore[]>([]);
+  readonly topScoresError = signal('');
+  private topScoresRequest?: Subscription;
   maximumDate = '';
   earliestScoreTimestamp = Date.now();
   latestScoreTimestamp = Date.now();
@@ -41,6 +46,24 @@ export class ScoreComparison implements OnInit {
 
   ngOnInit(): void {
     this.loadPlayers();
+  }
+
+  ngOnDestroy(): void {
+    this.topScoresRequest?.unsubscribe();
+  }
+
+  refreshTopScores(): void {
+    this.topScoresRequest?.unsubscribe();
+    this.topScores.set([]);
+    this.topScoresError.set('');
+    if (!this.highlightTopScores || this.compareMode || !this.selectedPlayer) {
+      return;
+    }
+    this.topScoresRequest = this.scoreService.getTopScores(this.selectedPlayer).subscribe({
+      next: scores => this.topScores.set(scores),
+      error: () => this.topScoresError.set(
+        'Could not load the current top 10 from ScoreSaber. Uncheck and recheck the option to retry.')
+    });
   }
 
   addPlayer(): void {
@@ -79,6 +102,7 @@ export class ScoreComparison implements OnInit {
   }
 
   loadComparison(): void {
+    this.refreshTopScores();
     if (!this.selectedPlayer) {
       return;
     }

@@ -11,9 +11,52 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class ScoresaberApiAdapterTest {
+    @Test
+    void topScoresRequestsTenByPpAndFetchesAgainInsteadOfCachingOrPersistingPp() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://scoresaber.test");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        ScoresaberApiAdapter adapter = new ScoresaberApiAdapter(builder.build(),
+                new ScoresaberEndpoints("/api/v2/players/{playerId}/scores", "/api/v2/players/{playerId}"));
+        for (String page : new String[]{pageOne(), pageOne().replace("0.90", "0.91")}) {
+            server.expect(requestTo("https://scoresaber.test/api/v2/players/123/scores?page=1&limit=10&sort=top"))
+                    .andExpect(header("Cache-Control", "no-cache, no-store"))
+                    .andRespond(withSuccess(page, MediaType.APPLICATION_JSON));
+        }
+
+        var first = adapter.loadTopScores("123");
+        var second = adapter.loadTopScores("123");
+
+        assertThat(first).hasSize(1);
+        assertThat(first.getFirst().leaderboardId()).isEqualTo(1475);
+        assertThat(first.getFirst().accuracy()).isEqualTo(90);
+        assertThat(first.getFirst().timeSet()).isEqualTo(LocalDateTime.of(2022, 1, 19, 19, 9, 8));
+        assertThat(second.getFirst().accuracy()).isEqualTo(91);
+        server.verify();
+    }
+
+    @Test
+    void topScoreFailuresAndMissingDataAreNotReportedAsSuccessfulEmptyResults() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://scoresaber.test");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        ScoresaberApiAdapter adapter = new ScoresaberApiAdapter(builder.build(),
+                new ScoresaberEndpoints("/api/v2/players/{playerId}/scores", "/api/v2/players/{playerId}"));
+        String url = "https://scoresaber.test/api/v2/players/123/scores?page=1&limit=10&sort=top";
+        server.expect(requestTo(url)).andRespond(withServerError());
+        server.expect(requestTo(url)).andRespond(withSuccess("{\"data\":null}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(url)).andRespond(withSuccess("{\"data\":[]}", MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> adapter.loadTopScores("123")).isInstanceOf(org.springframework.web.client.RestClientException.class);
+        assertThatThrownBy(() -> adapter.loadTopScores("123")).isInstanceOf(IllegalStateException.class);
+        assertThat(adapter.loadTopScores("123")).isEmpty();
+        server.verify();
+    }
+
     @Test
     void fullHistoryScanReadsEveryPageButReturnsOnlyNewRankedEventsAndAllLeaderboardMetadata() {
         RestClient.Builder builder = RestClient.builder().baseUrl("https://scoresaber.test");

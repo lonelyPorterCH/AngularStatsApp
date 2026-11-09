@@ -3,6 +3,8 @@ package ch.lonelyporter.statsapp.integration.scoresaber;
 import ch.lonelyporter.statsapp.domain.scores.Player;
 import ch.lonelyporter.statsapp.domain.scores.LeaderboardMetadata;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
+import ch.lonelyporter.statsapp.domain.scores.TopScore;
+import org.springframework.http.HttpHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -78,6 +80,23 @@ public class ScoresaberApiAdapter {
         ScoreMapper.mapLeaderboards(history).forEach(metadata ->
                 leaderboards.put(keyFor(metadata), metadata));
         return new PlayerScoreHistoryUpdate(newScores, new ArrayList<>(leaderboards.values()));
+    }
+
+    public List<TopScore> loadTopScores(String playerId) {
+        awaitScoreSaberRequestSlot();
+        PlayerScoresDto response = Objects.requireNonNull(restClient.get()
+                .uri(uriBuilder -> uriBuilder.path(endpoints.scoresPath())
+                        .queryParam("page", 1)
+                        .queryParam("limit", 10)
+                        .queryParam("sort", "top")
+                        .build(playerId))
+                .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store")
+                .retrieve()
+                .body(PlayerScoresDto.class), "ScoreSaber returned an empty top-scores response");
+        if (response.data() == null || response.data().size() > 10) {
+            throw new IllegalStateException("ScoreSaber returned invalid top-score data");
+        }
+        return response.data().stream().map(ScoreMapper::mapTopScore).toList();
     }
 
     private PlayerScoresDto readPage(String playerId, int page) {

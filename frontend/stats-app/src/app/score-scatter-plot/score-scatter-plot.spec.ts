@@ -1,6 +1,6 @@
 import {Score} from '../models/score';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {matchingScoreLocations, ScoreScatterPlot, selectLatestScoresBySongAndLeaderboard} from './score-scatter-plot';
+import {isExactTopScore, matchingScoreLocations, ScoreScatterPlot, selectLatestScoresBySongAndLeaderboard} from './score-scatter-plot';
 
 const chartConfig = vi.hoisted(() => vi.fn());
 const chartUpdate = vi.hoisted(() => vi.fn());
@@ -56,6 +56,51 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
     afterEach(() => {
       vi.restoreAllMocks();
       vi.unstubAllGlobals();
+    });
+
+    it('highlights exact top plays in green over NF orange, with selection colors taking priority', () => {
+      const top = {...first, noFail: true};
+      fixture.componentRef.setInput('playerScores', {player: [top, second]});
+      fixture.componentRef.setInput('highlightNoFail', true);
+      fixture.detectChanges();
+      const dataset = chartConfig.mock.lastCall![0].data.datasets[0];
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(255 140 0 / 0.85)');
+      fixture.componentRef.setInput('topScores', [top]);
+      fixture.detectChanges();
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(0 168 107 / 0.95)');
+      expect(dataset.borderColor({dataIndex: 0})).toBe('rgb(0 168 107 / 0.95)');
+      expect(dataset.backgroundColor({dataIndex: 1})).toBe('rgb(0 119 255 / 0.85)');
+      expect(component.selectedSongs()).toEqual([]);
+      component.toggleScore('player', top);
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe(component.selectedSongs()[0].color);
+      component.removeSelection(component.selectedSongs()[0].key);
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(0 168 107 / 0.95)');
+      fixture.componentRef.setInput('topScores', []);
+      fixture.detectChanges();
+      expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(255 140 0 / 0.85)');
+    });
+
+    it('does not highlight earlier plays of a currently top song or highlight top plays in comparison/previews', () => {
+      const top = {...first, timeSet: '2026-02-01T12:00:00Z', accuracy: 95};
+      fixture.componentRef.setInput('playerScores', {player: [first, top]});
+      fixture.componentRef.setInput('topScores', [top]);
+      fixture.componentRef.setInput('maximumDate', '2026-01-02T00:00:00Z');
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.85)');
+      fixture.componentRef.setInput('maximumDate', '2026-02-02T00:00:00Z');
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 168 107 / 0.95)');
+      fixture.componentRef.setInput('selectionEnabled', false);
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.85)');
+      fixture.componentRef.setInput('selectionEnabled', true);
+      fixture.componentRef.setInput('compact', true);
+      fixture.detectChanges();
+      expect(chartConfig.mock.lastCall![0].data.datasets[0].backgroundColor({dataIndex: 0}))
+        .toBe('rgb(0 119 255 / 0.2)');
     });
 
     it('draws matching comparison rings and a line, then clears them on empty hover and mouseout', () => {
@@ -428,6 +473,20 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
     const later = makeScore('song-a', '2026-02-01T12:00:00Z', 72);
 
     expect(selectLatestScoresBySongAndLeaderboard({player: [first, later]})['player']).toEqual([first]);
+  });
+
+  it('matches exact top plays using UTC time and accuracy, including legacy second precision but not legacy epoch offsets', () => {
+    const score = makeScore('a'.repeat(40), '2026-01-01T12:00:00', 90);
+    const top = {...score, songHash: 'A'.repeat(40), timeSet: '2026-01-01T12:00:00.500Z'};
+    expect(isExactTopScore({...score, timeSetMillis: 0}, [top])).toBe(true);
+    expect(isExactTopScore(score, [top], '2026-01-01T12:00:00.499Z')).toBe(false);
+    expect(isExactTopScore(score, [top], '2026-01-01T12:00:00.500Z')).toBe(true);
+    expect(isExactTopScore({...score, timeSet: '2026-01-01T12:00:00.123Z'}, [top])).toBe(false);
+    expect(isExactTopScore({...score, accuracy: 89}, [top])).toBe(false);
+    expect(isExactTopScore({...score, leaderboardId: 2}, [top])).toBe(false);
+    expect(isExactTopScore({...score, songHash: 'b'.repeat(40)}, [top])).toBe(false);
+    expect(isExactTopScore({...score, timeSet: '2025-01-01T12:00:00'}, [top])).toBe(false);
+    expect(isExactTopScore({...score, timeSet: 'invalid'}, [top])).toBe(false);
   });
 
   it('filters shared songs by both hash and leaderboard while keeping each players latest score', () => {

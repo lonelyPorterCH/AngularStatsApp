@@ -4,6 +4,7 @@ import ch.lonelyporter.statsapp.domain.scores.LeaderboardMetadata;
 import ch.lonelyporter.statsapp.domain.scores.ScoreEvent;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
 import ch.lonelyporter.statsapp.domain.scores.SongDifficulty;
+import ch.lonelyporter.statsapp.domain.scores.TopScore;
 
 import java.time.ZoneOffset;
 import java.util.List;
@@ -24,6 +25,21 @@ final class ScoreMapper {
                 .map(PlayerScoresDto.PlayerScore::leaderboard)
                 .map(ScoreMapper::mapLeaderboard)
                 .toList();
+    }
+
+    static TopScore mapTopScore(PlayerScoresDto.PlayerScore playerScore) {
+        if (playerScore == null || playerScore.score() == null || playerScore.leaderboard() == null) {
+            throw new IllegalArgumentException("ScoreSaber omitted a top score or its leaderboard");
+        }
+        var score = playerScore.score();
+        var leaderboard = playerScore.leaderboard();
+        double accuracy = toPercentage(score.accuracy(), score.modifiedScore(), leaderboard.maxScore());
+        if (score.createdAt() == null || leaderboard.map() == null || leaderboard.map().hash() == null
+                || !Double.isFinite(accuracy)) {
+            throw new IllegalArgumentException("ScoreSaber returned an invalid top score");
+        }
+        return new TopScore(leaderboard.id(), leaderboard.map().hash(),
+                score.createdAt().atOffset(ZoneOffset.UTC).toLocalDateTime(), accuracy);
     }
 
     static LeaderboardMetadata mapLeaderboard(PlayerScoresDto.Leaderboard leaderboard) {

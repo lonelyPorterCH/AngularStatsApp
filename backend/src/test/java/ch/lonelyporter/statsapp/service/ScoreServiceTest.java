@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -21,6 +22,31 @@ class ScoreServiceTest {
     private ScoreRepository scoreRepository;
     @Mock
     private ScoresaberApiAdapter apiAdapter;
+
+    @Test
+    void topScoresAreFetchedLiveOnEveryCallWithoutTouchingStorage() {
+        var top = new TopScore(1, "hash", LocalDateTime.of(2026, 1, 1, 12, 0), 90);
+        when(apiAdapter.loadTopScores("123")).thenReturn(List.of(top)).thenReturn(List.of());
+        ScoreService service = new ScoreService(scoreRepository, apiAdapter);
+        assertThat(service.getTopScores("123")).containsExactly(top);
+        assertThat(service.getTopScores("123")).isEmpty();
+        verify(apiAdapter, times(2)).loadTopScores("123");
+        verifyNoInteractions(scoreRepository);
+    }
+
+    @Test
+    void topScoresValidatePlayerIdAndReportUpstreamErrors() {
+        ScoreService service = new ScoreService(scoreRepository, apiAdapter);
+        assertThatThrownBy(() -> service.getTopScores("../invalid"))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("400");
+        verifyNoInteractions(apiAdapter);
+        when(apiAdapter.loadTopScores("123")).thenThrow(new org.springframework.web.client.RestClientException("Unavailable"));
+        assertThatThrownBy(() -> service.getTopScores("123"))
+                .isInstanceOf(org.springframework.web.server.ResponseStatusException.class)
+                .hasMessageContaining("502");
+        verifyNoInteractions(scoreRepository);
+    }
 
     @Test
     void updateAllPlayersRefreshesCachedStarsAndReportsPerPlayerCounts() {

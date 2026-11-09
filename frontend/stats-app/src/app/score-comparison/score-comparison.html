@@ -84,12 +84,22 @@
         Only shared songs (same difficulty)
       </label>
     } @else {
-      <label class="compare-toggle">
-        <input type="checkbox" [(ngModel)]="highlightNoFail">
-        Highlight NF scores
-      </label>
+      <div class="highlight-options">
+        <label class="compare-toggle">
+          <input type="checkbox" [(ngModel)]="highlightNoFail">
+          Highlight NF scores
+        </label>
+        <label class="compare-toggle">
+          <input type="checkbox" [(ngModel)]="highlightTopScores" (ngModelChange)="refreshTopScores()">
+          Highlight top 10
+        </label>
+      </div>
     }
   </div>
+
+  @if (!compareMode && highlightTopScores && topScoresError()) {
+    <p class="error" role="alert">{{ topScoresError() }}</p>
+  }
 
   @if (error()) {
     <p class="error">{{ error() }}</p>
@@ -101,7 +111,8 @@
     <div class="comparison-chart">
       <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [maximumDate]="maximumDate"
                              [selectionEnabled]="!compareMode" [highlightNoFail]="!compareMode && highlightNoFail"
-                             [sharedSongsOnly]="compareMode && sharedSongsOnly"></app-score-scatter-plot>
+                             [sharedSongsOnly]="compareMode && sharedSongsOnly"
+                             [topScores]="!compareMode && highlightTopScores ? topScores() : []"></app-score-scatter-plot>
     </div>
     <label class="date-slider">
       <span>Show scores up to {{ selectedDateTimestamp | date: 'dd.MM.yyyy' }}</span>

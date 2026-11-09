@@ -136,6 +136,11 @@ label {
   padding: 0;
 }
 
+.highlight-options {
+  display: grid;
+  gap: 4px;
+}
+
 select, input {
   min-width: 0;
   min-height: 40px;
