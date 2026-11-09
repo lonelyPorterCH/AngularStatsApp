@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [2.5.15] - 2026-11-09
+## [2.5.13] - 2026-11-09
 
 ### Added
 
@@ -15,32 +15,19 @@ All notable changes to this project are documented in this file.
 - Selected-song colors take precedence over top-ten green, which takes precedence over NF orange. Comparison and previews remain unchanged.
 - Top-ten results are fetched anew when enabled, reloading scores or changing players; stale requests are cancelled and errors are shown without hiding the chart (re-check the option to retry).
 
-## [2.5.14] - 2026-11-09
-
-### Changed
-
-- Comparison hover tooltips list the higher-accuracy player first, regardless of which player's dot is hovered; ties retain player order.
-
-## [2.5.13] - 2026-11-09
-
-### Added
-
-- Hovering a score in Beat Saber comparison highlights the same song/difficulty for both players with colored rings and a connecting line.
-- Comparison tooltips show both player names and accuracies, or indicate when the other player has no matching score at the selected date.
-
-### Changed
-
-- Hover matching uses the filtered, date-eligible scores and excludes hidden datasets; single-player selection and compact previews remain unchanged.
-
 ## [2.5.12] - 2026-11-09
 
 ### Added
 
 - Off-by-default "Only shared songs (same difficulty)" filter in Beat Saber comparison mode, matching both song hash and leaderboard.
+- Hovering a score in Beat Saber comparison highlights the same song/difficulty for both players with colored rings and a connecting line.
+- Comparison tooltips show both player names and accuracies, or indicate when the other player has no matching score at the selected date.
 
 ### Changed
 
 - Shared-song comparisons include only difficulties both players have played by the selected slider date, retaining each player's latest eligible score and original color.
+- Hover matching uses the filtered, date-eligible scores and excludes hidden datasets; single-player selection and compact previews remain unchanged.
+- Comparison tooltips list the higher-accuracy player first, regardless of which player's dot is hovered; ties retain player order.
 
 ## [2.5.11] - 2026-11-09
 
