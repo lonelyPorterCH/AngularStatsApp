@@ -39,14 +39,9 @@
       </mat-select>
     </mat-form-field>
     @if (stat()!.chartType !== 'bar') {
-    <mat-slide-toggle [hideIcon]="true" aria-label="Dots + trend" title="Recorded dots and a centered 7-measurement average"
+    <mat-slide-toggle [hideIcon]="true" aria-label="Dots + trend" title="Dots + trend"
       [checked]="stat()!.effortComparison ?? false" [disabled]="archived() || effortComparisonSaving()"
-      (change)="onEffortComparisonChange($event.checked)">Dots + trend (centered 7-measurement average)</mat-slide-toggle>
-    @if (!stat()!.effortComparison) {
-    <mat-slide-toggle [hideIcon]="true" aria-label="Smooth trend (7 measurements)" title="Smooth trend (7 measurements)"
-      [checked]="stat()!.smoothing ?? false" [disabled]="archived() || smoothingSaving()"
-      (change)="onSmoothingChange($event.checked)">Smooth trend (7 measurements)</mat-slide-toggle>
-    }
+      (change)="onEffortComparisonChange($event.checked)">Dots + trend</mat-slide-toggle>
     }
     <mat-slide-toggle [hideIcon]="true" aria-label="Stacked chart" title="Stacked chart"
       [checked]="stat()!.stacked ?? false"
@@ -54,7 +49,6 @@
       (change)="onStackedChange($event.checked)">Stacked</mat-slide-toggle>
     @if (chartTypeError()) { <p class="setting-error" role="alert">{{ chartTypeError() }}</p> }
     @if (effortComparisonError()) { <p class="setting-error" role="alert">{{ effortComparisonError() }}</p> }
-    @if (smoothingError()) { <p class="setting-error" role="alert">{{ smoothingError() }}</p> }
     @if (stackedError()) { <p class="setting-error" role="alert">{{ stackedError() }}</p> }
   </fieldset>
 

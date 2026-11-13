@@ -16,8 +16,6 @@ public class Statistic {
     private String chartType = "line";
     private boolean reverse;
     @Getter(AccessLevel.NONE)
-    private Boolean smoothing = false;
-    @Getter(AccessLevel.NONE)
     private Boolean effortComparison = false;
     private String yAxisFormat = "number";
     @Getter(AccessLevel.NONE)
@@ -32,10 +30,6 @@ public class Statistic {
 
     public String getChartType() {
         return chartType == null ? "line" : chartType;
-    }
-
-    public boolean isSmoothing() {
-        return Boolean.TRUE.equals(smoothing);
     }
 
     public boolean isEffortComparison() {
@@ -66,6 +60,8 @@ public class Statistic {
         private String label;
         private int index;
         private boolean filled;
+        @Getter(AccessLevel.NONE)
+        private Boolean smoothing = false;
         private String color;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
@@ -73,6 +69,10 @@ public class Statistic {
             this.label = label;
             this.dataPoints = dataPoints;
             this.filled = false;
+        }
+
+        public boolean isSmoothing() {
+            return Boolean.TRUE.equals(smoothing);
         }
     }
 

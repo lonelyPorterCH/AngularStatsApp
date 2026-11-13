@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.0] - 2026-11-13
+
+### Changed
+
+- **BREAKING**: Moved smoothing setting from chart level to dataset level. Each dataset can now be smoothed individually using a 7-measurement moving average. This allows selective smoothing—for example, smoothing weight data while keeping holiday markers sharp.
+- Smoothing controls are now in the "Manage data" page instead of the chart settings page.
+
 ## [2.5.15] - 2026-11-13
 
 ### Added

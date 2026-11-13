@@ -119,6 +119,16 @@ public class StatsApiController {
         return ResponseEntity.ok().build();
     }
 
+    @PatchMapping("/{id}/dataset/{label}/smoothing")
+    public ResponseEntity<Void> setDatasetSmoothing(@PathVariable String id, @PathVariable String label,
+                                                    @RequestBody SmoothingRequest request) {
+        if (request.smoothing() == null) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing must be true or false");
+        }
+        statisticService.setDatasetSmoothing(id, label, request.smoothing());
+        return ResponseEntity.ok().build();
+    }
+
     @PatchMapping("/{id}/title")
     public ResponseEntity<Void> renameStatistic(@PathVariable String id, @RequestBody TitleRequest request) {
         statisticService.renameStatistic(id, request.title());

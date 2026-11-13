@@ -67,6 +67,13 @@
                 >
                   Filled
                 </mat-checkbox>
+                <mat-checkbox
+                  [ngModel]="ds.smoothing ?? false"
+                  [ngModelOptions]="{standalone: true}"
+                  (ngModelChange)="onSetDatasetSmoothing(ds.label, $event)"
+                >
+                  Smooth trend
+                </mat-checkbox>
                 }
               </div>
             <div class="dataset-actions">

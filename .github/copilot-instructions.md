@@ -76,4 +76,8 @@ should never be. Don't add new scripts in there and remove them from gitignore, 
 
 ## Naming Conventions
 
-Test should all follow the following concept: 
+Test should all follow the following concept:
+
+## Commiting
+
+You don't commit, I commit.

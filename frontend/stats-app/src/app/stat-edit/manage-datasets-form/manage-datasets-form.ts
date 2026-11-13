@@ -170,6 +170,13 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     });
   }
 
+  onSetDatasetSmoothing(label: string, smoothing: boolean): void {
+    this.statService.setDatasetSmoothing(this.stat.id, label, smoothing).subscribe({
+      next: () => this.datasetsChanged.emit(),
+      error: err => console.error(err)
+    });
+  }
+
   rgbToHex(color?: string, defaultColorIndex = 0): string {
     const parts = (color ?? DEFAULT_DATASET_COLORS[defaultColorIndex % DEFAULT_DATASET_COLORS.length]).split(' ').map(Number);
     return '#' + parts.map(p => p.toString(16).padStart(2, '0')).join('');

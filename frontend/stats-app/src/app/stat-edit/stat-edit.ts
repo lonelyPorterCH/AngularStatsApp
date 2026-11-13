@@ -45,8 +45,6 @@ export class StatEdit implements OnInit {
   readonly renameSaved = signal(false);
   stat = signal<Stat | undefined>(undefined);
   archived = signal<boolean>(false);
-  smoothingSaving = signal(false);
-  smoothingError = signal('');
   stackedSaving = signal(false);
   stackedError = signal('');
   yAxisBoundsSaving = signal(false);
@@ -79,7 +77,6 @@ export class StatEdit implements OnInit {
   }
 
   loadStatById(id: string) {
-    this.smoothingError.set('');
     this.stackedError.set('');
     this.yAxisBoundsError.set('');
     this.chartTypeError.set('');
@@ -138,21 +135,8 @@ export class StatEdit implements OnInit {
   }
 
   onSmoothingChange(smoothing: boolean): void {
-    const stat = this.stat();
-    if (!stat || stat.chartType === 'bar' || stat.effortComparison || this.archived() || this.smoothingSaving()) return;
-    this.smoothingError.set('');
-    this.smoothingSaving.set(true);
-    this.stat.set({...stat, smoothing});
-    this.statService.setSmoothing(stat.id, smoothing).subscribe({
-      next: () => this.smoothingSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, smoothing: stat.smoothing ?? false} : current);
-          this.smoothingError.set('Could not save smoothing. The previous setting has been restored.');
-        }
-        this.smoothingSaving.set(false);
-      }
-    });
+    // Deprecated: smoothing is now controlled at the dataset level
+    // This method is kept for backward compatibility but does nothing
   }
 
   onEffortComparisonChange(effortComparison: boolean): void {

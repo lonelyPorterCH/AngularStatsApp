@@ -102,18 +102,21 @@ public class StatisticService {
         updateDataset(id, label, (statistic, dataset) -> dataset.setColor(color));
     }
 
+    public void setDatasetSmoothing(String id, String label, boolean smoothing) {
+        updateDataset(id, label, (statistic, dataset) -> dataset.setSmoothing(smoothing));
+    }
+
+    public void setSmoothing(String id, boolean smoothing) {
+        // Deprecated: smoothing is now controlled at the dataset level
+        // This method is kept for backward compatibility but does nothing
+    }
+
     public void renameStatistic(String id, String title) {
         if (title == null || title.isBlank()) {
             throw new InvalidDataPointException("Graph title must not be blank");
         }
         Statistic statistic = repository.findById(id);
         statistic.setTitle(title.strip());
-        repository.save(statistic);
-    }
-
-    public void setSmoothing(String id, boolean smoothing) {
-        Statistic statistic = repository.findById(id);
-        statistic.setSmoothing(smoothing);
         repository.save(statistic);
     }
 

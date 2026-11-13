@@ -16,12 +16,12 @@ export interface ChartPointClickEvent {
   point: DataPoint;
 }
 
-export function chartDataPoints(points: DataPoint[], stat: Stat): {x: string | number; y: number}[] {
+export function chartDataPoints(points: DataPoint[], stat: Stat, smoothing: boolean = false): {x: string | number; y: number}[] {
   const sorted = [...points].sort((first, second) => compareDataPoints(first, second, stat));
   const values = sorted.map(point => parseYAxisValue(point.y, stat));
   return sorted.map((point, index) => {
     const window = values.slice(Math.max(0, index - 6), index + 1).filter(Number.isFinite);
-    const value = stat.chartType !== 'bar' && stat.smoothing && Number.isFinite(values[index])
+    const value = stat.chartType !== 'bar' && smoothing && Number.isFinite(values[index])
       ? window.reduce((total, measurement) => total + measurement, 0) / window.length
       : values[index];
     return {x: parseXAxisValue(point.x, stat), y: value};
@@ -29,7 +29,7 @@ export function chartDataPoints(points: DataPoint[], stat: Stat): {x: string | n
 }
 
 export function effortTrendPoints(points: DataPoint[], stat: Stat): {x: string | number; y: number}[] {
-  const raw = chartDataPoints(points, {...stat, smoothing: false});
+  const raw = chartDataPoints(points, stat, false);
   return raw.map((point, index) => {
     const window = raw.slice(Math.max(0, index - 3), index + 4)
       .map(value => value.y).filter(Number.isFinite);
@@ -73,7 +73,6 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     this.chart?.destroy();
     const bar = this.stat.chartType === 'bar';
     const comparison = !bar && !!this.stat.effortComparison;
-    const smoothing = !bar && !comparison && !!this.stat.smoothing;
     const pace = this.stat.yAxisFormat === 'pace';
     const linearXAxis = isLinearXAxis(this.stat);
     const stacked = !comparison && !!this.stat.stacked && this.stat.datasets.length >= 2;
@@ -100,11 +99,12 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     const colors = this.stat.datasets.map((ds, i) => ds.color || DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]);
     const datasets: ChartDataset<'line' | 'bar', ChartCoordinate[]>[] = this.stat.datasets.map((ds, i) => {
       const color = colors[i];
+      const smoothing = !bar && !comparison && !!ds.smoothing;
       return {
         label: ds.label,
         data: (bar ? sourcePoints[i].map((point, index) => ({
           x: xValues[index], y: point ? parseYAxisValue(point.y, this.stat) : null
-        })) : chartDataPoints(ds.dataPoints, comparison ? {...this.stat, smoothing: false} : this.stat)),
+        })) : chartDataPoints(ds.dataPoints, this.stat, smoothing)),
         ...(!bar ? {
           showLine: !comparison,
           fill: !comparison && ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
@@ -122,7 +122,7 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     });
     if (comparison) {
       datasets.push(...this.stat.datasets.map((ds, i): ChartDataset<'line' | 'bar', ChartCoordinate[]> => ({
-        label: `${ds.label} - trend (7 measurements)`,
+        label: `${ds.label} - trend`,
         data: effortTrendPoints(ds.dataPoints, this.stat),
         borderColor: `rgb(${colors[i]} / 0.85)`,
         backgroundColor: `rgb(${colors[i]} / 0.2)`,
@@ -187,8 +187,8 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
                 title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
               } : {}),
               afterLabel: item => {
-                if (!smoothing) return '';
                 const dataset = this.stat.datasets[item.datasetIndex];
+                if (!dataset?.smoothing) return '';
                 const sorted = [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat));
                 const recorded = sorted[item.dataIndex].y;
                 return `Recorded: ${pace ? `${formatPace(parseYAxisValue(recorded, this.stat))} /km` : recorded}`;

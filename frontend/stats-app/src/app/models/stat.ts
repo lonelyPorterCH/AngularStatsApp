@@ -7,7 +7,6 @@ export interface Stat {
   xAxisScaleType?: 'time' | 'linear';
   xAxisUnit?: string;
   reverse: boolean;
-  smoothing?: boolean;
   effortComparison?: boolean;
   yAxisFormat?: 'number' | 'pace';
   stacked?: boolean;
@@ -20,6 +19,7 @@ export interface Dataset {
   label: string;
   index: number;
   filled?: boolean;
+  smoothing?: boolean;
   dataPoints: DataPoint[];
   color?: string;
 }

@@ -159,21 +159,21 @@ class StatisticServiceTest {
         repository.save(weight);
         repository.save(createStatistic("other", "Other"));
 
-        service.setSmoothing("weight", true);
+        service.setDatasetSmoothing("weight", "Series", true);
 
         Statistic loaded = repository.findById("weight");
-        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
         assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(new Statistic.DataPoint("2026-10-30", "64"));
-        assertThat(repository.findById("other").isSmoothing()).isFalse();
+        assertThat(repository.findById("other").getDatasets().getFirst().isSmoothing()).isFalse();
 
-        service.setSmoothing("weight", false);
-        assertThat(repository.findById("weight").isSmoothing()).isFalse();
+        service.setDatasetSmoothing("weight", "Series", false);
+        assertThat(repository.findById("weight").getDatasets().getFirst().isSmoothing()).isFalse();
     }
 
     @Test
     void effortComparisonAndPacePersistIndependentlyWithoutRewritingMeasurements() {
         Statistic runs = createStatistic("runs", "Runs");
-        runs.setSmoothing(true);
+        runs.getDatasets().getFirst().setSmoothing(true);
         runs.getDatasets().getFirst().getDataPoints().addAll(List.of(
                 new Statistic.DataPoint("2026-11-01", "4.59"),
                 new Statistic.DataPoint("2026-11-02", "5.1")));
@@ -183,7 +183,7 @@ class StatisticServiceTest {
         service.setYAxisFormat("runs", "pace");
         Statistic loaded = repository.findById("runs");
         assertThat(loaded.isEffortComparison()).isTrue();
-        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
         assertThat(loaded.getYAxisFormat()).isEqualTo("pace");
         assertThat(loaded.getDatasets().getFirst().getDataPoints()).isEqualTo(runs.getDatasets().getFirst().getDataPoints());
         assertThat(repository.findById("other").isEffortComparison()).isFalse();
@@ -249,23 +249,23 @@ class StatisticServiceTest {
         repository.save(createStatistic("weight", "Weight"));
         repository.toggleArchive("weight");
 
-        assertThatThrownBy(() -> service.setSmoothing("weight", true))
+        assertThatThrownBy(() -> service.setDatasetSmoothing("weight", "Series", true))
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
-        assertThat(repository.findById("weight").isSmoothing()).isFalse();
+        assertThat(repository.findById("weight").getDatasets().getFirst().isSmoothing()).isFalse();
     }
 
     @Test
     void missingSmoothingPropertyDefaultsToOff() throws Exception {
         Files.writeString(tempDir.resolve("legacy.json"), """
-                {"id":"legacy","title":"Legacy","reverse":false,"datasets":[]}
+                {"id":"legacy","title":"Legacy","reverse":false,"datasets":[{"label":"Series"}]}
                 """);
-        assertThat(repository.findById("legacy").isSmoothing()).isFalse();
+        assertThat(repository.findById("legacy").getDatasets().getFirst().isSmoothing()).isFalse();
     }
 
     @Test
     void renameStatisticChangesOnlyTheTitleAndTrimsWhitespace() {
         Statistic statistic = createStatistic("weight", "weight");
-        statistic.setSmoothing(true);
+        statistic.getDatasets().getFirst().setSmoothing(true);
         statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-10-30", "64"));
         repository.save(statistic);
 
@@ -274,7 +274,7 @@ class StatisticServiceTest {
         Statistic loaded = repository.findById("weight");
         assertThat(loaded.getTitle()).isEqualTo("Weight");
         assertThat(loaded.getId()).isEqualTo("weight");
-        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
         assertThat(loaded.getXAxisName()).isEqualTo("Date");
         assertThat(loaded.getDatasets().getFirst().getLabel()).isEqualTo("Series");
         assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(new Statistic.DataPoint("2026-10-30", "64"));
@@ -308,10 +308,10 @@ class StatisticServiceTest {
     }
 
     @Test
-    void stackingPersistsAcrossReloadAndDatasetChangesWithoutChangingMeasurements() {
+    void stackingPersistsAcrossReloadAndDatasetChangesWithoutChangingMeasurement() {
         Statistic statistic = createStatistic("cumulus", "Cumulus");
         statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-09-30", "1000"));
-        statistic.setSmoothing(true);
+        statistic.getDatasets().getFirst().setSmoothing(true);
         repository.save(statistic);
         service.addDataset("cumulus", "Carry");
         service.addDataPoint("cumulus", "Carry", new Statistic.DataPoint("2026-09-30", "391"));
@@ -319,7 +319,7 @@ class StatisticServiceTest {
         service.setStacked("cumulus", true);
         Statistic loaded = service.getStatisticById("cumulus");
         assertThat(loaded.isStacked()).isTrue();
-        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
         assertThat(loaded.getDatasets().getFirst().getDataPoints())
                 .containsExactly(new Statistic.DataPoint("2026-09-30", "1000"));
         assertThat(loaded.getDatasets().get(1).getDataPoints())
@@ -361,7 +361,7 @@ class StatisticServiceTest {
     void yAxisBoundsPersistIndependentlyAndCanBeClearedWithoutChangingOtherSettings() throws Exception {
         Statistic statistic = createStatistic("chart", "Chart");
         statistic.setReverse(true);
-        statistic.setSmoothing(true);
+        statistic.getDatasets().getFirst().setSmoothing(true);
         statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-02", "-50"));
         repository.save(statistic);
         repository.save(createStatistic("other", "Other"));
@@ -373,7 +373,7 @@ class StatisticServiceTest {
         assertThat(Files.readString(tempDir.resolve("chart.json")))
                 .contains("\"yAxisMin\"", "\"yAxisMax\"");
         assertThat(loaded.isReverse()).isTrue();
-        assertThat(loaded.isSmoothing()).isTrue();
+        assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
         assertThat(loaded.getDatasets().getFirst().getDataPoints())
                 .containsExactly(new Statistic.DataPoint("2026-11-02", "-50"));
         assertThat(repository.findById("other").getYAxisMin()).isNull();
@@ -449,14 +449,14 @@ class StatisticServiceTest {
         @Test
         void chartTypePersistsWithoutChangingMeasurementsOrLineSettings() {
         Statistic statistic = createStatistic("chart", "Chart");
-        statistic.setSmoothing(true);
+        statistic.getDatasets().getFirst().setSmoothing(true);
         statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-03", "300"));
         service.createStatistic(statistic);
         for (String chartType : List.of("bar", "line")) {
             service.setChartType("chart", chartType);
             Statistic loaded = service.getStatisticById("chart");
             assertThat(loaded.getChartType()).isEqualTo(chartType);
-            assertThat(loaded.isSmoothing()).isTrue();
+            assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
             assertThat(loaded.getDatasets().getFirst().getDataPoints())
                 .containsExactly(new Statistic.DataPoint("2026-11-03", "300"));
         }
