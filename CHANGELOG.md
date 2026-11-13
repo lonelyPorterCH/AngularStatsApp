@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.5.15] - 2026-11-13
+
+### Added
+
+- CSV import supports Swiss dates with optional times and an optional Luxon date-format field for other formats,
+  including explicit day/month ordering for ambiguous dates.
+- Optional inclusive From/To date range for CSV import, selected with calendar datepickers or entered as dd.MM.yyyy, with open-ended ranges and a preview
+  count of excluded rows. Invalid or reversed ranges block import.
+
+### Changed
+
+- CSV import detects comma, semicolon, tab and pipe delimiters automatically.
+- ISO timestamps accept timezone offsets and retain their original calendar date; invalid dates and times remain reported in the preview.
+
 ## [2.5.14] - 2026-11-09
 
 ### Changed

@@ -20,14 +20,14 @@ details ul { max-height: 220px; overflow: auto; padding-left: 24px; }
 summary { cursor: pointer; }
 fieldset { margin: 0 0 20px; padding: 20px 0; border: 0; border-bottom: 1px solid var(--mat-sys-outline-variant, #ccc); min-width: 0; }
 legend { font-weight: 600; }
-.metadata { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
-.metadata mat-form-field { width: 100%; min-width: 0; }
+.metadata, .date-range { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.metadata mat-form-field, .date-range mat-form-field { width: 100%; min-width: 0; }
 .actions { margin-top: 20px; }
 mat-button-toggle-group { max-width: 100%; }
 @media (max-width: 600px) {
   .column-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .sample { padding-left: 44px; margin-bottom: 8px; }
-  .metadata { grid-template-columns: minmax(0, 1fr); }
+  .metadata, .date-range { grid-template-columns: minmax(0, 1fr); }
   th, td { padding: 10px 8px; }
   .filename { display: block; margin: 12px 0 0; }
 }

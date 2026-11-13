@@ -25,6 +25,40 @@
           @for (header of csv.headers; track $index) { <mat-option [value]="$index">{{ header }}</mat-option> }
         </mat-select>
       </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Date Format (optional)</mat-label>
+        <input matInput #dateFormatInput [value]="dateFormat()" (input)="setDateFormat(dateFormatInput.value)"
+          placeholder="e.g. dd.MM.yyyy" [disabled]="prepared() || busy()" aria-describedby="date-format-help">
+        <mat-hint>Blank: ISO or Swiss dates, with optional time.</mat-hint>
+      </mat-form-field>
+      <p id="date-format-help">
+        Custom formats use Luxon tokens (case-sensitive): d.M.yyyy for 3.4.2026,
+        dd/MM/yyyy for 03/04/2026 (day first), MM/dd/yyyy for 04/03/2026 (month first),
+        yyyyMMdd for 20260403, or dd.MM.yyyy HH:mm:ss for dates with time.
+        Use MMM for English abbreviated month names, MMMM for full names, and quote literal text with single quotes.
+        Slash dates require an explicit format to avoid guessing the day/month order. Times are discarded without shifting the date.
+      </p>
+      <h4>Import Date Range (optional)</h4>
+      <div class="date-range">
+        <mat-form-field appearance="outline">
+          <mat-label>From date</mat-label>
+          <input matInput [matDatepicker]="fromPicker" [formControl]="rangeForm.controls.from"
+            placeholder="01.01.2026" [readonly]="prepared() || busy()" aria-describedby="date-range-help">
+          <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
+          <mat-datepicker #fromPicker [disabled]="prepared() || busy()"></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>To date</mat-label>
+          <input matInput [matDatepicker]="toPicker" [formControl]="rangeForm.controls.to"
+            placeholder="31.12.2026" [readonly]="prepared() || busy()" aria-describedby="date-range-help">
+          <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
+          <mat-datepicker #toPicker [disabled]="prepared() || busy()"></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <p id="date-range-help">Choose dates from the calendars or enter dd.MM.yyyy. Both dates are included. Leave either date blank for no limit on that side.</p>
+      @if (rangeInputError() || preview()?.rangeError) {
+        <p class="error" role="alert">{{ rangeInputError() || preview()!.rangeError }}</p>
+      }
       <div class="column-list">
         @for (column of numericColumns(); track column.index) {
           <div class="column-row">
@@ -56,7 +90,12 @@
               </tbody>
             </table>
           </div>
-          @if (!canReview()) { <p class="error">Every selected measurement needs at least one valid value.</p> }
+          @if (!canReview() && !rangeInputError() && !current.rangeError) {
+            <p class="error">Every selected measurement needs at least one valid value within the selected date range.</p>
+          }
+          @if (current.excludedRows) {
+            <p role="status">{{ current.excludedRows }} rows outside the date range will not be imported.</p>
+          }
           @if (current.duplicateDates) {
             <p class="warning">{{ current.duplicateDates }} repeated dates. All measurements will be kept.</p>
           }
@@ -109,7 +148,8 @@
           </div>
           @if (!allSaved()) {
             <mat-checkbox [checked]="confirmed()" (change)="confirmed.set($event.checked)" [disabled]="busy()">
-              Confirm {{ graphs.length }} new {{ graphs.length === 1 ? 'graph' : 'graphs' }}, dates only, {{ preview()!.issues.length }} skipped rows or values
+              Confirm {{ graphs.length }} new {{ graphs.length === 1 ? 'graph' : 'graphs' }}, dates only, {{ preview()!.issues.length }} skipped rows or values,
+              {{ preview()!.excludedRows }} rows outside the date range
             </mat-checkbox>
           }
           <div class="actions">

@@ -1,4 +1,5 @@
 import {Component, computed, inject, signal} from '@angular/core';
+import {toSignal} from '@angular/core/rxjs-interop';
 import {FormArray, FormBuilder, ReactiveFormsModule, Validators} from '@angular/forms';
 import {HttpErrorResponse} from '@angular/common/http';
 import {DOCUMENT} from '@angular/common';
@@ -6,12 +7,15 @@ import {RouterLink} from '@angular/router';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {MatCheckbox} from '@angular/material/checkbox';
-import {MatFormField, MatLabel} from '@angular/material/form-field';
+import {MatFormField, MatHint, MatLabel, MatSuffix} from '@angular/material/form-field';
+import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
+import {provideLuxonDateAdapter} from '@angular/material-luxon-adapter';
 import {MatInput} from '@angular/material/input';
 import {MatSelect} from '@angular/material/select';
 import {MatOption} from '@angular/material/core';
 import {MatButtonToggleModule} from '@angular/material/button-toggle';
-import {firstValueFrom} from 'rxjs';
+import {firstValueFrom, tap} from 'rxjs';
+import {DateTime} from 'luxon';
 import {StatService} from '../services/stat-service';
 import {Stat} from '../models/stat';
 import {buildGraphs, CsvTable, numericValue, parseCsv, previewCsv, sharedUnit, validGraphId} from './csv-mapper';
@@ -25,7 +29,15 @@ interface SaveResult {
 @Component({
   selector: 'app-csv-import',
   imports: [ReactiveFormsModule, RouterLink, MatButton, MatIcon, MatCheckbox, MatFormField,
-    MatLabel, MatInput, MatSelect, MatOption, MatButtonToggleModule],
+    MatLabel, MatHint, MatInput, MatSelect, MatOption, MatButtonToggleModule,
+    MatDatepicker, MatDatepickerInput, MatDatepickerToggle, MatSuffix],
+  providers: [provideLuxonDateAdapter({
+    parse: {dateInput: 'd.M.yyyy'},
+    display: {
+      dateInput: 'dd.MM.yyyy', monthYearLabel: 'LLL yyyy',
+      dateA11yLabel: 'DD', monthYearA11yLabel: 'LLLL yyyy'
+    }
+  })],
   templateUrl: './csv-import.html',
   styleUrl: './csv-import.scss'
 })
@@ -36,6 +48,22 @@ export class CsvImport {
   readonly table = signal<CsvTable | null>(null);
   readonly fileName = signal('');
   readonly dateColumn = signal(0);
+  readonly dateFormat = signal('');
+  readonly rangeForm = this.builder.group({
+    from: this.builder.control<DateTime | null>(null),
+    to: this.builder.control<DateTime | null>(null)
+  }, {updateOn: 'blur'});
+  private readonly rangeValues = toSignal(this.rangeForm.valueChanges.pipe(tap(() => this.resetReview())),
+    {initialValue: this.rangeForm.getRawValue()});
+  readonly dateRange = computed(() => ({
+    from: this.rangeValues().from?.toFormat('dd.MM.yyyy') ?? '',
+    to: this.rangeValues().to?.toFormat('dd.MM.yyyy') ?? ''
+  }));
+  readonly rangeInputError = computed(() => {
+    this.rangeValues();
+    return this.rangeForm.controls.from.hasError('matDatepickerParse') ? 'Enter a valid From date in dd.MM.yyyy format.'
+      : this.rangeForm.controls.to.hasError('matDatepickerParse') ? 'Enter a valid To date in dd.MM.yyyy format.' : '';
+  });
   readonly selected = signal<number[]>([]);
   readonly separate = signal(false);
   readonly busy = signal(false);
@@ -46,7 +74,7 @@ export class CsvImport {
   readonly confirmed = signal(false);
   readonly preview = computed(() => {
     const table = this.table();
-    return table ? previewCsv(table, this.dateColumn(), this.selected()) : null;
+    return table ? previewCsv(table, this.dateColumn(), this.selected(), this.dateFormat(), this.dateRange()) : null;
   });
   readonly numericColumns = computed(() => {
     const table = this.table();
@@ -59,7 +87,7 @@ export class CsvImport {
     const datasets = this.preview()?.datasets ?? [];
     return !this.separate() && datasets.length > 1 && !sharedUnit(datasets);
   });
-  readonly canReview = computed(() => !!this.preview()?.datasets.length
+  readonly canReview = computed(() => !this.rangeInputError() && !this.preview()?.rangeError && !!this.preview()?.datasets.length
     && this.preview()!.datasets.every(dataset => dataset.dataPoints.length > 0));
   readonly attempted = computed(() => this.results().some(result => result.status !== 'pending'));
   readonly allSaved = computed(() => !!this.results().length && this.results().every(result => result.status === 'saved'));
@@ -87,6 +115,8 @@ export class CsvImport {
     this.resetReview();
     this.table.set(null);
     this.selected.set([]);
+    this.dateFormat.set('');
+    this.rangeForm.reset();
     this.fileName.set(file.name);
     this.error.set('');
     this.reading.set(true);
@@ -107,6 +137,11 @@ export class CsvImport {
   setDateColumn(column: number): void {
     this.dateColumn.set(column);
     this.selected.update(columns => columns.filter(index => index !== column));
+    this.resetReview();
+  }
+
+  setDateFormat(format: string): void {
+    this.dateFormat.set(format);
     this.resetReview();
   }
 

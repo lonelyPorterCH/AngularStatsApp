@@ -43,6 +43,8 @@ separate feature/change set, a change after release, or when explicitly requeste
 
 > Bug fixes do not require a version bump unless they change observable behaviour.
 
+Do not touch other md files like README.md or SCORESABER-DATA-FLOW.md or create new ones unless told to.
+
 ## CORS
 
 Allowed HTTP methods in `WebConfig.java` are `GET, POST, PUT, DELETE, PATCH`.  
@@ -55,3 +57,23 @@ If a new HTTP method is introduced, add it to the `allowedMethods` list.
 - Use `FormBuilder` with `{updateOn: 'blur'}` for forms.
 - Backend: use Lombok (`@Getter`, `@Setter`, `@RequiredArgsConstructor`, etc.) — avoid boilerplate.
 - Backend endpoints live under `/api/stats/**`.
+
+## Architecture
+
+Backend is managed in Domain Driven Design.
+
+- ch.lonelyporter.statsapp.domain: Domain Classes
+- ch.lonelyporter.statsapp.exception: Exceptions
+- ch.lonelyporter.statsapp.integration: Connections to outside services, like the scoresaber API
+- ch.lonelyporter.statsapp.persistence: Storing and Loading Data
+- ch.lonelyporter.statsapp.service: Services
+- ch.lonelyporter.statsapp.web: APIs for frontend
+
+## Tools
+
+For One-off Tools like Migration Scripts you should use the tools folder. The Tools Folder is not version controlled and
+should never be. Don't add new scripts in there and remove them from gitignore, tools are always ignored.
+
+## Naming Conventions
+
+Test should all follow the following concept: 
