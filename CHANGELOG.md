@@ -6,7 +6,8 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
-- **BREAKING**: Moved smoothing setting from chart level to dataset level. Each dataset can now be smoothed individually using a 7-measurement moving average. This allows selective smoothing—for example, smoothing weight data while keeping holiday markers sharp.
+- **BREAKING**: Moved smoothing setting from chart level to dataset level. Each dataset can now be smoothed individually
+  using a 7-measurement moving average.
 - Smoothing controls are now in the "Manage data" page instead of the chart settings page.
 
 ## [2.5.15] - 2026-11-13
@@ -15,13 +16,14 @@ All notable changes to this project are documented in this file.
 
 - CSV import supports Swiss dates with optional times and an optional Luxon date-format field for other formats,
   including explicit day/month ordering for ambiguous dates.
-- Optional inclusive From/To date range for CSV import, selected with calendar datepickers or entered as dd.MM.yyyy, with open-ended ranges and a preview
-  count of excluded rows. Invalid or reversed ranges block import.
+- Optional inclusive From/To date range for CSV import, selected with calendar datepickers or entered as dd.MM.yyyy,
+  with open-ended ranges and a preview count of excluded rows. Invalid or reversed ranges block import.
 
 ### Changed
 
 - CSV import detects comma, semicolon, tab and pipe delimiters automatically.
-- ISO timestamps accept timezone offsets and retain their original calendar date; invalid dates and times remain reported in the preview.
+- ISO timestamps accept timezone offsets and retain their original calendar date; invalid dates and times remain
+  reported in the preview.
 
 ## [2.5.14] - 2026-11-09
 
@@ -31,8 +33,8 @@ All notable changes to this project are documented in this file.
   (single column on narrow screens). Dots + trend and Stacked now sit together with the chart type, and the Y-axis
   bounds share one row.
 - Reorganized the Edit page the same way: a full-width General section for the title, with Chart display (chart type,
-  Dots + trend, Smooth trend, Stacked) and Y axis (value format, bounds, Save bounds) side by side. Setting errors appear
-  in their section.
+  Dots + trend, Smooth trend, Stacked) and Y axis (value format, bounds, Save bounds) side by side. Setting errors
+  appear in their section.
 - The Y-axis bounds hint on the Create New Chart form and the Edit page is shown only when the Pace value format is
   selected.
 
@@ -40,41 +42,56 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- Off-by-default single-player "Highlight top 10" (by PP) toggle below "Highlight NF scores"; checking it fetches the current top ten and highlights them green.
-- Live top-ten ScoreSaber requests using `page=1&limit=10&sort=top`, with request/response caching disabled and no PP persistence.
+- Off-by-default single-player "Highlight top 10" (by PP) toggle below "Highlight NF scores"; checking it fetches the
+  current top ten and highlights them green.
+- Live top-ten ScoreSaber requests using `page=1&limit=10&sort=top`, with request/response caching disabled and no PP
+  persistence.
 
 ### Changed
 
-- Only exact top-ten plays already displayed at the selected date are highlighted, matching song, difficulty, timestamp and accuracy.
-- Selected-song colors take precedence over top-ten green, which takes precedence over NF orange. Comparison and previews remain unchanged.
-- Top-ten results are fetched anew when enabled, reloading scores or changing players; stale requests are cancelled and errors are shown without hiding the chart (re-check the option to retry).
+- Only exact top-ten plays already displayed at the selected date are highlighted, matching song, difficulty, timestamp
+  and accuracy.
+- Selected-song colors take precedence over top-ten green, which takes precedence over NF orange. Comparison and
+  previews remain unchanged.
+- Top-ten results are fetched anew when enabled, reloading scores or changing players; stale requests are cancelled and
+  errors are shown without hiding the chart (re-check the option to retry).
 
 ## [2.5.12] - 2026-11-09
 
 ### Added
 
-- Off-by-default "Only shared songs (same difficulty)" filter in Beat Saber comparison mode, matching both song hash and leaderboard.
-- Hovering a score in Beat Saber comparison highlights the same song/difficulty for both players with colored rings and a connecting line.
-- Comparison tooltips show both player names and accuracies, or indicate when the other player has no matching score at the selected date.
+- Off-by-default "Only shared songs (same difficulty)" filter in Beat Saber comparison mode, matching both song hash and
+  leaderboard.
+- Hovering a score in Beat Saber comparison highlights the same song/difficulty for both players with colored rings and
+  a connecting line.
+- Comparison tooltips show both player names and accuracies, or indicate when the other player has no matching score at
+  the selected date.
 
 ### Changed
 
-- Shared-song comparisons include only difficulties both players have played by the selected slider date, retaining each player's latest eligible score and original color.
-- Hover matching uses the filtered, date-eligible scores and excludes hidden datasets; single-player selection and compact previews remain unchanged.
-- Comparison tooltips list the higher-accuracy player first, regardless of which player's dot is hovered; ties retain player order.
+- Shared-song comparisons include only difficulties both players have played by the selected slider date, retaining each
+  player's latest eligible score and original color.
+- Hover matching uses the filtered, date-eligible scores and excludes hidden datasets; single-player selection and
+  compact previews remain unchanged.
+- Comparison tooltips list the higher-accuracy player first, regardless of which player's dot is hovered; ties retain
+  player order.
 
 ## [2.5.11] - 2026-11-09
 
 ### Added
 
-- Off-by-default "Highlight NF scores" toggle in single-player Beat Saber charts: NF dots turn orange without creating song selections.
+- Off-by-default "Highlight NF scores" toggle in single-player Beat Saber charts: NF dots turn orange without creating
+  song selections.
 - Per-play No Fail status in score storage and responses, sourced from ScoreSaber's `mods` array.
-- Non-destructive Python enrichment for existing player files, with explicit reporting of historical plays whose modifiers cannot be recovered.
+- Non-destructive Python enrichment for existing player files, with explicit reporting of historical plays whose
+  modifiers cannot be recovered.
 
 ### Changed
 
-- Selected dots retain their selection colors over NF highlighting; deselecting restores orange when NF highlighting is enabled.
-- Comparison and compact previews keep their existing player colors. Old scores with unavailable NF status remain readable and keep their normal color without displaying a migration notice.
+- Selected dots retain their selection colors over NF highlighting; deselecting restores orange when NF highlighting is
+  enabled.
+- Comparison and compact previews keep their existing player colors. Old scores with unavailable NF status remain
+  readable and keep their normal color without displaying a migration notice.
 
 ## [2.5.10] - 2026-11-09
 
