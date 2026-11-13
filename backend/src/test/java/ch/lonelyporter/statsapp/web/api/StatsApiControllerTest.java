@@ -26,6 +26,22 @@ class StatsApiControllerTest {
     }
 
     @Test
+    void smoothingWindowEndpointValidatesWholePositiveMeasurements() throws Exception {
+        String path = "/api/stats/chart/dataset/Series/smoothing-window";
+        mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content("{\"smoothingWindow\":3}"))
+                .andExpect(status().isOk());
+        verify(service).setDatasetSmoothingWindow("chart", "Series", 3);
+        clearInvocations(service);
+        for (String body : new String[]{"{}", "{\"smoothingWindow\":null}", "{\"smoothingWindow\":0}",
+                "{\"smoothingWindow\":-1}", "{\"smoothingWindow\":1.5}", "{\"smoothingWindow\":2147483648}",
+                "{\"smoothingWindow\":{}}"}) {
+            mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(service);
+    }
+
+    @Test
     void yAxisBoundsEndpointAcceptsOptionalBoundsAndClearingBoth() throws Exception {
         mvc.perform(patch("/api/stats/chart/y-axis-bounds")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -62,6 +62,8 @@ public class Statistic {
         private boolean filled;
         @Getter(AccessLevel.NONE)
         private Boolean smoothing = false;
+        @Getter(AccessLevel.NONE)
+        private Integer smoothingWindow = 7;
         private String color;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
@@ -73,6 +75,10 @@ public class Statistic {
 
         public boolean isSmoothing() {
             return Boolean.TRUE.equals(smoothing);
+        }
+
+        public int getSmoothingWindow() {
+            return smoothingWindow == null ? 7 : smoothingWindow;
         }
     }
 

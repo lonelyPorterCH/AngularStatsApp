@@ -171,6 +171,24 @@ class StatisticServiceTest {
     }
 
     @Test
+    void smoothingWindowDefaultsToSevenAndPersistsIndependently() throws Exception {
+        Files.writeString(tempDir.resolve("legacy.json"), """
+                {"id":"legacy","reverse":false,"datasets":[{"label":"Series","dataPoints":[]},{"label":"Other","dataPoints":[]}]}
+                """);
+        assertThat(repository.findById("legacy").getDatasets().getFirst().getSmoothingWindow()).isEqualTo(7);
+        service.setDatasetSmoothingWindow("legacy", "Series", 3);
+        Statistic loaded = repository.findById("legacy");
+        assertThat(loaded.getDatasets().getFirst().getSmoothingWindow()).isEqualTo(3);
+        assertThat(loaded.getDatasets().get(1).getSmoothingWindow()).isEqualTo(7);
+        assertThatThrownBy(() -> service.setDatasetSmoothingWindow("legacy", "Series", 0))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(repository.findById("legacy").getDatasets().getFirst().getSmoothingWindow()).isEqualTo(3);
+        repository.toggleArchive("legacy");
+        assertThatThrownBy(() -> service.setDatasetSmoothingWindow("legacy", "Series", 4))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+    }
+
+    @Test
     void effortComparisonAndPacePersistIndependentlyWithoutRewritingMeasurements() {
         Statistic runs = createStatistic("runs", "Runs");
         runs.getDatasets().getFirst().setSmoothing(true);

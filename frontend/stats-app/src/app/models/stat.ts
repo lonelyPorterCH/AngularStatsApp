@@ -20,6 +20,7 @@ export interface Dataset {
   index: number;
   filled?: boolean;
   smoothing?: boolean;
+  smoothingWindow?: number;
   dataPoints: DataPoint[];
   color?: string;
 }

@@ -16,11 +16,11 @@ export interface ChartPointClickEvent {
   point: DataPoint;
 }
 
-export function chartDataPoints(points: DataPoint[], stat: Stat, smoothing: boolean = false): {x: string | number; y: number}[] {
+export function chartDataPoints(points: DataPoint[], stat: Stat, smoothing: boolean = false, smoothingWindow = 7): {x: string | number; y: number}[] {
   const sorted = [...points].sort((first, second) => compareDataPoints(first, second, stat));
   const values = sorted.map(point => parseYAxisValue(point.y, stat));
   return sorted.map((point, index) => {
-    const window = values.slice(Math.max(0, index - 6), index + 1).filter(Number.isFinite);
+    const window = values.slice(Math.max(0, index - smoothingWindow + 1), index + 1).filter(Number.isFinite);
     const value = stat.chartType !== 'bar' && smoothing && Number.isFinite(values[index])
       ? window.reduce((total, measurement) => total + measurement, 0) / window.length
       : values[index];
@@ -104,7 +104,7 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
         label: ds.label,
         data: (bar ? sourcePoints[i].map((point, index) => ({
           x: xValues[index], y: point ? parseYAxisValue(point.y, this.stat) : null
-        })) : chartDataPoints(ds.dataPoints, this.stat, smoothing)),
+        })) : chartDataPoints(ds.dataPoints, this.stat, smoothing, ds.smoothingWindow ?? 7)),
         ...(!bar ? {
           showLine: !comparison,
           fill: !comparison && ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,

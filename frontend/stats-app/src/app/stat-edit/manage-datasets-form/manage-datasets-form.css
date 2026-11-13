@@ -4,10 +4,40 @@
 
 .axes-form {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 8px;
+}
+
+.axes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+.axis-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 16px 16px;
+  border: 1px solid var(--mat-sys-outline-variant, #ccc);
+  border-radius: 12px;
+}
+
+.axis-section legend {
+  padding: 0 4px;
+  font-weight: 500;
+}
+
+.axis-field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .add-dataset-form {
@@ -21,6 +51,8 @@
 mat-list-item {
   display: flex;
   align-items: stretch;
+  height: auto !important;
+  min-height: 48px;
 }
 
 .rename-input {
@@ -38,12 +70,44 @@ mat-list-item {
   align-items: center;
   width: 100%;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .dataset-label-section {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.smoothing-controls,
+.smoothing-window {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.smoothing-controls {
+  max-width: 100%;
+}
+
+.smoothing-window input {
+  flex: 1 1 120px;
+  width: 120px;
+  min-width: 40px;
+}
+
+.smoothing-window span {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.smoothing-error {
+  color: #b3261e;
 }
 
 /* TODO: Replace with Material Design CSS variables/tokens instead of ::ng-deep piercing.
@@ -75,4 +139,15 @@ mat-list-item:hover .dataset-actions {
   background: none;
 }
 
+@media (max-width: 760px) {
+  .axes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .axis-field-row {
+    grid-template-columns: 1fr;
+  }
+}
 

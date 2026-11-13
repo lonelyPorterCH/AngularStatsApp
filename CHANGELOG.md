@@ -7,8 +7,11 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - **BREAKING**: Moved smoothing setting from chart level to dataset level. Each dataset can now be smoothed individually
-  using a 7-measurement moving average.
+  using a configurable trailing moving average, defaulting to 7 measurements.
 - Smoothing controls are now in the "Manage data" page instead of the chart settings page.
+- Adjust the smoothing window with a slider beside the Smooth checkbox that saves on release.
+- Group the axis settings into X and Y sections while keeping the wider dataset controls.
+- Arrange data-point fields side by side where space permits.
 
 ## [2.5.15] - 2026-11-13
 

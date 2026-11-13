@@ -62,6 +62,15 @@ describe('StatService', () => {
     await promise;
   });
 
+  it('saves a smoothing window for the selected dataset', async () => {
+    const promise = firstValueFrom(service.setDatasetSmoothingWindow('test-stat', 'A/B', 3));
+    const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/dataset/A%2FB/smoothing-window`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({smoothingWindow: 3});
+    request.flush(null);
+    await promise;
+  });
+
   it('should persist the chart type for a graph', async () => {
     const promise = firstValueFrom(service.setChartType('test-stat', 'bar'));
     const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/chart-type`);

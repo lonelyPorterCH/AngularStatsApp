@@ -100,6 +100,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/smoothing`, {smoothing});
   }
 
+  setDatasetSmoothingWindow(id: string, label: string, smoothingWindow: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/smoothing-window`, {smoothingWindow});
+  }
+
   setDatasetColor(id: string, label: string, color: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/color`, {color});
   }

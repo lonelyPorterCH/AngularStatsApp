@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Dataset, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
@@ -41,6 +41,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
 
   // Map of dataset label -> rename input value (undefined = not editing)
   editingDataset: Record<string, string | undefined> = {};
+  smoothingWindowErrors = signal<Record<string, string | undefined>>({});
+  smoothingWindowSaving = signal<Record<string, boolean>>({});
 
   constructor(
     private statService: StatService,
@@ -175,6 +177,33 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
     });
+  }
+
+  onSetSmoothingWindow(dataset: Dataset, input: HTMLInputElement): void {
+    const value = input.valueAsNumber;
+    if (!input.validity.valid || !Number.isInteger(value) || value < 1 || value > 2147483647) {
+      this.smoothingWindowErrors.update(errors => ({...errors, [dataset.label]: 'Enter a whole number between 1 and 2147483647.'}));
+      return;
+    }
+    this.clearSmoothingWindowError(dataset.label);
+    if (value === (dataset.smoothingWindow ?? 7)) return;
+    this.smoothingWindowSaving.update(saving => ({...saving, [dataset.label]: true}));
+    this.statService.setDatasetSmoothingWindow(this.stat.id, dataset.label, value).subscribe({
+      next: () => {
+        this.smoothingWindowSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.datasetsChanged.emit();
+      },
+      error: err => {
+        console.error(err);
+        this.smoothingWindowSaving.update(saving => ({...saving, [dataset.label]: false}));
+        input.value = String(dataset.smoothingWindow ?? 7);
+        this.smoothingWindowErrors.update(errors => ({...errors, [dataset.label]: 'Could not save the smoothing window. Please try again.'}));
+      }
+    });
+  }
+
+  clearSmoothingWindowError(label: string): void {
+    this.smoothingWindowErrors.update(errors => ({...errors, [label]: undefined}));
   }
 
   rgbToHex(color?: string, defaultColorIndex = 0): string {

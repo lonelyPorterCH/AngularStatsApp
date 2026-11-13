@@ -38,6 +38,7 @@ public class StatisticService {
         validateYAxisFormat(statistic);
         validateYAxisBounds(statistic.getYAxisMin(), statistic.getYAxisMax());
         validateBarDatasets(statistic);
+        statistic.getDatasets().forEach(dataset -> validateSmoothingWindow(dataset.getSmoothingWindow()));
         int nextStatisticIndex = repository.findAll().stream()
                 .map(Statistic::getIndex)
                 .filter(Objects::nonNull)
@@ -104,6 +105,17 @@ public class StatisticService {
 
     public void setDatasetSmoothing(String id, String label, boolean smoothing) {
         updateDataset(id, label, (statistic, dataset) -> dataset.setSmoothing(smoothing));
+    }
+
+    public void setDatasetSmoothingWindow(String id, String label, int smoothingWindow) {
+        validateSmoothingWindow(smoothingWindow);
+        updateDataset(id, label, (statistic, dataset) -> dataset.setSmoothingWindow(smoothingWindow));
+    }
+
+    private void validateSmoothingWindow(int smoothingWindow) {
+        if (smoothingWindow < 1) {
+            throw new InvalidDataPointException("Smoothing window must be a positive whole number");
+        }
     }
 
     public void setSmoothing(String id, boolean smoothing) {

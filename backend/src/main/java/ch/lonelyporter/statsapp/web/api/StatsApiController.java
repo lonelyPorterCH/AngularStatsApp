@@ -30,6 +30,9 @@ public class StatsApiController {
     public record SmoothingRequest(Boolean smoothing) {
     }
 
+    public record SmoothingWindowRequest(Double smoothingWindow) {
+    }
+
     public record EffortComparisonRequest(Boolean effortComparison) {
     }
 
@@ -126,6 +129,18 @@ public class StatsApiController {
             throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing must be true or false");
         }
         statisticService.setDatasetSmoothing(id, label, request.smoothing());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/dataset/{label}/smoothing-window")
+    public ResponseEntity<Void> setDatasetSmoothingWindow(@PathVariable String id, @PathVariable String label,
+                                                          @RequestBody SmoothingWindowRequest request) {
+        Double window = request.smoothingWindow();
+        if (window == null || !Double.isFinite(window) || window < 1 || window > Integer.MAX_VALUE
+                || window != Math.rint(window)) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing window must be a positive whole number");
+        }
+        statisticService.setDatasetSmoothingWindow(id, label, window.intValue());
         return ResponseEntity.ok().build();
     }
 

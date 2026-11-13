@@ -11,7 +11,7 @@ nav {
 }
 
 mat-tab-group {
-  max-width: 500px;
+  max-width: 1000px;
 }
 
 .data-error {
