@@ -81,4 +81,47 @@ describe('ManageDatasetsForm smoothing window', () => {
     http.verify();
     fixture.destroy();
   });
+
+  it('saves gap filling and restores the checkbox if saving fails', async () => {
+    await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
+      providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(ManageDatasetsForm);
+    fixture.componentRef.setInput('stat', stat);
+    fixture.detectChanges();
+    const checkbox: HTMLElement = Array.from(fixture.nativeElement.querySelectorAll('mat-checkbox'))
+      .find((element): element is HTMLElement => element instanceof HTMLElement && element.textContent!.includes('Fill gaps'))!;
+    const input = checkbox.querySelector('input')!;
+    expect(input.checked).toBe(false);
+    input.click();
+    fixture.detectChanges();
+    expect(input.disabled).toBe(true);
+    const request = http.expectOne(`${environment.apiBaseUrl}/chart/dataset/Series/interpolate-gaps`);
+    expect(request.request.body).toEqual({interpolateGaps: true});
+    request.flush('failed', {status: 500, statusText: 'Error'});
+    fixture.detectChanges();
+    expect(input.checked).toBe(false);
+    expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain('Could not save gap filling');
+    input.click();
+    http.expectOne(`${environment.apiBaseUrl}/chart/dataset/Series/interpolate-gaps`).flush(null);
+    expect(fixture.componentInstance.interpolateGapsErrors()['Series']).toBeUndefined();
+    http.verify();
+    fixture.destroy();
+  });
+
+  it('only offers gap filling for smoothed date datasets', async () => {
+    await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
+      providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
+    const fixture = TestBed.createComponent(ManageDatasetsForm);
+    for (const settings of [
+      {xAxisScaleType: 'linear' as const, smoothing: true},
+      {xAxisScaleType: 'time' as const, smoothing: false}
+    ]) {
+      fixture.componentRef.setInput('stat', {...stat, xAxisScaleType: settings.xAxisScaleType,
+        datasets: [{...stat.datasets[0], smoothing: settings.smoothing}]});
+      fixture.detectChanges();
+      expect(fixture.nativeElement.textContent).not.toContain('Fill gaps');
+    }
+    fixture.destroy();
+  });
 });

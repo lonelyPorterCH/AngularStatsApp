@@ -104,6 +104,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/smoothing-window`, {smoothingWindow});
   }
 
+  setDatasetInterpolateGaps(id: string, label: string, interpolateGaps: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/interpolate-gaps`, {interpolateGaps});
+  }
+
   setDatasetColor(id: string, label: string, color: string): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/color`, {color});
   }

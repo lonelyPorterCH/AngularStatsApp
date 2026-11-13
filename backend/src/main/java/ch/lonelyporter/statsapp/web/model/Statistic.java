@@ -64,6 +64,8 @@ public class Statistic {
         private Boolean smoothing = false;
         @Getter(AccessLevel.NONE)
         private Integer smoothingWindow = 7;
+        @Getter(AccessLevel.NONE)
+        private Boolean interpolateGaps = false;
         private String color;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
@@ -79,6 +81,10 @@ public class Statistic {
 
         public int getSmoothingWindow() {
             return smoothingWindow == null ? 7 : smoothingWindow;
+        }
+
+        public boolean isInterpolateGaps() {
+            return Boolean.TRUE.equals(interpolateGaps);
         }
     }
 

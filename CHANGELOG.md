@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.1] - 2026-11-13
+
+### Added
+
+- Optional per-dataset gap filling for smoothed date charts: linearly interpolate missing days between measurements
+  at least seven calendar days apart. Interpolated points are temporary and are not saved as measurements.
+
 ## [2.6.0] - 2026-11-13
 
 ### Changed

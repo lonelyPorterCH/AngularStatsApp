@@ -10,22 +10,49 @@ import {formatPace, parseYAxisValue} from '../models/y-axis';
 Chart.register(...registerables);
 
 type ChartCoordinate = {x: string | number; y: number | null};
+type ChartSample = {x: string | number; y: number; rawY: number; recorded?: DataPoint};
 
 export interface ChartPointClickEvent {
   datasetLabel: string;
   point: DataPoint;
 }
 
-export function chartDataPoints(points: DataPoint[], stat: Stat, smoothing: boolean = false, smoothingWindow = 7): {x: string | number; y: number}[] {
+function prepareLinePoints(points: DataPoint[], stat: Stat, smoothing: boolean, smoothingWindow: number,
+                           interpolateGaps: boolean): ChartSample[] {
   const sorted = [...points].sort((first, second) => compareDataPoints(first, second, stat));
-  const values = sorted.map(point => parseYAxisValue(point.y, stat));
-  return sorted.map((point, index) => {
+  const samples: ChartSample[] = [];
+  sorted.forEach((point, index) => {
+    const rawY = parseYAxisValue(point.y, stat);
+    samples.push({x: parseXAxisValue(point.x, stat), y: rawY, rawY, recorded: point});
+    const next = sorted[index + 1];
+    if (!next || !smoothing || !interpolateGaps || isLinearXAxis(stat) || stat.chartType === 'bar') return;
+    const nextY = parseYAxisValue(next.y, stat);
+    if (!Number.isFinite(rawY) || !Number.isFinite(nextY)) return;
+    const start = DateTime.fromISO(point.x).startOf('day');
+    const end = DateTime.fromISO(next.x).startOf('day');
+    if (!start.isValid || !end.isValid) return;
+    const days = end.diff(start, 'days').days;
+    if (days < 7) return;
+    for (let day = 1; day < days; day++) {
+      const x = start.plus({days: day}).toISODate();
+      if (x) {
+        const value = rawY + (nextY - rawY) * day / days;
+        samples.push({x, y: value, rawY: value});
+      }
+    }
+  });
+  const values = samples.map(sample => sample.rawY);
+  return samples.map((sample, index) => {
     const window = values.slice(Math.max(0, index - smoothingWindow + 1), index + 1).filter(Number.isFinite);
     const value = stat.chartType !== 'bar' && smoothing && Number.isFinite(values[index])
       ? window.reduce((total, measurement) => total + measurement, 0) / window.length
       : values[index];
-    return {x: parseXAxisValue(point.x, stat), y: value};
+    return {...sample, y: value};
   });
+}
+
+export function chartDataPoints(points: DataPoint[], stat: Stat, smoothing: boolean = false, smoothingWindow = 7): {x: string | number; y: number}[] {
+  return prepareLinePoints(points, stat, smoothing, smoothingWindow, false).map(({x, y}) => ({x, y}));
 }
 
 export function effortTrendPoints(points: DataPoint[], stat: Stat): {x: string | number; y: number}[] {
@@ -78,12 +105,14 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     const stacked = !comparison && !!this.stat.stacked && this.stat.datasets.length >= 2;
     const sortedPoints = this.stat.datasets.map(dataset =>
       [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat)));
+    const linePoints = this.stat.datasets.map(dataset => prepareLinePoints(dataset.dataPoints, this.stat,
+      !bar && !comparison && !!dataset.smoothing, dataset.smoothingWindow ?? 7, !!dataset.interpolateGaps));
     const xValues = [...new Set(sortedPoints.flat().map(point => parseXAxisValue(point.x, this.stat)))]
       .sort((first, second) => compareDataPoints({x: String(first), y: ''}, {x: String(second), y: ''}, this.stat));
     const sourcePoints = bar ? sortedPoints.map(points => {
       const byX = new Map(points.map(point => [parseXAxisValue(point.x, this.stat), point]));
       return xValues.map(x => byX.get(x));
-    }) : sortedPoints;
+    }) : linePoints.map(points => points.map(point => point.recorded));
     const coordinates = bar ? [...new Set(xValues.map(value => linearXAxis
       ? Number(value) : DateTime.fromISO(String(value)).toMillis()).filter(Number.isFinite))]
       .sort((first, second) => first - second) : [];
@@ -104,7 +133,7 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
         label: ds.label,
         data: (bar ? sourcePoints[i].map((point, index) => ({
           x: xValues[index], y: point ? parseYAxisValue(point.y, this.stat) : null
-        })) : chartDataPoints(ds.dataPoints, this.stat, smoothing, ds.smoothingWindow ?? 7)),
+        })) : linePoints[i].map(({x, y}) => ({x, y}))),
         ...(!bar ? {
           showLine: !comparison,
           fill: !comparison && ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
@@ -188,17 +217,21 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
               } : {}),
               afterLabel: item => {
                 const dataset = this.stat.datasets[item.datasetIndex];
-                if (!dataset?.smoothing) return '';
-                const sorted = [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat));
-                const recorded = sorted[item.dataIndex].y;
-                return `Recorded: ${pace ? `${formatPace(parseYAxisValue(recorded, this.stat))} /km` : recorded}`;
+                if (!dataset?.smoothing || bar || comparison) return '';
+                const sample = linePoints[item.datasetIndex]?.[item.dataIndex];
+                if (!sample) return '';
+                if (!sample.recorded) {
+                  return `Interpolated: ${pace ? `${formatPace(sample.rawY)} /km` : sample.rawY}`;
+                }
+                return `Recorded: ${pace ? `${formatPace(sample.rawY)} /km` : sample.recorded.y}`;
               }
             }
           }
         },
         onClick: (_event, elements) => {
           if (elements.length > 0) {
-            const el = elements.find(element => element.datasetIndex < this.stat.datasets.length);
+            const el = elements.find(element => element.datasetIndex < this.stat.datasets.length
+              && sourcePoints[element.datasetIndex]?.[element.index]);
             if (!el) return;
             const ds = this.stat.datasets[el.datasetIndex];
             const point = sourcePoints[el.datasetIndex]?.[el.index];

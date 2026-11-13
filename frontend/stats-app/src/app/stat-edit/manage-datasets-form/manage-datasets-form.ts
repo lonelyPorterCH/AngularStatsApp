@@ -6,7 +6,7 @@ import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {MatList, MatListItem} from '@angular/material/list';
-import {MatCheckbox} from '@angular/material/checkbox';
+import {MatCheckbox, MatCheckboxChange} from '@angular/material/checkbox';
 import {MatOption} from '@angular/material/core';
 import {MatSelect} from '@angular/material/select';
 import {DEFAULT_DATASET_COLORS} from '../../models/dataset-colors';
@@ -43,6 +43,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
   editingDataset: Record<string, string | undefined> = {};
   smoothingWindowErrors = signal<Record<string, string | undefined>>({});
   smoothingWindowSaving = signal<Record<string, boolean>>({});
+  interpolateGapsSaving = signal<Record<string, boolean>>({});
+  interpolateGapsErrors = signal<Record<string, string | undefined>>({});
 
   constructor(
     private statService: StatService,
@@ -176,6 +178,23 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     this.statService.setDatasetSmoothing(this.stat.id, label, smoothing).subscribe({
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
+    });
+  }
+
+  onSetInterpolateGaps(dataset: Dataset, event: MatCheckboxChange): void {
+    this.interpolateGapsErrors.update(errors => ({...errors, [dataset.label]: undefined}));
+    this.interpolateGapsSaving.update(saving => ({...saving, [dataset.label]: true}));
+    this.statService.setDatasetInterpolateGaps(this.stat.id, dataset.label, event.checked).subscribe({
+      next: () => {
+        this.interpolateGapsSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.datasetsChanged.emit();
+      },
+      error: err => {
+        console.error(err);
+        event.source.checked = dataset.interpolateGaps ?? false;
+        this.interpolateGapsSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.interpolateGapsErrors.update(errors => ({...errors, [dataset.label]: 'Could not save gap filling. Please try again.'}));
+      }
     });
   }
 

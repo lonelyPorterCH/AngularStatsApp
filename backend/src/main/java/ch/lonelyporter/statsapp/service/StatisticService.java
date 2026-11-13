@@ -112,6 +112,10 @@ public class StatisticService {
         updateDataset(id, label, (statistic, dataset) -> dataset.setSmoothingWindow(smoothingWindow));
     }
 
+    public void setDatasetInterpolateGaps(String id, String label, boolean interpolateGaps) {
+        updateDataset(id, label, (statistic, dataset) -> dataset.setInterpolateGaps(interpolateGaps));
+    }
+
     private void validateSmoothingWindow(int smoothingWindow) {
         if (smoothingWindow < 1) {
             throw new InvalidDataPointException("Smoothing window must be a positive whole number");

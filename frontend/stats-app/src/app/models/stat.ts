@@ -21,6 +21,7 @@ export interface Dataset {
   filled?: boolean;
   smoothing?: boolean;
   smoothingWindow?: number;
+  interpolateGaps?: boolean;
   dataPoints: DataPoint[];
   color?: string;
 }

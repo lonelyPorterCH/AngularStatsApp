@@ -42,6 +42,23 @@ class StatsApiControllerTest {
     }
 
     @Test
+    void gapFillingEndpointRequiresBooleanAndAcceptsBothSettings() throws Exception {
+        String path = "/api/stats/chart/dataset/Series/interpolate-gaps";
+        for (boolean enabled : new boolean[]{true, false}) {
+            mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"interpolateGaps\":" + enabled + "}"))
+                    .andExpect(status().isOk());
+            verify(service).setDatasetInterpolateGaps("chart", "Series", enabled);
+        }
+        clearInvocations(service);
+        for (String body : new String[]{"{}", "{\"interpolateGaps\":null}", "{\"interpolateGaps\":{}}"}) {
+            mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(service);
+    }
+
+    @Test
     void yAxisBoundsEndpointAcceptsOptionalBoundsAndClearingBoth() throws Exception {
         mvc.perform(patch("/api/stats/chart/y-axis-bounds")
                         .contentType(MediaType.APPLICATION_JSON)

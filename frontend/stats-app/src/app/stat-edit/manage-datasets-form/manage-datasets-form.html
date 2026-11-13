@@ -100,6 +100,17 @@
                 @if (ds.smoothing && smoothingWindowErrors()[ds.label]) {
                   <span class="smoothing-error" role="alert">{{ smoothingWindowErrors()[ds.label] }}</span>
                 }
+                @if (ds.smoothing && stat.xAxisScaleType !== 'linear') {
+                  <mat-checkbox [checked]="ds.interpolateGaps ?? false"
+                                [disabled]="interpolateGapsSaving()[ds.label]"
+                                (change)="onSetInterpolateGaps(ds, $event)"
+                                title="Linearly interpolate missing days when measurements are at least 7 days apart">
+                    Fill gaps (7+ days)
+                  </mat-checkbox>
+                  @if (interpolateGapsErrors()[ds.label]) {
+                    <span class="smoothing-error" role="alert">{{ interpolateGapsErrors()[ds.label] }}</span>
+                  }
+                }
                 }
               </div>
             <div class="dataset-actions">

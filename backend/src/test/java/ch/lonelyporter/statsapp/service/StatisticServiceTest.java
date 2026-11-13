@@ -189,6 +189,26 @@ class StatisticServiceTest {
     }
 
     @Test
+    void gapFillingDefaultsOffAndPersistsWithoutAddingMeasurements() throws Exception {
+        Files.writeString(tempDir.resolve("legacy.json"), """
+                {"id":"legacy","reverse":false,"datasets":[{"label":"Series","dataPoints":[
+                {"x":"2026-10-01","y":"10"},{"x":"2026-10-08","y":"24"}]},{"label":"Other","dataPoints":[]}]}
+                """);
+        Statistic before = repository.findById("legacy");
+        assertThat(before.getDatasets().getFirst().isInterpolateGaps()).isFalse();
+        service.setDatasetInterpolateGaps("legacy", "Series", true);
+        Statistic loaded = repository.findById("legacy");
+        assertThat(loaded.getDatasets().getFirst().isInterpolateGaps()).isTrue();
+        assertThat(loaded.getDatasets().get(1).isInterpolateGaps()).isFalse();
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).isEqualTo(before.getDatasets().getFirst().getDataPoints());
+        service.setDatasetInterpolateGaps("legacy", "Series", false);
+        assertThat(repository.findById("legacy").getDatasets().getFirst().isInterpolateGaps()).isFalse();
+        repository.toggleArchive("legacy");
+        assertThatThrownBy(() -> service.setDatasetInterpolateGaps("legacy", "Series", true))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+    }
+
+    @Test
     void effortComparisonAndPacePersistIndependentlyWithoutRewritingMeasurements() {
         Statistic runs = createStatistic("runs", "Runs");
         runs.getDatasets().getFirst().setSmoothing(true);

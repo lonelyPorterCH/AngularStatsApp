@@ -33,6 +33,9 @@ public class StatsApiController {
     public record SmoothingWindowRequest(Double smoothingWindow) {
     }
 
+    public record InterpolateGapsRequest(Boolean interpolateGaps) {
+    }
+
     public record EffortComparisonRequest(Boolean effortComparison) {
     }
 
@@ -141,6 +144,16 @@ public class StatsApiController {
             throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing window must be a positive whole number");
         }
         statisticService.setDatasetSmoothingWindow(id, label, window.intValue());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/dataset/{label}/interpolate-gaps")
+    public ResponseEntity<Void> setDatasetInterpolateGaps(@PathVariable String id, @PathVariable String label,
+                                                         @RequestBody InterpolateGapsRequest request) {
+        if (request.interpolateGaps() == null) {
+            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Interpolate gaps must be true or false");
+        }
+        statisticService.setDatasetInterpolateGaps(id, label, request.interpolateGaps());
         return ResponseEntity.ok().build();
     }
 
