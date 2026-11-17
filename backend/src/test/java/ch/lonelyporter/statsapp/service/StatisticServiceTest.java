@@ -65,6 +65,75 @@ class StatisticServiceTest {
     }
 
     @Test
+    void percentageFormatPersistsForNewAndExistingChartsWithoutRescaling() {
+        Statistic statistic = createStatistic("progress", "Progress");
+        statistic.setYAxisFormat("percentage");
+        statistic.setYAxisMin(0.0);
+        statistic.setYAxisMax(100.0);
+        statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-14", "0"));
+        service.createStatistic(statistic);
+        service.addDataPoint("progress", "Series", new Statistic.DataPoint("2026-11-16", "10.5"));
+
+        assertThat(repository.findById("progress").getYAxisFormat()).isEqualTo("percentage");
+        service.setYAxisFormat("progress", "number");
+        service.setYAxisFormat("progress", "percentage");
+
+        Statistic loaded = service.getStatisticById("progress");
+        assertThat(loaded.getYAxisFormat()).isEqualTo("percentage");
+        assertThat(loaded.getYAxisMin()).isEqualTo(0.0);
+        assertThat(loaded.getYAxisMax()).isEqualTo(100.0);
+        assertThat(loaded.getDatasets().getFirst().getDataPoints()).containsExactly(
+                new Statistic.DataPoint("2026-11-14", "0"), new Statistic.DataPoint("2026-11-16", "10.5"));
+    }
+
+    @Test
+    void percentageTargetsPersistAcrossRenamingAndRecalculateWithoutRewritingCounts() {
+        Statistic statistic = createStatistic("progress", "Progress");
+        statistic.setYAxisFormat("percentage");
+        statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-16", "6"));
+        statistic.getDatasets().getFirst().setPercentageTarget(50.0);
+        service.createStatistic(statistic);
+        assertThat(repository.findById("progress").getDatasets().getFirst().getPercentageTarget()).isEqualTo(50.0);
+        service.setDatasetPercentageTarget("progress", "Series", 30.0);
+        service.renameDataset("progress", "Series", "Lucky trades");
+        Statistic.Dataset loaded = service.getStatisticById("progress").getDatasets().getFirst();
+        assertThat(loaded.getLabel()).isEqualTo("Lucky trades");
+        assertThat(loaded.getPercentageTarget()).isEqualTo(30.0);
+        assertThat(loaded.getDataPoints()).containsExactly(new Statistic.DataPoint("2026-11-16", "6"));
+
+        service.addDataset("progress", "Eggs");
+        assertThat(repository.findById("progress").getDatasets().get(1).getPercentageTarget()).isEqualTo(100.0);
+    }
+
+    @Test
+    void percentageTargetsRejectInvalidUpdatesAndImportsWithoutSaving() {
+        repository.save(createStatistic("progress", "Progress"));
+        for (Double target : new Double[]{null, 0.0, -1.0, Double.NaN, Double.POSITIVE_INFINITY}) {
+            assertThatThrownBy(() -> service.setDatasetPercentageTarget("progress", "Series", target))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            assertThat(repository.findById("progress").getDatasets().getFirst().getPercentageTarget()).isEqualTo(100.0);
+        }
+        Statistic imported = createStatistic("imported", "Imported");
+        imported.getDatasets().getFirst().setPercentageTarget(0.0);
+        assertThatThrownBy(() -> service.createStatistic(imported))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(Files.exists(tempDir.resolve("imported.json"))).isFalse();
+    }
+
+    @Test
+    void legacyDatasetsDefaultToTarget100AndArchivedTargetsCannotBeChanged() throws Exception {
+        Files.writeString(tempDir.resolve("legacy.json"), """
+                {"id":"legacy","reverse":false,"datasets":[{"label":"Series","index":0,"filled":false,
+                "dataPoints":[{"x":"2026-11-16","y":"6"}]}]}
+                """);
+        assertThat(repository.findById("legacy").getDatasets().getFirst().getPercentageTarget()).isEqualTo(100.0);
+        repository.toggleArchive("legacy");
+        assertThatThrownBy(() -> service.setDatasetPercentageTarget("legacy", "Series", 50.0))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+        assertThat(repository.findById("legacy").getDatasets().getFirst().getPercentageTarget()).isEqualTo(100.0);
+    }
+
+    @Test
     void getStatisticsAssignsMissingIndexAndPersistsIt() throws Exception {
         String legacyJsonWithoutIndex = """
                 {
@@ -468,7 +537,7 @@ class StatisticServiceTest {
     }
 
     @Test
-    void yAxisBoundsAcceptJsonNumbersAndNullUsingTheApiPropertyNames() throws Exception {
+    void yAxisBoundsAcceptJsonNumbersAndNullUsingTheApiPropertyNames() {
         ObjectMapper mapper = new ObjectMapper();
         Statistic statistic = mapper.readValue(
                 "{\"id\":\"chart\",\"reverse\":false,\"yAxisMin\":-10.5,\"yAxisMax\":100,\"datasets\":[]}",
@@ -484,8 +553,8 @@ class StatisticServiceTest {
         assertThat(repository.findById("automatic").getYAxisMax()).isNull();
     }
 
-        @Test
-        void chartTypePersistsWithoutChangingMeasurementsOrLineSettings() {
+    @Test
+    void chartTypePersistsWithoutChangingMeasurementsOrLineSettings() {
         Statistic statistic = createStatistic("chart", "Chart");
         statistic.getDatasets().getFirst().setSmoothing(true);
         statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-03", "300"));
@@ -496,76 +565,76 @@ class StatisticServiceTest {
             assertThat(loaded.getChartType()).isEqualTo(chartType);
             assertThat(loaded.getDatasets().getFirst().isSmoothing()).isTrue();
             assertThat(loaded.getDatasets().getFirst().getDataPoints())
-                .containsExactly(new Statistic.DataPoint("2026-11-03", "300"));
+                    .containsExactly(new Statistic.DataPoint("2026-11-03", "300"));
         }
         statistic.setId("bar-chart");
         statistic.setChartType("bar");
         service.createStatistic(statistic);
         assertThat(repository.findById("bar-chart").getChartType()).isEqualTo("bar");
-        }
+    }
 
-        @Test
-        void chartTypeRejectsInvalidSettingsArchivedAndMissingGraphs() {
+    @Test
+    void chartTypeRejectsInvalidSettingsArchivedAndMissingGraphs() {
         repository.save(createStatistic("chart", "Chart"));
         for (String chartType : new String[]{null, "", "pie", "BAR"}) {
             assertThatThrownBy(() -> service.setChartType("chart", chartType))
-                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
         }
         Statistic invalid = createStatistic("invalid", "Invalid");
         invalid.setChartType("pie");
         assertThatThrownBy(() -> service.createStatistic(invalid))
-            .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
         assertThat(repository.findAll()).hasSize(1);
         repository.toggleArchive("chart");
         assertThatThrownBy(() -> service.setChartType("chart", "bar"))
-            .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
         assertThat(repository.findById("chart").getChartType()).isEqualTo("line");
         assertThatThrownBy(() -> service.setChartType("missing", "bar"))
-            .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class);
-        }
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class);
+    }
 
-            @Test
-            void barChartsRejectDuplicateXValuesWithoutDiscardingExistingMeasurements() {
-            for (String xAxisScaleType : List.of("time", "linear")) {
-                String firstX = "linear".equals(xAxisScaleType) ? "2" : "2026-11-03";
-                String duplicateX = "linear".equals(xAxisScaleType) ? "02.0" : firstX;
-                Statistic statistic = createStatistic(xAxisScaleType, "Chart");
-                statistic.setXAxisScaleType(xAxisScaleType);
-                statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint(firstX, "100"));
-                statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint(duplicateX, "200"));
-                service.createStatistic(statistic);
-                assertThatThrownBy(() -> service.setChartType(xAxisScaleType, "bar"))
+    @Test
+    void barChartsRejectDuplicateXValuesWithoutDiscardingExistingMeasurements() {
+        for (String xAxisScaleType : List.of("time", "linear")) {
+            String firstX = "linear".equals(xAxisScaleType) ? "2" : "2026-11-03";
+            String duplicateX = "linear".equals(xAxisScaleType) ? "02.0" : firstX;
+            Statistic statistic = createStatistic(xAxisScaleType, "Chart");
+            statistic.setXAxisScaleType(xAxisScaleType);
+            statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint(firstX, "100"));
+            statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint(duplicateX, "200"));
+            service.createStatistic(statistic);
+            assertThatThrownBy(() -> service.setChartType(xAxisScaleType, "bar"))
                     .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class)
                     .hasMessageContaining("Edit the existing point");
-                assertThat(repository.findById(xAxisScaleType).getChartType()).isEqualTo("line");
-                assertThat(repository.findById(xAxisScaleType).getDatasets().getFirst().getDataPoints()).hasSize(2);
-                statistic.setId(xAxisScaleType + "-bar");
-                statistic.setChartType("bar");
-                assertThatThrownBy(() -> service.createStatistic(statistic))
-                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
-                statistic.getDatasets().getFirst().getDataPoints().removeLast();
-                service.createStatistic(statistic);
-                assertThatThrownBy(() -> service.addDataPoint(statistic.getId(), "Series", new Statistic.DataPoint(duplicateX, "300")))
-                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
-                assertThat(repository.findById(statistic.getId()).getDatasets().getFirst().getDataPoints())
-                    .containsExactly(new Statistic.DataPoint(firstX, "100"));
-            }
-            }
-
-        @Test
-        void changingBarAxisScaleRejectsValuesThatWouldCollapseToTheSameX() {
-            Statistic statistic = createStatistic("chart", "Chart");
+            assertThat(repository.findById(xAxisScaleType).getChartType()).isEqualTo("line");
+            assertThat(repository.findById(xAxisScaleType).getDatasets().getFirst().getDataPoints()).hasSize(2);
+            statistic.setId(xAxisScaleType + "-bar");
             statistic.setChartType("bar");
-            statistic.getDatasets().getFirst().getDataPoints().addAll(List.of(
-                    new Statistic.DataPoint("2", "100"), new Statistic.DataPoint("02.0", "200")));
-            service.createStatistic(statistic);
-            assertThatThrownBy(() -> service.renameAxes("chart", "X", "Y", "linear", ""))
+            assertThatThrownBy(() -> service.createStatistic(statistic))
                     .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
-            assertThat(repository.findById("chart").getXAxisScaleType()).isEqualTo("time");
-            assertThat(repository.findById("chart").getDatasets().getFirst().getDataPoints()).hasSize(2);
+            statistic.getDatasets().getFirst().getDataPoints().removeLast();
+            service.createStatistic(statistic);
+            assertThatThrownBy(() -> service.addDataPoint(statistic.getId(), "Series", new Statistic.DataPoint(duplicateX, "300")))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            assertThat(repository.findById(statistic.getId()).getDatasets().getFirst().getDataPoints())
+                    .containsExactly(new Statistic.DataPoint(firstX, "100"));
         }
+    }
 
-            private static Statistic createStatistic(String id, String title) {
+    @Test
+    void changingBarAxisScaleRejectsValuesThatWouldCollapseToTheSameX() {
+        Statistic statistic = createStatistic("chart", "Chart");
+        statistic.setChartType("bar");
+        statistic.getDatasets().getFirst().getDataPoints().addAll(List.of(
+                new Statistic.DataPoint("2", "100"), new Statistic.DataPoint("02.0", "200")));
+        service.createStatistic(statistic);
+        assertThatThrownBy(() -> service.renameAxes("chart", "X", "Y", "linear", ""))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+        assertThat(repository.findById("chart").getXAxisScaleType()).isEqualTo("time");
+        assertThat(repository.findById("chart").getDatasets().getFirst().getDataPoints()).hasSize(2);
+    }
+
+    private static Statistic createStatistic(String id, String title) {
         Statistic statistic = new Statistic();
         statistic.setId(id);
         statistic.setTitle(title);

@@ -9,6 +9,47 @@ describe('ManageDatasetsForm smoothing window', () => {
   const stat: Stat = {id: 'chart', title: 'Chart', xAxisName: 'X', yAxisName: 'Y', reverse: false,
     datasets: [{label: 'Series', index: 0, smoothing: true, dataPoints: []}]};
 
+  it('saves a percentage target without changing counts and restores the input on failure', async () => {
+    await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
+      providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
+    const http = TestBed.inject(HttpTestingController);
+    const fixture = TestBed.createComponent(ManageDatasetsForm);
+    const dataset = {label: 'Lucky trades', index: 0, dataPoints: [{x: '2026-11-16', y: '6'}]};
+    fixture.componentRef.setInput('stat', {...stat, yAxisFormat: 'percentage', datasets: [dataset]});
+    fixture.detectChanges();
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.percentage-target input');
+    expect(input.value).toBe('100');
+    const changed = vi.spyOn(fixture.componentInstance.datasetsChanged, 'emit');
+    for (const invalid of ['', '0', '-1']) {
+      input.value = invalid;
+      input.dispatchEvent(new Event('change'));
+      expect(fixture.componentInstance.percentageTargetErrors()[dataset.label]).toContain('positive');
+    }
+    http.verify();
+    input.value = '50';
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(input.disabled).toBe(true);
+    const request = http.expectOne(`${environment.apiBaseUrl}/chart/dataset/Lucky%20trades/percentage-target`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({percentageTarget: 50});
+    request.flush('Failed', {status: 500, statusText: 'Error'});
+    fixture.detectChanges();
+    expect(input.value).toBe('100');
+    expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain('Could not save');
+    expect(changed).not.toHaveBeenCalled();
+    input.value = '50';
+    input.dispatchEvent(new Event('change'));
+    http.expectOne(`${environment.apiBaseUrl}/chart/dataset/Lucky%20trades/percentage-target`).flush(null);
+    expect(changed).toHaveBeenCalledOnce();
+    expect(dataset.dataPoints[0].y).toBe('6');
+    fixture.componentRef.setInput('stat', {...stat, yAxisFormat: 'number', datasets: [dataset]});
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.percentage-target')).toBeNull();
+    http.verify();
+    fixture.destroy();
+  });
+
   it('shows the slider value while dragging, saves on release and restores it on failure', async () => {
     await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
       providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();

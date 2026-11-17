@@ -86,6 +86,20 @@ describe('AddPointForm', () => {
     httpTesting.expectNone(`${environment.apiBaseUrl}/test-stat/datapoint`);
   });
 
+  it('submits completed counts and count increments without converting to percentages', () => {
+    fixture.componentRef.setInput('stat', {...MOCK_STAT, yAxisFormat: 'percentage', xAxisScaleType: 'linear',
+      datasets: [{label: 'Lucky trades', index: 0, percentageTarget: 50, dataPoints: [{x: '1', y: '4'}]}]});
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Completed count');
+    for (const value of ['6', '+2']) {
+      component.addPointForm.setValue({dataset: 'Lucky trades', x: '2', y: value});
+      component.onAddPoint();
+      const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/datapoint`);
+      expect(request.request.body).toEqual({datasetLabel: 'Lucky trades', x: '2', y: '6'});
+      request.flush(null);
+    }
+  });
+
   it('shows duplicate bar-point validation errors and retains the input for correction', () => {
     fixture.componentRef.setInput('stat', {...MOCK_STAT, chartType: 'bar', xAxisScaleType: 'linear',
       datasets: [{label: 'Series', index: 0, dataPoints: [{x: '2', y: '100'}]}]});

@@ -8,7 +8,7 @@ export interface Stat {
   xAxisUnit?: string;
   reverse: boolean;
   effortComparison?: boolean;
-  yAxisFormat?: 'number' | 'pace';
+  yAxisFormat?: 'number' | 'pace' | 'percentage';
   stacked?: boolean;
   yAxisMin?: number | null;
   yAxisMax?: number | null;
@@ -22,6 +22,7 @@ export interface Dataset {
   smoothing?: boolean;
   smoothingWindow?: number;
   interpolateGaps?: boolean;
+  percentageTarget?: number;
   dataPoints: DataPoint[];
   color?: string;
 }

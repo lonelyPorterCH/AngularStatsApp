@@ -110,6 +110,11 @@ mat-list-item {
   color: #b3261e;
 }
 
+.percentage-target {
+  width: 150px;
+  margin-top: 16px;
+}
+
 /* TODO: Replace with Material Design CSS variables/tokens instead of ::ng-deep piercing.
    This is a temporary workaround to style Material checkbox internals. */
 .dataset-label-section ::ng-deep .mdc-checkbox {

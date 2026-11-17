@@ -81,3 +81,14 @@ Test should all follow the following concept:
 ## Commiting
 
 You don't commit, I commit.
+
+## Backwards Compatibility
+
+There is no need to leave code just for backwards compatibility, when changing something removes an endpoint, makes a
+method no longer needed or similar, remove it, everything is deployed at the same time.
+When a feature changes the data-structure, you will migrate the data for me if asked, or I do it myself, as defined in
+chat. If migration is needed and I didn't specify in chat, ask me how migration should proceed.
+When the feature is done I will test locally with the migrated data (or migrate it myself) stop the container on my
+Synology, add the migrated data, and start it again.
+I reapeat, leave no unused code for backwards compatibility, and if you find code like this, that was left by previous
+agents, tell me that you removed it.

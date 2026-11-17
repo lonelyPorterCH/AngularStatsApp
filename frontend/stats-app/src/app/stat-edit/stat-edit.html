@@ -60,8 +60,13 @@
         (selectionChange)="onYAxisFormatChange($event.value)">
         <mat-option value="number">Number</mat-option>
         <mat-option value="pace">Pace (min/km)</mat-option>
+        <mat-option value="percentage">Percentage (%)</mat-option>
       </mat-select>
     </mat-form-field>
+    @if (stat()!.yAxisFormat === 'percentage') {
+    <p class="hint">Enter counts; percentages are calculated from each dataset's 100% target in Manage data.
+      Y-axis bounds use percentages.</p>
+    }
     @if (yAxisFormatError()) { <p class="setting-error" role="alert">{{ yAxisFormatError() }}</p> }
     <form class="bounds-form" [formGroup]="yAxisBoundsForm" (ngSubmit)="onYAxisBoundsSave()">
       <div class="field-row">

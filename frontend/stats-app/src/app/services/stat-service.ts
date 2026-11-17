@@ -60,7 +60,7 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/effort-comparison`, {effortComparison});
   }
 
-  setYAxisFormat(id: string, yAxisFormat: 'number' | 'pace'): Observable<void> {
+  setYAxisFormat(id: string, yAxisFormat: 'number' | 'pace' | 'percentage'): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/y-axis-format`, {yAxisFormat});
   }
 
@@ -106,6 +106,10 @@ export class StatService {
 
   setDatasetInterpolateGaps(id: string, label: string, interpolateGaps: boolean): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/interpolate-gaps`, {interpolateGaps});
+  }
+
+  setDatasetPercentageTarget(id: string, label: string, percentageTarget: number): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/percentage-target`, {percentageTarget});
   }
 
   setDatasetColor(id: string, label: string, color: string): Observable<void> {

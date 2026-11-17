@@ -87,6 +87,19 @@ describe('CreateForm', () => {
     http.verify();
   });
 
+  it('creates a percentage chart with bounds in percentage units', () => {
+    const http = TestBed.inject(HttpTestingController);
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    component.statForm.patchValue({id: 'progress', title: 'Progress', xAxisName: 'Date', yAxisName: 'Progress',
+      yAxisFormat: 'percentage', yAxisMin: 0, yAxisMax: 100});
+    http.expectOne(`${environment.apiBaseUrl}/progress`).flush('Not found', {status: 404, statusText: 'Not Found'});
+    fixture.debugElement.query(element => element.name === 'form').triggerEventHandler('ngSubmit');
+    const request = http.expectOne(environment.apiBaseUrl);
+    expect(request.request.body).toMatchObject({yAxisFormat: 'percentage', yAxisMin: 0, yAxisMax: 100});
+    request.flush(null);
+    http.verify();
+  });
+
   it('does not replace explicitly chosen display settings when selecting bar', () => {
     component.statForm.get('stacked')!.markAsDirty();
     component.statForm.patchValue({yAxisMin: -10, yAxisMax: 20});

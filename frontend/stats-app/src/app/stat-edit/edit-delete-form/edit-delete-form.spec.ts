@@ -52,4 +52,25 @@ describe('EditDeleteForm', () => {
     addition.flush(null);
     http.verify();
   });
+
+  it('edits percentage-chart counts including zero without treating zero as deletion', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat = {...component.stat, yAxisFormat: 'percentage', datasets: [
+      {label: 'Lucky trades', index: 0, percentageTarget: 50, dataPoints: [{x: '2026-11-16', y: '4'}]}
+    ]};
+    for (const value of [6, 0]) {
+      component.prefillPoint('Lucky trades', component.stat.datasets[0].dataPoints[0]);
+      component.editPointForm.patchValue({value});
+      component.onEditPoint();
+      const deletion = http.expectOne(`${environment.apiBaseUrl}/runs/datapoint`);
+      expect(deletion.request.method).toBe('DELETE');
+      expect(deletion.request.body.y).toBe('4');
+      deletion.flush(null);
+      const addition = http.expectOne(`${environment.apiBaseUrl}/runs/datapoint`);
+      expect(addition.request.method).toBe('POST');
+      expect(addition.request.body.y).toBe(String(value));
+      addition.flush(null);
+    }
+    http.verify();
+  });
 });

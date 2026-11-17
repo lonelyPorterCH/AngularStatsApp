@@ -82,8 +82,13 @@
         <mat-select formControlName="yAxisFormat">
           <mat-option value="number">Number</mat-option>
           <mat-option value="pace">Pace (min/km)</mat-option>
+          <mat-option value="percentage">Percentage (%)</mat-option>
         </mat-select>
       </mat-form-field>
+      @if (statForm.get('yAxisFormat')?.value === 'percentage') {
+      <p class="hint">Enter counts; percentages are calculated from each dataset's 100% target in Manage data.
+        Y-axis bounds use percentages.</p>
+      }
 
       <div class="field-row">
         <mat-form-field appearance="outline">

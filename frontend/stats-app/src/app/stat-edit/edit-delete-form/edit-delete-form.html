@@ -24,7 +24,7 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Value</mat-label>
+    <mat-label>{{ stat.yAxisFormat === 'percentage' ? 'Completed count' : 'Value' }}</mat-label>
     <input formControlName="value" matInput [type]="stat.yAxisFormat === 'pace' ? 'text' : 'number'"/>
   </mat-form-field>
 

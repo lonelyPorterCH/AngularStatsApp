@@ -157,7 +157,7 @@ export class StatEdit implements OnInit {
     });
   }
 
-  onYAxisFormatChange(yAxisFormat: 'number' | 'pace'): void {
+  onYAxisFormatChange(yAxisFormat: 'number' | 'pace' | 'percentage'): void {
     const stat = this.stat();
     if (!stat || this.archived() || this.yAxisFormatSaving() || (stat.yAxisFormat ?? 'number') === yAxisFormat) return;
     this.yAxisFormatError.set('');

@@ -45,6 +45,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
   smoothingWindowSaving = signal<Record<string, boolean>>({});
   interpolateGapsSaving = signal<Record<string, boolean>>({});
   interpolateGapsErrors = signal<Record<string, string | undefined>>({});
+  percentageTargetSaving = signal<Record<string, boolean>>({});
+  percentageTargetErrors = signal<Record<string, string | undefined>>({});
 
   constructor(
     private statService: StatService,
@@ -217,6 +219,30 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
         this.smoothingWindowSaving.update(saving => ({...saving, [dataset.label]: false}));
         input.value = String(dataset.smoothingWindow ?? 7);
         this.smoothingWindowErrors.update(errors => ({...errors, [dataset.label]: 'Could not save the smoothing window. Please try again.'}));
+      }
+    });
+  }
+
+  onSetPercentageTarget(dataset: Dataset, input: HTMLInputElement): void {
+    const value = input.valueAsNumber;
+    if (!input.validity.valid || !Number.isFinite(value) || value <= 0) {
+      this.percentageTargetErrors.update(errors => ({...errors, [dataset.label]: 'Enter a positive finite number.'}));
+      return;
+    }
+    this.percentageTargetErrors.update(errors => ({...errors, [dataset.label]: undefined}));
+    if (value === (dataset.percentageTarget ?? 100) || this.percentageTargetSaving()[dataset.label]) return;
+    this.percentageTargetSaving.update(saving => ({...saving, [dataset.label]: true}));
+    this.statService.setDatasetPercentageTarget(this.stat.id, dataset.label, value).subscribe({
+      next: () => {
+        this.percentageTargetSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.datasetsChanged.emit();
+      },
+      error: err => {
+        console.error(err);
+        input.value = String(dataset.percentageTarget ?? 100);
+        this.percentageTargetSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.percentageTargetErrors.update(errors => ({...errors, [dataset.label]:
+          'Could not save the 100% target. Please try again.'}));
       }
     });
   }

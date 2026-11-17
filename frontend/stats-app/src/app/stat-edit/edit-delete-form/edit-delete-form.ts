@@ -101,7 +101,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
     const selected: DataPoint = this.editPointForm.get('selectedPoint')?.value;
     const newValue = this.editPointForm.get('value')?.value;
 
-    if (!newValue) {
+    if (newValue === null || newValue === undefined || newValue === '') {
       const dialogRef = this.dialog.open(ConfirmDialog);
       dialogRef.afterClosed().subscribe(confirmed => {
         if (confirmed) {
@@ -113,7 +113,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
         this.submissionError.set('Enter pace as m:ss or M.SS with seconds between 00 and 59.');
         return;
       }
-      this.replacePoint(datasetLabel, selected, this.stat.yAxisFormat === 'pace' ? String(newValue) : newValue);
+      this.replacePoint(datasetLabel, selected, String(newValue));
     }
   }
 

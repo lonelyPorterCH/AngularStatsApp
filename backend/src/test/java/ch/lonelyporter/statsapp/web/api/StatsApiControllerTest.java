@@ -50,12 +50,28 @@ class StatsApiControllerTest {
                     .andExpect(status().isOk());
             verify(service).setDatasetInterpolateGaps("chart", "Series", enabled);
         }
+
         clearInvocations(service);
         for (String body : new String[]{"{}", "{\"interpolateGaps\":null}", "{\"interpolateGaps\":{}}"}) {
             mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content(body))
                     .andExpect(status().isBadRequest());
         }
         verifyNoInteractions(service);
+    }
+
+    @Test
+    void percentageTargetEndpointAcceptsCountsAndReportsValidationErrors() throws Exception {
+        String path = "/api/stats/chart/dataset/Series/percentage-target";
+        mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content("{\"percentageTarget\":50}"))
+                .andExpect(status().isOk());
+        verify(service).setDatasetPercentageTarget("chart", "Series", 50.0);
+        doThrow(new InvalidDataPointException("100% target must be a positive finite number"))
+                .when(service).setDatasetPercentageTarget(eq("chart"), eq("Series"), nullable(Double.class));
+        for (String body : new String[]{"{}", "{\"percentageTarget\":null}", "{\"percentageTarget\":0}",
+                "{\"percentageTarget\":-1}", "{\"percentageTarget\":{}}"}) {
+            mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
     }
 
     @Test
@@ -113,14 +129,14 @@ class StatsApiControllerTest {
     }
 
     @Test
-    void yAxisFormatEndpointAcceptsBothFormatsAndReportsValidationFailures() throws Exception {
-        for (String format : new String[]{"number", "pace"}) {
+    void yAxisFormatEndpointAcceptsSupportedFormatsAndReportsValidationFailures() throws Exception {
+        for (String format : new String[]{"number", "pace", "percentage"}) {
             mvc.perform(patch("/api/stats/runs/y-axis-format")
                             .contentType(MediaType.APPLICATION_JSON).content("{\"yAxisFormat\":\"" + format + "\"}"))
                     .andExpect(status().isOk());
             verify(service).setYAxisFormat("runs", format);
         }
-        doThrow(new InvalidDataPointException("Y axis format must be number or pace"))
+        doThrow(new InvalidDataPointException("Y axis format must be number, pace or percentage"))
                 .when(service).setYAxisFormat(eq("runs"), nullable(String.class));
         for (String body : new String[]{"{}", "{\"yAxisFormat\":null}", "{\"yAxisFormat\":\"invalid\"}"}) {
             mvc.perform(patch("/api/stats/runs/y-axis-format")

@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.2] - 2026-11-17
+
+### Added
+
+- Percentage (%) charts with a configurable positive 100% target per dataset under Manage data.
+  Enter and edit completed counts (including +count increments); the chart calculates count / target * 100.
+  Tooltips show counts and targets instead of percentages, while Y-axis labels and bounds use percentages.
+  Existing datasets default to a target of 100; changing targets or formats never rewrites measurements.
+
 ## [2.6.1] - 2026-11-13
 
 ### Added

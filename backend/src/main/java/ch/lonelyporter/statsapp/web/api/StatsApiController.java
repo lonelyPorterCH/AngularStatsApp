@@ -36,6 +36,9 @@ public class StatsApiController {
     public record InterpolateGapsRequest(Boolean interpolateGaps) {
     }
 
+    public record PercentageTargetRequest(Double percentageTarget) {
+    }
+
     public record EffortComparisonRequest(Boolean effortComparison) {
     }
 
@@ -149,7 +152,7 @@ public class StatsApiController {
 
     @PatchMapping("/{id}/dataset/{label}/interpolate-gaps")
     public ResponseEntity<Void> setDatasetInterpolateGaps(@PathVariable String id, @PathVariable String label,
-                                                         @RequestBody InterpolateGapsRequest request) {
+                                                          @RequestBody InterpolateGapsRequest request) {
         if (request.interpolateGaps() == null) {
             throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Interpolate gaps must be true or false");
         }
@@ -163,12 +166,10 @@ public class StatsApiController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping("/{id}/smoothing")
-    public ResponseEntity<Void> setSmoothing(@PathVariable String id, @RequestBody SmoothingRequest request) {
-        if (request.smoothing() == null) {
-            throw new ch.lonelyporter.statsapp.exception.InvalidDataPointException("Smoothing must be true or false");
-        }
-        statisticService.setSmoothing(id, request.smoothing());
+    @PatchMapping("/{id}/dataset/{label}/percentage-target")
+    public ResponseEntity<Void> setDatasetPercentageTarget(@PathVariable String id, @PathVariable String label,
+                                                           @RequestBody PercentageTargetRequest request) {
+        statisticService.setDatasetPercentageTarget(id, label, request.percentageTarget());
         return ResponseEntity.ok().build();
     }
 

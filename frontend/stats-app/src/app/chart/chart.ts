@@ -2,7 +2,7 @@ import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, On
 import {Chart, ChartDataset, registerables, TooltipItem} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {DateTime} from 'luxon';
-import {DataPoint, Stat} from '../models/stat';
+import {DataPoint, Dataset, Stat} from '../models/stat';
 import {compareDataPoints, isLinearXAxis, parseXAxisValue} from '../models/x-axis';
 import {DEFAULT_DATASET_COLORS} from '../models/dataset-colors';
 import {formatPace, parseYAxisValue} from '../models/y-axis';
@@ -101,6 +101,11 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     const bar = this.stat.chartType === 'bar';
     const comparison = !bar && !!this.stat.effortComparison;
     const pace = this.stat.yAxisFormat === 'pace';
+    const percentage = this.stat.yAxisFormat === 'percentage';
+    const formatPercentage = (value: string | number) => `${value}%`;
+    const chartY = (value: number, dataset: Dataset) =>
+      percentage ? value / (dataset.percentageTarget ?? 100) * 100 : value;
+    const countFormat = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
     const linearXAxis = isLinearXAxis(this.stat);
     const stacked = !comparison && !!this.stat.stacked && this.stat.datasets.length >= 2;
     const sortedPoints = this.stat.datasets.map(dataset =>
@@ -132,8 +137,8 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
       return {
         label: ds.label,
         data: (bar ? sourcePoints[i].map((point, index) => ({
-          x: xValues[index], y: point ? parseYAxisValue(point.y, this.stat) : null
-        })) : linePoints[i].map(({x, y}) => ({x, y}))),
+          x: xValues[index], y: point ? chartY(parseYAxisValue(point.y, this.stat), ds) : null
+        })) : linePoints[i].map(({x, y}) => ({x, y: chartY(y, ds)}))),
         ...(!bar ? {
           showLine: !comparison,
           fill: !comparison && ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
@@ -152,7 +157,7 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
     if (comparison) {
       datasets.push(...this.stat.datasets.map((ds, i): ChartDataset<'line' | 'bar', ChartCoordinate[]> => ({
         label: `${ds.label} - trend`,
-        data: effortTrendPoints(ds.dataPoints, this.stat),
+        data: effortTrendPoints(ds.dataPoints, this.stat).map(({x, y}) => ({x, y: chartY(y, ds)})),
         borderColor: `rgb(${colors[i]} / 0.85)`,
         backgroundColor: `rgb(${colors[i]} / 0.2)`,
         borderWidth: 2,
@@ -203,7 +208,7 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
                 item.parsed.x === items[0]?.parsed.x
             } : {}),
             callbacks: {
-              ...(stacked ? {
+              ...(stacked && !percentage ? {
                 footer: (items: {parsed: {y: number | null}}[]) =>
                   `Total: ${pace ? formatPace(items.reduce((total, item) => total + (item.parsed.y ?? 0), 0))
                     : items.reduce((total, item) => total + (item.parsed.y ?? 0), 0)}`
@@ -211,6 +216,16 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
               ...(pace ? {
                 label: (item: TooltipItem<'line' | 'bar'>) =>
                   `${item.dataset.label}: ${item.parsed.y === null ? '' : formatPace(item.parsed.y)} /km`
+              } : percentage ? {
+                label: (item: TooltipItem<'line' | 'bar'>) => {
+                  const dataset = this.stat.datasets[item.datasetIndex];
+                  const sample = linePoints[item.datasetIndex]?.[item.dataIndex];
+                  const count = bar ? sourcePoints[item.datasetIndex]?.[item.dataIndex]?.y
+                    : sample?.recorded && (!dataset.smoothing || comparison) ? sample.recorded.y
+                      : sample === undefined ? undefined : countFormat.format(sample.y);
+                  return `${dataset.label}: ${item.parsed.y === null || count === undefined ? ''
+                    : `${count} / ${dataset.percentageTarget ?? 100}`}`;
+                }
               } : {}),
               ...(linearXAxis ? {
                 title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
@@ -221,9 +236,11 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
                 const sample = linePoints[item.datasetIndex]?.[item.dataIndex];
                 if (!sample) return '';
                 if (!sample.recorded) {
-                  return `Interpolated: ${pace ? `${formatPace(sample.rawY)} /km` : sample.rawY}`;
+                  return `Interpolated: ${pace ? `${formatPace(sample.rawY)} /km`
+                    : percentage ? countFormat.format(sample.rawY) : sample.rawY}`;
                 }
-                return `Recorded: ${pace ? `${formatPace(sample.rawY)} /km` : sample.recorded.y}`;
+                return `Recorded: ${pace ? `${formatPace(sample.rawY)} /km`
+                  : sample.recorded.y}`;
               }
             }
           }
@@ -257,8 +274,10 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
             max: this.stat.yAxisMax ?? undefined,
             stacked: bar ? stacked : stacked ? 'single' : false,
             reverse: this.stat.reverse,
-            ...(pace ? {ticks: {callback: (value: string | number) => `${formatPace(Number(value))} /km`}} : {}),
-            title: {display: true, text: pace ? `${this.stat.yAxisName} (min/km)` : this.stat.yAxisName}
+            ...(pace ? {ticks: {callback: (value: string | number) => `${formatPace(Number(value))} /km`}}
+              : percentage ? {ticks: {callback: formatPercentage}} : {}),
+            title: {display: true, text: pace ? `${this.stat.yAxisName} (min/km)`
+              : percentage ? `${this.stat.yAxisName} (%)` : this.stat.yAxisName}
           }
         }
       }

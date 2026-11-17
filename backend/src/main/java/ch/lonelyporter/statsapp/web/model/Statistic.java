@@ -67,6 +67,8 @@ public class Statistic {
         @Getter(AccessLevel.NONE)
         private Boolean interpolateGaps = false;
         private String color;
+        @Getter(AccessLevel.NONE)
+        private Double percentageTarget = 100.0;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
         public Dataset(String label, List<DataPoint> dataPoints) {
@@ -85,6 +87,10 @@ public class Statistic {
 
         public boolean isInterpolateGaps() {
             return Boolean.TRUE.equals(interpolateGaps);
+        }
+
+        public double getPercentageTarget() {
+            return percentageTarget == null ? 100.0 : percentageTarget;
         }
     }
 

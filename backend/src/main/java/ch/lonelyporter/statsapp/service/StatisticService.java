@@ -39,6 +39,7 @@ public class StatisticService {
         validateYAxisBounds(statistic.getYAxisMin(), statistic.getYAxisMax());
         validateBarDatasets(statistic);
         statistic.getDatasets().forEach(dataset -> validateSmoothingWindow(dataset.getSmoothingWindow()));
+        statistic.getDatasets().forEach(dataset -> validatePercentageTarget(dataset.getPercentageTarget()));
         int nextStatisticIndex = repository.findAll().stream()
                 .map(Statistic::getIndex)
                 .filter(Objects::nonNull)
@@ -116,15 +117,21 @@ public class StatisticService {
         updateDataset(id, label, (statistic, dataset) -> dataset.setInterpolateGaps(interpolateGaps));
     }
 
+    public void setDatasetPercentageTarget(String id, String label, Double percentageTarget) {
+        validatePercentageTarget(percentageTarget);
+        updateDataset(id, label, (statistic, dataset) -> dataset.setPercentageTarget(percentageTarget));
+    }
+
+    private void validatePercentageTarget(Double percentageTarget) {
+        if (percentageTarget == null || !Double.isFinite(percentageTarget) || percentageTarget <= 0) {
+            throw new InvalidDataPointException("100% target must be a positive finite number");
+        }
+    }
+
     private void validateSmoothingWindow(int smoothingWindow) {
         if (smoothingWindow < 1) {
             throw new InvalidDataPointException("Smoothing window must be a positive whole number");
         }
-    }
-
-    public void setSmoothing(String id, boolean smoothing) {
-        // Deprecated: smoothing is now controlled at the dataset level
-        // This method is kept for backward compatibility but does nothing
     }
 
     public void renameStatistic(String id, String title) {
@@ -146,15 +153,16 @@ public class StatisticService {
         Statistic statistic = repository.findById(id);
         statistic.setYAxisFormat(yAxisFormat);
         if (yAxisFormat == null) {
-            throw new InvalidDataPointException("Y axis format must be number or pace");
+            throw new InvalidDataPointException("Y axis format must be number, pace or percentage");
         }
         validateYAxisFormat(statistic);
         repository.save(statistic);
     }
 
     private void validateYAxisFormat(Statistic statistic) {
-        if (!"number".equals(statistic.getYAxisFormat()) && !"pace".equals(statistic.getYAxisFormat())) {
-            throw new InvalidDataPointException("Y axis format must be number or pace");
+        if (!"number".equals(statistic.getYAxisFormat()) && !"pace".equals(statistic.getYAxisFormat())
+                && !"percentage".equals(statistic.getYAxisFormat())) {
+            throw new InvalidDataPointException("Y axis format must be number, pace or percentage");
         }
         if ("pace".equals(statistic.getYAxisFormat())) {
             statistic.getDatasets().forEach(dataset -> dataset.getDataPoints().forEach(this::validatePace));

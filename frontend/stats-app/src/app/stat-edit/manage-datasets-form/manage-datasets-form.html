@@ -40,6 +40,10 @@
 
   <!-- Dataset list -->
   <h3>Datasets</h3>
+  @if (stat.yAxisFormat === 'percentage') {
+    <p>Set the count that represents 100% for each dataset. Enter counts when adding or editing data.
+      Changing a target recalculates the chart without changing saved counts.</p>
+  }
   <mat-list>
     @for (ds of sortedDatasets; track ds.label; let datasetIndex = $index) {
       <mat-list-item>
@@ -62,6 +66,19 @@
           <div class="dataset-row">
             <div class="dataset-label-section">
               <span>{{ ds.label }}</span>
+                @if (stat.yAxisFormat === 'percentage') {
+                  <mat-form-field appearance="outline" class="percentage-target">
+                    <mat-label>100% target</mat-label>
+                    <input #targetInput matInput type="number" step="any" min="0" required
+                           [value]="ds.percentageTarget ?? 100"
+                           [disabled]="percentageTargetSaving()[ds.label]"
+                           [attr.aria-label]="'100% target for ' + ds.label"
+                           (change)="onSetPercentageTarget(ds, targetInput)"/>
+                  </mat-form-field>
+                  @if (percentageTargetErrors()[ds.label]) {
+                    <span class="smoothing-error" role="alert">{{ percentageTargetErrors()[ds.label] }}</span>
+                  }
+                }
                 <input
                   type="color"
                   class="color-picker"
