@@ -12,6 +12,23 @@
   <app-chart [stat]="stat()!" (pointClick)="onChartPointClick($event)"></app-chart>
 </div>
 <p>Click a recorded point in the chart to edit or delete it.</p>
+@if (stat()!.yAxisFormat === 'percentage') {
+<div class="entry-mode">
+  <span>Enter values as</span>
+  <mat-button-toggle-group #inputModeToggle="matButtonToggleGroup" aria-label="Data entry mode" [hideSingleSelectionIndicator]="true"
+    [value]="stat()!.percentageInputMode ?? 'number'" [disabled]="inputModeSaving()"
+    (change)="onInputModeChange($event.value, inputModeToggle)">
+    <mat-button-toggle value="number" aria-label="Enter counts" title="Enter counts">
+      <mat-icon>numbers</mat-icon>
+    </mat-button-toggle>
+    <mat-button-toggle value="percentage" aria-label="Enter percentages" title="Enter percentages">
+      <mat-icon>percent</mat-icon>
+    </mat-button-toggle>
+  </mat-button-toggle-group>
+  <span>{{ stat()!.percentageInputMode === 'percentage' ? 'Percentage' : 'Number' }}</span>
+</div>
+@if (inputModeError()) { <p class="data-error" role="alert">{{ inputModeError() }}</p> }
+}
 <mat-tab-group #tabGroup>
   <mat-tab label="Manage Datasets">
     <app-manage-datasets-form (datasetsChanged)="reloadStat()" [stat]="stat()!"></app-manage-datasets-form>

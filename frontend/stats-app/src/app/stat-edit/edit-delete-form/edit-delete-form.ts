@@ -2,16 +2,17 @@ import {Component, computed, EventEmitter, Input, OnChanges, OnInit, Output, sig
 import {DatePipe} from '@angular/common';
 import {MatButton} from '@angular/material/button';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
+import {MatSuffix} from '@angular/material/form-field';
 import {MatIcon} from '@angular/material/icon';
 import {MatOption} from '@angular/material/core';
-import {MatSelect} from '@angular/material/select';
+import {MatSelect, MatSelectChange} from '@angular/material/select';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DataPoint, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../../confirm-dialog/confirm-dialog';
 import {compareDataPoints, isLinearXAxis} from '../../models/x-axis';
-import {parseYAxisValue} from '../../models/y-axis';
+import {countToPercentage, formatInputNumber, isPercentageInput, parseYAxisValue, PercentageInputValue} from '../../models/y-axis';
 
 @Component({
   selector: 'app-edit-delete-form',
@@ -24,6 +25,7 @@ import {parseYAxisValue} from '../../models/y-axis';
     MatLabel,
     MatOption,
     MatSelect,
+    MatSuffix,
     ReactiveFormsModule
   ],
   templateUrl: './edit-delete-form.html',
@@ -37,6 +39,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
 
   selectedDatasetLabel = signal<string | null>(null);
   submissionError = signal('');
+  private readonly entryValue = new PercentageInputValue();
 
   sortedDataPoints = computed(() => {
     const label = this.selectedDatasetLabel();
@@ -48,6 +51,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
   });
 
   protected readonly isLinearXAxis = isLinearXAxis;
+  protected readonly isPercentageInput = isPercentageInput;
 
   constructor(
     private statService: StatService,
@@ -62,8 +66,10 @@ export class EditDeleteForm implements OnInit, OnChanges {
       selectedPoint: [null, Validators.required],
       value: ['']
     }, {updateOn: 'blur'});
+    this.editPointForm.get('value')!.valueChanges.subscribe(() => this.entryValue.reset());
 
     this.editPointForm.get('dataset')?.valueChanges.subscribe(label => {
+      this.entryValue.reset();
       this.selectedDatasetLabel.set(label);
       this.editPointForm.get('selectedPoint')?.reset();
       this.editPointForm.get('value')?.reset();
@@ -74,6 +80,15 @@ export class EditDeleteForm implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['stat']) {
+      const previous: Stat | undefined = changes['stat'].previousValue;
+      const dataset = this.stat.datasets.find(ds => ds.label === this.editPointForm?.get('dataset')?.value);
+      if (previous && dataset && isPercentageInput(previous) !== isPercentageInput(this.stat)) {
+        const control = this.editPointForm.get('value')!;
+        if (control.value !== null) {
+          control.setValue(this.entryValue.switchMode(String(control.value), dataset, isPercentageInput(this.stat)),
+            {emitEvent: false});
+        }
+      }
       this.preselectDatasetIfSingle();
     }
   }
@@ -85,12 +100,25 @@ export class EditDeleteForm implements OnInit, OnChanges {
     const sorted = this.sortedDataPoints();
     const match = sorted.find(p => p.x === point.x && p.y === point.y);
     if (match) {
-      this.editPointForm.patchValue({selectedPoint: match, value: match.y});
+      this.editPointForm.patchValue({selectedPoint: match});
+      this.setPointValue(match);
     }
   }
 
-  onPointSelected(event: any): void {
-    this.editPointForm.get('value')?.setValue(event.value.y);
+  onPointSelected(event: MatSelectChange): void {
+    this.setPointValue(event.value);
+  }
+
+  private setPointValue(point: DataPoint): void {
+    const dataset = this.stat.datasets.find(ds => ds.label === this.selectedDatasetLabel());
+    const value = dataset && this.stat.yAxisFormat === 'percentage'
+      ? this.entryValue.displayCount(point.y, dataset, isPercentageInput(this.stat)) : point.y;
+    this.editPointForm.get('value')!.setValue(value, {emitEvent: false});
+  }
+
+  pointInputValue(point: DataPoint): string {
+    const dataset = this.stat.datasets.find(ds => ds.label === this.selectedDatasetLabel());
+    return isPercentageInput(this.stat) && dataset ? formatInputNumber(countToPercentage(Number(point.y), dataset)) : point.y;
   }
 
   onEditPoint(): void {
@@ -113,7 +141,18 @@ export class EditDeleteForm implements OnInit, OnChanges {
         this.submissionError.set('Enter pace as m:ss or M.SS with seconds between 00 and 59.');
         return;
       }
-      this.replacePoint(datasetLabel, selected, String(newValue));
+      let value = String(newValue);
+      const dataset = this.stat.datasets.find(ds => ds.label === datasetLabel);
+      if (dataset && this.stat.yAxisFormat === 'percentage') {
+        value = this.entryValue.toCount(value, dataset, isPercentageInput(this.stat));
+      }
+      if (isPercentageInput(this.stat)) {
+        if (!dataset || !value.trim() || !Number.isFinite(Number(value))) {
+          this.submissionError.set('Enter a finite percentage and select a dataset with a valid target.');
+          return;
+        }
+      }
+      this.replacePoint(datasetLabel, selected, value);
     }
   }
 
@@ -149,7 +188,7 @@ export class EditDeleteForm implements OnInit, OnChanges {
 
   private preselectDatasetIfSingle(): void {
     if (!this.editPointForm || !this.stat) return;
-    if (this.stat.datasets.length === 1) {
+    if (this.stat.datasets.length === 1 && this.editPointForm.get('dataset')?.value !== this.stat.datasets[0].label) {
       const label = this.stat.datasets[0].label;
       this.editPointForm.patchValue({dataset: label});
       this.selectedDatasetLabel.set(label);

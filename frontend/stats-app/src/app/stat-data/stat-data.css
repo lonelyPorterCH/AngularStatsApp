@@ -14,6 +14,14 @@ mat-tab-group {
   max-width: 1000px;
 }
 
+.entry-mode {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .data-error {
   color: var(--mat-sys-error, #b3261e);
 }

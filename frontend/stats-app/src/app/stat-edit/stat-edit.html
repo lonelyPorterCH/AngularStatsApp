@@ -64,7 +64,7 @@
       </mat-select>
     </mat-form-field>
     @if (stat()!.yAxisFormat === 'percentage') {
-    <p class="hint">Enter counts; percentages are calculated from each dataset's 100% target in Manage data.
+    <p class="hint">Choose number or percentage entry in Manage data; conversion uses each dataset's 100% target.
       Y-axis bounds use percentages.</p>
     }
     @if (yAxisFormatError()) { <p class="setting-error" role="alert">{{ yAxisFormatError() }}</p> }

@@ -100,6 +100,88 @@ describe('AddPointForm', () => {
     }
   });
 
+  it('converts percentage entries and percentage-point increments to counts using the selected target', () => {
+    fixture.componentRef.setInput('stat', {...MOCK_STAT, yAxisFormat: 'percentage', percentageInputMode: 'percentage',
+      xAxisScaleType: 'linear', datasets: [
+        {label: 'Lucky trades', index: 0, percentageTarget: 50, dataPoints: [{x: '1', y: '4'}]},
+        {label: 'Rocket leaders', index: 1, percentageTarget: 30, dataPoints: []}
+      ]});
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[matTextSuffix]').textContent).toBe('%');
+    for (const [dataset, value, expected] of [
+      ['Lucky trades', '12', '6'], ['Lucky trades', '+4', '6'], ['Rocket leaders', '20', '6'],
+      ['Lucky trades', '0', '0'], ['Lucky trades', '120', '60']
+    ]) {
+      component.addPointForm.setValue({dataset, x: '2', y: value});
+      component.onAddPoint();
+      const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/datapoint`);
+      expect(request.request.body.y).toBe(expected);
+      request.flush(null);
+    }
+    component.addPointForm.setValue({dataset: 'Lucky trades', x: '2', y: 'invalid'});
+    component.onAddPoint();
+    expect(component.submissionError()).toContain('finite percentage');
+  });
+
+  it('converts a pending entry when switching units without losing its date or increment marker', () => {
+    const stat: Stat = {...MOCK_STAT, yAxisFormat: 'percentage', xAxisScaleType: 'linear',
+      datasets: [{label: 'Lucky trades', index: 0, percentageTarget: 50, dataPoints: []}]};
+    fixture.componentRef.setInput('stat', stat);
+    fixture.detectChanges();
+    component.addPointForm.setValue({dataset: 'Lucky trades', x: '2', y: '+6'});
+    fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'percentage'});
+    fixture.detectChanges();
+    expect(component.addPointForm.value).toEqual({dataset: 'Lucky trades', x: '2', y: '+12'});
+    fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'number'});
+    fixture.detectChanges();
+    expect(component.addPointForm.get('y')?.value).toBe('+6');
+    expect(fixture.nativeElement.querySelector('[matTextSuffix]')).toBeNull();
+  });
+
+  it('preserves exact counts and increments through repeated rounded mode changes and saving', () => {
+    const stat: Stat = {...MOCK_STAT, yAxisFormat: 'percentage', xAxisScaleType: 'linear',
+      datasets: [{label: 'Rocket leaders', index: 0, percentageTarget: 30, dataPoints: [{x: '1', y: '5'}]}]};
+    fixture.componentRef.setInput('stat', stat);
+    fixture.detectChanges();
+    for (const [value, expected] of [['10', '10'], ['+10', '15']]) {
+      component.addPointForm.setValue({dataset: 'Rocket leaders', x: '2', y: value});
+      for (let cycle = 0; cycle < 3; cycle++) {
+        fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'percentage'});
+        fixture.detectChanges();
+        expect(component.addPointForm.get('y')?.value).toBe(value.startsWith('+') ? '+33.33' : '33.33');
+        fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'number'});
+        fixture.detectChanges();
+        expect(component.addPointForm.get('y')?.value).toBe(value);
+      }
+      fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'percentage'});
+      fixture.detectChanges();
+      component.onAddPoint();
+      const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/datapoint`);
+      expect(request.request.body.y).toBe(expected);
+      request.flush(null);
+      fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'number'});
+      fixture.detectChanges();
+    }
+  });
+
+  it('converts an edited percentage instead of restoring the earlier count', () => {
+    const stat: Stat = {...MOCK_STAT, yAxisFormat: 'percentage', xAxisScaleType: 'linear',
+      datasets: [{label: 'Rocket leaders', index: 0, percentageTarget: 30, dataPoints: []}]};
+    fixture.componentRef.setInput('stat', stat);
+    fixture.detectChanges();
+    component.addPointForm.setValue({dataset: 'Rocket leaders', x: '2', y: '10'});
+    fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'percentage'});
+    fixture.detectChanges();
+    component.addPointForm.patchValue({y: '50'});
+    fixture.componentRef.setInput('stat', {...stat, percentageInputMode: 'number'});
+    fixture.detectChanges();
+    expect(component.addPointForm.get('y')?.value).toBe('15');
+    component.onAddPoint();
+    const request = httpTesting.expectOne(`${environment.apiBaseUrl}/test-stat/datapoint`);
+    expect(request.request.body.y).toBe('15');
+    request.flush(null);
+  });
+
   it('shows duplicate bar-point validation errors and retains the input for correction', () => {
     fixture.componentRef.setInput('stat', {...MOCK_STAT, chartType: 'bar', xAxisScaleType: 'linear',
       datasets: [{label: 'Series', index: 0, dataPoints: [{x: '2', y: '100'}]}]});

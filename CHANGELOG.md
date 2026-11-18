@@ -10,6 +10,11 @@ All notable changes to this project are documented in this file.
   Enter and edit completed counts (including +count increments); the chart calculates count / target * 100.
   Tooltips show counts and targets instead of percentages, while Y-axis labels and bounds use percentages.
   Existing datasets default to a target of 100; changing targets or formats never rewrites measurements.
+- Statistic-wide number/percentage icon toggle on Manage data, remembered per chart.
+  Add and edit values in the selected units with a % input suffix in percentage mode;
+  percentage entries and +percentage-point increments are converted to counts using the dataset target.
+- Number/percentage conversions display at most two decimal places and retain the exact underlying count,
+  preventing values from drifting when switching entry modes or saving an unchanged rounded value.
 
 ## [2.6.1] - 2026-11-13
 

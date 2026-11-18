@@ -36,6 +36,7 @@ public class StatisticService {
     public void createStatistic(Statistic statistic) {
         validateChartType(statistic.getChartType());
         validateYAxisFormat(statistic);
+        validatePercentageInputMode(statistic.getPercentageInputMode());
         validateYAxisBounds(statistic.getYAxisMin(), statistic.getYAxisMax());
         validateBarDatasets(statistic);
         statistic.getDatasets().forEach(dataset -> validateSmoothingWindow(dataset.getSmoothingWindow()));
@@ -157,6 +158,19 @@ public class StatisticService {
         }
         validateYAxisFormat(statistic);
         repository.save(statistic);
+    }
+
+    public void setPercentageInputMode(String id, String percentageInputMode) {
+        validatePercentageInputMode(percentageInputMode);
+        Statistic statistic = repository.findById(id);
+        statistic.setPercentageInputMode(percentageInputMode);
+        repository.save(statistic);
+    }
+
+    private void validatePercentageInputMode(String percentageInputMode) {
+        if (!"number".equals(percentageInputMode) && !"percentage".equals(percentageInputMode)) {
+            throw new InvalidDataPointException("Percentage input mode must be number or percentage");
+        }
     }
 
     private void validateYAxisFormat(Statistic statistic) {

@@ -35,15 +35,18 @@
   }
 
   <mat-form-field appearance="outline">
-    <mat-label>{{ stat.yAxisFormat === 'percentage' ? 'Completed count' : stat.yAxisName }}</mat-label>
+    <mat-label>{{ isPercentageInput(stat) ? 'Completed percentage' : stat.yAxisFormat === 'percentage' ? 'Completed count' : stat.yAxisName }}</mat-label>
     <input formControlName="y" matInput type="text"
-      [matTooltip]="stat.yAxisFormat === 'pace' ? 'Enter pace as m:ss or M.SS (5.1 means 5:10). No increments.' : 'Enter a number (e.g., 100) or +number to increment the latest value (e.g., +10)'"/>
+      [matTooltip]="isPercentageInput(stat) ? 'Enter a percentage or +number to add percentage points to the latest value.' : stat.yAxisFormat === 'pace' ? 'Enter pace as m:ss or M.SS (5.1 means 5:10). No increments.' : 'Enter a number (e.g., 100) or +number to increment the latest value (e.g., +10)'"/>
+    @if (isPercentageInput(stat)) { <span matTextSuffix>%</span> }
     @if (addPointForm.get('y')?.errors?.['required']) {
       <mat-error>Value is required</mat-error>
     }
   </mat-form-field>
   @if (stat.yAxisFormat === 'percentage') {
-    <p>Enter the completed count, not a percentage (e.g. 6), or use +number to add to the latest count.</p>
+    <p>{{ isPercentageInput(stat)
+      ? 'Enter the completed percentage (e.g. 12), or +number to add percentage points to the latest value.'
+      : 'Enter the completed count (e.g. 6), or +number to add to the latest count.' }}</p>
   }
 
   <button mat-flat-button type="submit">

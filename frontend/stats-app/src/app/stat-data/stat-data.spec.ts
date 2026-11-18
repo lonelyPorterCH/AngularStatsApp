@@ -111,6 +111,38 @@ describe('StatData', () => {
       .toMatchObject({dataset: 'Weight', selectedPoint: point, value: '70'});
   });
 
+  it('persists the statistic-wide icon entry mode and restores the previous mode after save failure', () => {
+    http.expectOne(`${environment.apiBaseUrl}/weight`).flush({...stat, yAxisFormat: 'percentage'});
+    http.expectOne(`${environment.apiBaseUrl}/weight/archived`).flush(false);
+    fixture.detectChanges();
+    const buttons: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('mat-button-toggle button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].getAttribute('aria-checked')).toBe('true');
+    buttons[1].click();
+    fixture.detectChanges();
+    expect(component.stat()?.percentageInputMode).toBe('percentage');
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/percentage-input-mode`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({percentageInputMode: 'percentage'});
+    expect(buttons[0].hasAttribute('disabled')).toBe(true);
+    request.flush(null);
+    fixture.detectChanges();
+    buttons[0].click();
+    http.expectOne(`${environment.apiBaseUrl}/weight/percentage-input-mode`)
+      .flush('Failed', {status: 500, statusText: 'Error'});
+    fixture.detectChanges();
+    expect(component.stat()?.percentageInputMode).toBe('percentage');
+    expect(buttons[1].getAttribute('aria-checked')).toBe('true');
+    expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain('Could not save entry mode');
+    expect(component.stat()?.datasets).toEqual(stat.datasets);
+  });
+
+  it('does not offer percentage entry for ordinary number statistics', () => {
+    load();
+    expect(fixture.nativeElement.querySelector('mat-button-toggle-group')).toBeNull();
+    http.expectNone(`${environment.apiBaseUrl}/weight/percentage-input-mode`);
+  });
+
   it('redirects archived charts without rendering data editing tools', () => {
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     load(true);

@@ -10,6 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Statistic {
+    private static final String NUMBER = "number";
     private String id;
     private Integer index;
     private String title;
@@ -17,7 +18,8 @@ public class Statistic {
     private boolean reverse;
     @Getter(AccessLevel.NONE)
     private Boolean effortComparison = false;
-    private String yAxisFormat = "number";
+    private String yAxisFormat = NUMBER;
+    private String percentageInputMode = NUMBER;
     @Getter(AccessLevel.NONE)
     private Boolean stacked = false;
     private Double yAxisMin;
@@ -37,7 +39,11 @@ public class Statistic {
     }
 
     public String getYAxisFormat() {
-        return yAxisFormat == null ? "number" : yAxisFormat;
+        return yAxisFormat == null ? NUMBER : yAxisFormat;
+    }
+
+    public String getPercentageInputMode() {
+        return percentageInputMode == null ? NUMBER : percentageInputMode;
     }
 
     public boolean isStacked() {

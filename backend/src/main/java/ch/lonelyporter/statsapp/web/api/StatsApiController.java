@@ -45,6 +45,9 @@ public class StatsApiController {
     public record YAxisFormatRequest(String yAxisFormat) {
     }
 
+    public record PercentageInputModeRequest(String percentageInputMode) {
+    }
+
     public record StackedRequest(Boolean stacked) {
     }
 
@@ -197,6 +200,13 @@ public class StatsApiController {
     @PatchMapping("/{id}/y-axis-bounds")
     public ResponseEntity<Void> setYAxisBounds(@PathVariable String id, @RequestBody YAxisBoundsRequest request) {
         statisticService.setYAxisBounds(id, request.yAxisMin(), request.yAxisMax());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/percentage-input-mode")
+    public ResponseEntity<Void> setPercentageInputMode(@PathVariable String id,
+                                                       @RequestBody PercentageInputModeRequest request) {
+        statisticService.setPercentageInputMode(id, request.percentageInputMode());
         return ResponseEntity.ok().build();
     }
 

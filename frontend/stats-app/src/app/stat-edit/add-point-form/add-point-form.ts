@@ -11,6 +11,7 @@ import {MatOption} from '@angular/material/core';
 import {MatSelect} from '@angular/material/select';
 import {MatTooltip} from '@angular/material/tooltip';
 import {compareDataPoints, isLinearXAxis} from '../../models/x-axis';
+import {isPercentageInput, PercentageInputValue} from '../../models/y-axis';
 
 @Component({
   selector: 'app-add-point-form',
@@ -40,6 +41,8 @@ export class AddPointForm implements OnInit, OnChanges {
   @Output() pointChanged = new EventEmitter<void>();
   addPointForm!: FormGroup;
   submissionError = signal('');
+  protected readonly isPercentageInput = isPercentageInput;
+  private readonly entryValue = new PercentageInputValue();
 
   constructor(
     private statService: StatService,
@@ -53,12 +56,23 @@ export class AddPointForm implements OnInit, OnChanges {
       x: ['', Validators.required],
       y: ['', Validators.required]
     }, {updateOn: 'blur'});
+    this.addPointForm.get('y')!.valueChanges.subscribe(() => this.entryValue.reset());
+    this.addPointForm.get('dataset')!.valueChanges.subscribe(() => this.entryValue.reset());
     this.updateXAxisValidators();
     this.preselectDatasetIfSingle();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['stat']) {
+      const previous: Stat | undefined = changes['stat'].previousValue;
+      const dataset = this.stat.datasets.find(ds => ds.label === this.addPointForm?.get('dataset')?.value);
+      if (previous && dataset && isPercentageInput(previous) !== isPercentageInput(this.stat)) {
+        const control = this.addPointForm.get('y')!;
+        if (control.value !== null) {
+          control.setValue(this.entryValue.switchMode(String(control.value), dataset, isPercentageInput(this.stat)),
+            {emitEvent: false});
+        }
+      }
       this.updateXAxisValidators();
       this.preselectDatasetIfSingle();
     }
@@ -72,19 +86,28 @@ export class AddPointForm implements OnInit, OnChanges {
     const yInput: string = this.addPointForm.get('y')?.value;
     const xValue = this.addPointForm.get('x')?.value;
     const x = isLinearXAxis(this.stat) ? String(xValue) : xValue.toFormat('yyyy-MM-dd');
+    const dataset = this.stat.datasets.find(ds => ds.label === datasetLabel);
+    const value = dataset && this.stat.yAxisFormat === 'percentage'
+      ? this.entryValue.toCount(yInput, dataset, isPercentageInput(this.stat)) : yInput;
+    if (isPercentageInput(this.stat)) {
+      if (!dataset || !value.trim() || !Number.isFinite(Number(value))) {
+        this.submissionError.set('Enter a finite percentage and select a dataset with a valid target.');
+        return;
+      }
+    }
 
-    if (yInput.startsWith('+')) {
+    if (value.startsWith('+')) {
       if (this.stat.yAxisFormat === 'pace') {
         this.submissionError.set('Enter an absolute pace as m:ss or M.SS; pace increments are not supported.');
         return;
       }
       // Increment mode: add the amount to the latest value
-      this.handleIncrement(datasetLabel, x, yInput);
+      this.handleIncrement(datasetLabel, x, value);
     } else {
       // Regular mode: add point with exact value
       const newPoint: DataPoint = {
         x,
-        y: yInput
+        y: value
       };
       this.addDataPointAndReset(datasetLabel, newPoint);
     }
@@ -97,7 +120,7 @@ export class AddPointForm implements OnInit, OnChanges {
       .at(-1);
 
     if (!latestPoint) {
-      console.error('No latest point found for increment operation');
+      this.submissionError.set('Add an absolute value before using increments.');
       return;
     }
 
@@ -126,7 +149,7 @@ export class AddPointForm implements OnInit, OnChanges {
 
   private preselectDatasetIfSingle(): void {
     if (!this.addPointForm || !this.stat) return;
-    if (this.stat.datasets.length === 1) {
+    if (this.stat.datasets.length === 1 && this.addPointForm.get('dataset')?.value !== this.stat.datasets[0].label) {
       this.addPointForm.patchValue({dataset: this.stat.datasets[0].label});
     }
   }

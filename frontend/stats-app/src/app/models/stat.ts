@@ -9,6 +9,7 @@ export interface Stat {
   reverse: boolean;
   effortComparison?: boolean;
   yAxisFormat?: 'number' | 'pace' | 'percentage';
+  percentageInputMode?: 'number' | 'percentage';
   stacked?: boolean;
   yAxisMin?: number | null;
   yAxisMax?: number | null;

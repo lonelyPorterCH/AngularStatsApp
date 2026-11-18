@@ -87,6 +87,30 @@ class StatisticServiceTest {
     }
 
     @Test
+    void percentageInputModePersistsWithoutRewritingCountsAndRejectsInvalidSettings() {
+        Statistic statistic = createStatistic("progress", "Progress");
+        statistic.setYAxisFormat("percentage");
+        statistic.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-11-16", "6"));
+        statistic.getDatasets().getFirst().setPercentageTarget(50.0);
+        service.createStatistic(statistic);
+        assertThat(repository.findById("progress").getPercentageInputMode()).isEqualTo("number");
+        service.setPercentageInputMode("progress", "percentage");
+        assertThat(repository.findById("progress").getPercentageInputMode()).isEqualTo("percentage");
+        assertThat(repository.findById("progress").getDatasets().getFirst().getDataPoints())
+                .containsExactly(new Statistic.DataPoint("2026-11-16", "6"));
+        for (String invalid : new String[]{null, "", "pace"}) {
+            assertThatThrownBy(() -> service.setPercentageInputMode("progress", invalid))
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.InvalidDataPointException.class);
+            assertThat(repository.findById("progress").getPercentageInputMode()).isEqualTo("percentage");
+        }
+        service.setPercentageInputMode("progress", "number");
+        assertThat(repository.findById("progress").getPercentageInputMode()).isEqualTo("number");
+        repository.toggleArchive("progress");
+        assertThatThrownBy(() -> service.setPercentageInputMode("progress", "percentage"))
+                .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
+    }
+
+    @Test
     void percentageTargetsPersistAcrossRenamingAndRecalculateWithoutRewritingCounts() {
         Statistic statistic = createStatistic("progress", "Progress");
         statistic.setYAxisFormat("percentage");

@@ -3,6 +3,7 @@ import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import {Title} from '@angular/platform-browser';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
+import {MatButtonToggle, MatButtonToggleGroup} from '@angular/material/button-toggle';
 import {MatTab, MatTabGroup} from '@angular/material/tabs';
 import {forkJoin} from 'rxjs';
 import {ChartComponent, ChartPointClickEvent} from '../chart/chart';
@@ -15,13 +16,15 @@ import {ManageDatasetsForm} from '../stat-edit/manage-datasets-form/manage-datas
 @Component({
   selector: 'app-stat-data',
   imports: [RouterLink, MatButton, MatIcon, ChartComponent, MatTabGroup, MatTab,
-    AddPointForm, EditDeleteForm, ManageDatasetsForm],
+    AddPointForm, EditDeleteForm, ManageDatasetsForm, MatButtonToggle, MatButtonToggleGroup],
   templateUrl: './stat-data.html',
   styleUrl: './stat-data.css'
 })
 export class StatData implements OnInit {
   stat = signal<Stat | undefined>(undefined);
   error = signal('');
+  inputModeSaving = signal(false);
+  inputModeError = signal('');
   tabGroup = viewChild<MatTabGroup>('tabGroup');
   editDeleteForm = viewChild<EditDeleteForm>('editDeleteForm');
 
@@ -42,6 +45,7 @@ export class StatData implements OnInit {
   loadStatById(id: string): void {
     this.stat.set(undefined);
     this.error.set('');
+    this.inputModeError.set('');
     forkJoin({
       stat: this.statService.getStatById(id),
       archived: this.statService.isArchived(id)
@@ -87,6 +91,28 @@ export class StatData implements OnInit {
     setTimeout(() => {
       if (this.stat()?.id === stat?.id) {
         this.editDeleteForm()?.prefillPoint(event.datasetLabel, event.point);
+      }
+    });
+  }
+
+  onInputModeChange(percentageInputMode: 'number' | 'percentage', toggleGroup: MatButtonToggleGroup): void {
+    const stat = this.stat();
+    if (!stat || stat.yAxisFormat !== 'percentage' || this.inputModeSaving()
+      || (stat.percentageInputMode ?? 'number') === percentageInputMode) return;
+    this.inputModeSaving.set(true);
+    this.inputModeError.set('');
+    this.stat.set({...stat, percentageInputMode});
+    this.statService.setPercentageInputMode(stat.id, percentageInputMode).subscribe({
+      next: () => {
+        this.inputModeSaving.set(false);
+      },
+      error: () => {
+        toggleGroup.value = stat.percentageInputMode ?? 'number';
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, percentageInputMode: stat.percentageInputMode ?? 'number'} : current);
+          this.inputModeError.set('Could not save entry mode. The previous mode is still selected.');
+        }
+        this.inputModeSaving.set(false);
       }
     });
   }

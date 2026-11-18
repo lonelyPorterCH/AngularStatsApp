@@ -64,6 +64,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/y-axis-format`, {yAxisFormat});
   }
 
+  setPercentageInputMode(id: string, percentageInputMode: 'number' | 'percentage'): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/percentage-input-mode`, {percentageInputMode});
+  }
+
   setChartType(id: string, chartType: 'line' | 'bar'): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/chart-type`, {chartType});
   }

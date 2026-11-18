@@ -129,6 +129,23 @@ class StatsApiControllerTest {
     }
 
     @Test
+    void percentageInputModeEndpointAcceptsBothModesAndReportsValidationErrors() throws Exception {
+        String path = "/api/stats/chart/percentage-input-mode";
+        for (String mode : new String[]{"number", "percentage"}) {
+            mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"percentageInputMode\":\"" + mode + "\"}"))
+                    .andExpect(status().isOk());
+            verify(service).setPercentageInputMode("chart", mode);
+        }
+        doThrow(new InvalidDataPointException("Percentage input mode must be number or percentage"))
+                .when(service).setPercentageInputMode(eq("chart"), nullable(String.class));
+        for (String body : new String[]{"{}", "{\"percentageInputMode\":null}", "{\"percentageInputMode\":\"pace\"}"}) {
+            mvc.perform(patch(path).contentType(MediaType.APPLICATION_JSON).content(body))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void yAxisFormatEndpointAcceptsSupportedFormatsAndReportsValidationFailures() throws Exception {
         for (String format : new String[]{"number", "pace", "percentage"}) {
             mvc.perform(patch("/api/stats/runs/y-axis-format")

@@ -1,4 +1,4 @@
-import {formatPace, parseYAxisValue} from './y-axis';
+import {formatPace, parseYAxisValue, PercentageInputValue} from './y-axis';
 import {Stat} from './stat';
 
 describe('Pace values', () => {
@@ -12,6 +12,35 @@ describe('Pace values', () => {
     }
     expect(parseYAxisValue('5.11', {...stat, yAxisFormat: 'number'})).toBe(5.11);
     expect(parseYAxisValue('5.11', {...stat, yAxisFormat: undefined})).toBe(5.11);
+  });
+
+  describe('Percentage input precision', () => {
+    const dataset = {label: 'Rocket leaders', index: 0, percentageTarget: 30, dataPoints: []};
+
+    it('rounds display values to two decimals without round-tripping the rounded text', () => {
+      for (const count of ['10', '+10', '10.123456']) {
+        const input = new PercentageInputValue();
+        const percentage = input.switchMode(count, dataset, true);
+        expect(percentage).toBe(count === '10.123456' ? '33.74' : count === '+10' ? '+33.33' : '33.33');
+        expect(input.toCount(percentage, dataset, true)).toBe(count);
+        const number = input.switchMode(percentage, dataset, false);
+        expect(number).toBe(count === '10.123456' ? '10.12' : count);
+        expect(input.toCount(number, dataset, false)).toBe(count);
+        expect(input.switchMode(number, dataset, true)).toBe(percentage);
+      }
+    });
+
+    it('does not reuse preserved counts after the input is edited, reset or used for another dataset', () => {
+      const input = new PercentageInputValue();
+      input.displayCount('10', dataset, true);
+      expect(input.toCount('50', dataset, true)).toBe('15');
+      input.reset();
+      expect(Number(input.toCount('33.33', dataset, true))).toBeCloseTo(9.999, 10);
+      input.displayCount('10', dataset, true);
+      expect(input.toCount('33.33', {...dataset, label: 'Other', percentageTarget: 100}, true)).toBe('33.33');
+      expect(input.switchMode('', dataset, true)).toBe('');
+      expect(input.switchMode('invalid', dataset, true)).toBe('invalid');
+    });
   });
 
   it('rejects invalid pace rather than treating it as decimal minutes', () => {

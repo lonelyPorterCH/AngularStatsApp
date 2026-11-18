@@ -17,15 +17,16 @@
             {{ point.x }}
           } @else {
             {{ point.x | date:'dd.MM.yyyy' }}
-          } - {{ point.y }}
+          } - {{ pointInputValue(point) }}{{ isPercentageInput(stat) ? '%' : '' }}
         </mat-option>
       }
     </mat-select>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>{{ stat.yAxisFormat === 'percentage' ? 'Completed count' : 'Value' }}</mat-label>
-    <input formControlName="value" matInput [type]="stat.yAxisFormat === 'pace' ? 'text' : 'number'"/>
+    <mat-label>{{ isPercentageInput(stat) ? 'Completed percentage' : stat.yAxisFormat === 'percentage' ? 'Completed count' : 'Value' }}</mat-label>
+    <input formControlName="value" matInput step="any" [type]="stat.yAxisFormat === 'pace' ? 'text' : 'number'"/>
+    @if (isPercentageInput(stat)) { <span matTextSuffix>%</span> }
   </mat-form-field>
 
   <button mat-flat-button type="submit">
