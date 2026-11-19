@@ -1,5 +1,6 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal, WritableSignal} from '@angular/core';
 import {DOCUMENT} from '@angular/common';
+import {HttpErrorResponse} from '@angular/common/http';
 import {Stat} from '../models/stat';
 import {StatService} from '../services/stat-service';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -7,7 +8,7 @@ import {MatButton} from '@angular/material/button';
 import {ChartComponent} from '../chart/chart';
 import {MatIcon} from '@angular/material/icon';
 import {Title} from '@angular/platform-browser';
-import {forkJoin} from 'rxjs';
+import {concatMap, forkJoin, from, Observable, tap} from 'rxjs';
 import {MatSlideToggle} from '@angular/material/slide-toggle';
 import {MatError, MatFormField, MatLabel} from '@angular/material/form-field';
 import {MatOption, MatSelect} from '@angular/material/select';
@@ -45,20 +46,26 @@ export class StatEdit implements OnInit {
   readonly renameSaved = signal(false);
   stat = signal<Stat | undefined>(undefined);
   archived = signal<boolean>(false);
-  stackedSaving = signal(false);
-  stackedError = signal('');
-  yAxisBoundsSaving = signal(false);
-  yAxisBoundsError = signal('');
-  readonly yAxisBoundsForm = this.formBuilder.group({
+  readonly chartDisplayForm = this.formBuilder.nonNullable.group({
+    chartType: ['line' as 'line' | 'bar', Validators.required],
+    effortComparison: [false],
+    stacked: [false]
+  }, {updateOn: 'blur'});
+  chartDisplaySaving = signal(false);
+  chartDisplayError = signal('');
+  yAxisSaving = signal(false);
+  yAxisError = signal('');
+  readonly yAxisForm = this.formBuilder.group({
+    yAxisFormat: this.formBuilder.nonNullable.control<'number' | 'pace' | 'percentage'>('number', Validators.required),
     yAxisMin: this.formBuilder.control<number | null>(null),
     yAxisMax: this.formBuilder.control<number | null>(null)
   }, {updateOn: 'blur', validators: yAxisBoundsValidator});
-  chartTypeSaving = signal(false);
-  chartTypeError = signal('');
-  effortComparisonSaving = signal(false);
-  effortComparisonError = signal('');
-  yAxisFormatSaving = signal(false);
-  yAxisFormatError = signal('');
+  readonly xAxisForm = this.formBuilder.nonNullable.group({
+    xAxisScaleType: ['time' as 'time' | 'linear', Validators.required],
+    xAxisUnit: ['']
+  }, {updateOn: 'blur'});
+  xAxisSaving = signal(false);
+  xAxisError = signal('');
 
   constructor(
     private statService: StatService,
@@ -77,11 +84,8 @@ export class StatEdit implements OnInit {
   }
 
   loadStatById(id: string) {
-    this.stackedError.set('');
-    this.yAxisBoundsError.set('');
-    this.chartTypeError.set('');
-    this.effortComparisonError.set('');
-    this.yAxisFormatError.set('');
+    this.chartDisplayError.set('');
+    this.yAxisError.set('');
 
     forkJoin({
       stat: this.statService.getStatById(id),
@@ -94,14 +98,29 @@ export class StatEdit implements OnInit {
           return;
         }
         this.stat.set(result.stat);
+        this.chartDisplayForm.reset({
+          chartType: result.stat.chartType ?? 'line',
+          effortComparison: result.stat.effortComparison ?? false,
+          stacked: result.stat.stacked ?? false
+        });
+        this.chartDisplayForm.enable();
+        this.chartDisplayError.set('');
         this.titleForm.reset({title: result.stat.title});
         this.renameError.set('');
         this.renameSaved.set(false);
-        this.yAxisBoundsForm.reset({
+        this.yAxisForm.reset({
+          yAxisFormat: result.stat.yAxisFormat ?? 'number',
           yAxisMin: result.stat.yAxisMin ?? null,
           yAxisMax: result.stat.yAxisMax ?? null
         });
-        this.yAxisBoundsForm.enable();
+        this.yAxisForm.enable();
+        this.yAxisError.set('');
+        this.xAxisForm.reset({
+          xAxisScaleType: result.stat.xAxisScaleType ?? 'time',
+          xAxisUnit: result.stat.xAxisUnit ?? ''
+        });
+        this.xAxisForm.enable();
+        this.xAxisError.set('');
         this.title.setTitle(`StatsApp - Edit ${result.stat.title}`);
       },
       error: err => {
@@ -114,113 +133,143 @@ export class StatEdit implements OnInit {
     });
   }
 
-  onChartTypeChange(chartType: 'line' | 'bar'): void {
-    const stat = this.stat();
-    if (!stat || this.archived() || this.chartTypeSaving() || (stat.chartType ?? 'line') === chartType) return;
-    this.chartTypeError.set('');
-    this.chartTypeSaving.set(true);
-    this.stat.set({...stat, chartType});
-    this.statService.setChartType(stat.id, chartType).subscribe({
-      next: () => this.chartTypeSaving.set(false),
-      error: error => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, chartType: stat.chartType ?? 'line'} : current);
-          const reason = error.status === 400 && typeof error.error === 'string'
-            ? error.error : 'Could not save chart type.';
-          this.chartTypeError.set(`${reason} The previous setting has been restored.`);
-        }
-        this.chartTypeSaving.set(false);
-      }
-    });
-  }
-
   onSmoothingChange(smoothing: boolean): void {
-    // Deprecated: smoothing is now controlled at the dataset level
-    // This method is kept for backward compatibility but does nothing
+    // Deprecated: smoothing is now controlled at the dataset level.
   }
 
-  onEffortComparisonChange(effortComparison: boolean): void {
+  onChartDisplaySave(): void {
     const stat = this.stat();
-    if (!stat || stat.chartType === 'bar' || this.archived() || this.effortComparisonSaving()) return;
-    this.effortComparisonError.set('');
-    this.effortComparisonSaving.set(true);
-    this.stat.set({...stat, effortComparison});
-    this.statService.setEffortComparison(stat.id, effortComparison).subscribe({
-      next: () => this.effortComparisonSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, effortComparison: stat.effortComparison ?? false} : current);
-          this.effortComparisonError.set('Could not save Dots + trend. The previous setting has been restored.');
-        }
-        this.effortComparisonSaving.set(false);
+    if (!stat || this.archived() || this.chartDisplaySaving() || this.chartDisplayForm.invalid
+      || this.chartDisplayForm.pristine) return;
+    const values = this.chartDisplayForm.getRawValue();
+    const changes: {request: () => Observable<void>; update: Partial<Stat>}[] = [];
+    if (values.chartType !== (stat.chartType ?? 'line')) {
+      changes.push({request: () => this.statService.setChartType(stat.id, values.chartType),
+        update: {chartType: values.chartType}});
+    }
+    if (values.chartType !== 'bar' && values.effortComparison !== (stat.effortComparison ?? false)) {
+      changes.push({request: () => this.statService.setEffortComparison(stat.id, values.effortComparison),
+        update: {effortComparison: values.effortComparison}});
+    }
+    if (values.stacked !== (stat.stacked ?? false)) {
+      changes.push({request: () => this.statService.setStacked(stat.id, values.stacked),
+        update: {stacked: values.stacked}});
+    }
+    this.chartDisplayError.set('');
+    this.chartDisplaySaving.set(true);
+    this.chartDisplayForm.disable();
+    this.saveSequentially(stat, changes, () => {
+      this.chartDisplaySaving.set(false);
+      if (this.stat()?.id === stat.id) {
+        this.resetChartDisplayForm(this.stat()!);
+        this.chartDisplayForm.enable();
+      }
+    }, error => {
+      this.chartDisplaySaving.set(false);
+      if (this.stat()?.id === stat.id) {
+        const current = this.stat()!;
+        this.resetChartDisplayForm(current);
+        this.chartDisplayForm.enable();
+        const reason = error instanceof HttpErrorResponse && error.status === 400 && typeof error.error === 'string'
+          ? error.error : 'Could not save chart display settings.';
+        this.chartDisplayError.set(`${reason} The form reflects the last confirmed settings.`);
       }
     });
   }
 
-  onYAxisFormatChange(yAxisFormat: 'number' | 'pace' | 'percentage'): void {
+  onXAxisSave(): void {
     const stat = this.stat();
-    if (!stat || this.archived() || this.yAxisFormatSaving() || (stat.yAxisFormat ?? 'number') === yAxisFormat) return;
-    this.yAxisFormatError.set('');
-    this.yAxisFormatSaving.set(true);
-    this.stat.set({...stat, yAxisFormat});
-    this.statService.setYAxisFormat(stat.id, yAxisFormat).subscribe({
-      next: () => this.yAxisFormatSaving.set(false),
-      error: error => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, yAxisFormat: stat.yAxisFormat ?? 'number'} : current);
-          const reason = error.status === 400 && typeof error.error === 'string'
-            ? error.error : 'Could not save value format.';
-          this.yAxisFormatError.set(`${reason} The previous setting has been restored.`);
-        }
-        this.yAxisFormatSaving.set(false);
-      }
-    });
-  }
-
-  onStackedChange(stacked: boolean): void {
-    const stat = this.stat();
-    if (!stat || (stat.chartType !== 'bar' && stat.effortComparison) || this.archived()
-      || this.stackedSaving() || (stacked && stat.datasets.length < 2)) return;
-    this.stackedError.set('');
-    this.stackedSaving.set(true);
-    this.stat.set({...stat, stacked});
-    this.statService.setStacked(stat.id, stacked).subscribe({
-      next: () => this.stackedSaving.set(false),
-      error: () => {
-        if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, stacked: stat.stacked ?? false} : current);
-          this.stackedError.set('Could not save stacking. The previous setting has been restored.');
-        }
-        this.stackedSaving.set(false);
-      }
-    });
-  }
-
-  onYAxisBoundsSave(): void {
-    const stat = this.stat();
-    if (!stat || this.archived() || this.yAxisBoundsSaving() || this.yAxisBoundsForm.invalid) return;
-    const {yAxisMin, yAxisMax} = this.yAxisBoundsForm.getRawValue();
-    this.yAxisBoundsError.set('');
-    this.yAxisBoundsSaving.set(true);
-    this.yAxisBoundsForm.disable();
-    this.stat.set({...stat, yAxisMin, yAxisMax});
-    this.statService.setYAxisBounds(stat.id, yAxisMin, yAxisMax).subscribe({
+    if (!stat || this.archived() || this.xAxisSaving() || this.xAxisForm.invalid || this.xAxisForm.pristine) return;
+    const {xAxisScaleType, xAxisUnit} = this.xAxisForm.getRawValue();
+    const unit = xAxisUnit.trim();
+    const previous = {xAxisScaleType: stat.xAxisScaleType ?? 'time', xAxisUnit: stat.xAxisUnit ?? ''};
+    this.xAxisError.set('');
+    this.xAxisSaving.set(true);
+    this.xAxisForm.disable();
+    this.stat.update(current => current ? {...current, xAxisScaleType, xAxisUnit: unit} : current);
+    this.statService.renameAxes(stat.id, stat.xAxisName, stat.yAxisName, xAxisScaleType, unit).subscribe({
       next: () => {
-        this.yAxisBoundsSaving.set(false);
-        if (!this.archived()) this.yAxisBoundsForm.enable();
+        this.xAxisSaving.set(false);
+        if (this.stat()?.id === stat.id) {
+          this.xAxisForm.enable();
+          this.xAxisForm.markAsPristine();
+        }
       },
       error: error => {
         if (this.stat()?.id === stat.id) {
-          this.stat.update(current => current ? {...current, yAxisMin: stat.yAxisMin,
-            yAxisMax: stat.yAxisMax} : current);
-          this.yAxisBoundsForm.reset({yAxisMin: stat.yAxisMin ?? null, yAxisMax: stat.yAxisMax ?? null});
+          this.stat.update(current => current ? {...current, ...previous} : current);
           const reason = error.status === 400 && typeof error.error === 'string'
-            ? error.error : 'Could not save Y-axis bounds.';
-          this.yAxisBoundsError.set(`${reason} The previous setting has been restored.`);
+            ? error.error : 'Could not save X-axis settings.';
+          this.xAxisError.set(`${reason} The previous setting has been restored.`);
+          this.xAxisForm.reset(previous);
+          this.xAxisForm.enable();
         }
-        this.yAxisBoundsSaving.set(false);
-        if (!this.archived()) this.yAxisBoundsForm.enable();
+        this.xAxisSaving.set(false);
       }
+    });
+  }
+
+  onYAxisSave(): void {
+    const stat = this.stat();
+    if (!stat || this.archived() || this.yAxisSaving() || this.yAxisForm.invalid || this.yAxisForm.pristine) return;
+    const values = this.yAxisForm.getRawValue();
+    const changes: {request: () => Observable<void>; update: Partial<Stat>}[] = [];
+    if (values.yAxisFormat !== (stat.yAxisFormat ?? 'number')) {
+      changes.push({request: () => this.statService.setYAxisFormat(stat.id, values.yAxisFormat),
+        update: {yAxisFormat: values.yAxisFormat}});
+    }
+    if (values.yAxisMin !== (stat.yAxisMin ?? null) || values.yAxisMax !== (stat.yAxisMax ?? null)) {
+      changes.push({request: () => this.statService.setYAxisBounds(stat.id, values.yAxisMin, values.yAxisMax),
+        update: {yAxisMin: values.yAxisMin, yAxisMax: values.yAxisMax}});
+    }
+    this.yAxisError.set('');
+    this.yAxisSaving.set(true);
+    this.yAxisForm.disable();
+    this.saveSequentially(stat, changes, () => {
+      this.yAxisSaving.set(false);
+      if (this.stat()?.id === stat.id) {
+        this.resetYAxisForm(this.stat()!);
+        this.yAxisForm.enable();
+      }
+    }, error => {
+      this.yAxisSaving.set(false);
+      if (this.stat()?.id === stat.id) {
+        const current = this.stat()!;
+        this.resetYAxisForm(current);
+        this.yAxisForm.enable();
+        const reason = error instanceof HttpErrorResponse && error.status === 400 && typeof error.error === 'string'
+          ? error.error : 'Could not save Y-axis settings.';
+        this.yAxisError.set(`${reason} The form reflects the last confirmed settings.`);
+      }
+    });
+  }
+
+  private saveSequentially(
+    stat: Stat,
+    changes: {request: () => Observable<void>; update: Partial<Stat>}[],
+    onComplete: () => void,
+    onError: (error: unknown) => void
+  ): void {
+    from(changes).pipe(concatMap(change => change.request().pipe(tap(() => {
+      if (this.stat()?.id === stat.id) {
+        this.stat.update(current => current?.id === stat.id ? {...current, ...change.update} : current);
+      }
+    })))).subscribe({complete: onComplete, error: onError});
+  }
+
+  private resetChartDisplayForm(stat: Stat): void {
+    this.chartDisplayForm.reset({
+      chartType: stat.chartType ?? 'line',
+      effortComparison: stat.effortComparison ?? false,
+      stacked: stat.stacked ?? false
+    });
+  }
+
+  private resetYAxisForm(stat: Stat): void {
+    this.yAxisForm.reset({
+      yAxisFormat: stat.yAxisFormat ?? 'number',
+      yAxisMin: stat.yAxisMin ?? null,
+      yAxisMax: stat.yAxisMax ?? null
     });
   }
 

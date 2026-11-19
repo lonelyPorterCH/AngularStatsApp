@@ -31,11 +31,24 @@ describe('CreateForm', () => {
       const field = page.querySelector(`[formControlName="${name}"]`)!.closest('mat-form-field')!;
       expect(field.querySelector('.mat-mdc-form-field-required-marker')).toBeTruthy();
     }
-    for (const name of ['xAxisUnit', 'yAxisMin', 'yAxisMax']) {
+    for (const name of ['yAxisMin', 'yAxisMax']) {
       const field = page.querySelector(`[formControlName="${name}"]`)!.closest('mat-form-field')!;
       expect(field.querySelector('.mat-mdc-form-field-required-marker')).toBeNull();
       expect(field.querySelector('mat-label')!.textContent).not.toContain('(optional)');
     }
+  });
+
+  it('shows the numeric X-axis unit only when the numeric scale is selected', () => {
+    const unitField = () => fixture.nativeElement.querySelector('[formControlName="xAxisUnit"]');
+    expect(unitField()).toBeNull();
+
+    component.statForm.patchValue({xAxisScaleType: 'linear'});
+    fixture.detectChanges();
+    expect(unitField()).toBeTruthy();
+
+    component.statForm.patchValue({xAxisScaleType: 'time'});
+    fixture.detectChanges();
+    expect(unitField()).toBeNull();
   });
 
   it('shows the pace bounds hint only when pace format is selected', async () => {

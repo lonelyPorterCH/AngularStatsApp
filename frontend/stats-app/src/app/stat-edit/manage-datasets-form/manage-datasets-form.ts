@@ -7,8 +7,6 @@ import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {MatList, MatListItem} from '@angular/material/list';
 import {MatCheckbox, MatCheckboxChange} from '@angular/material/checkbox';
-import {MatOption} from '@angular/material/core';
-import {MatSelect} from '@angular/material/select';
 import {DEFAULT_DATASET_COLORS} from '../../models/dataset-colors';
 
 @Component({
@@ -25,8 +23,6 @@ import {DEFAULT_DATASET_COLORS} from '../../models/dataset-colors';
     MatList,
     MatListItem,
     MatCheckbox,
-    MatOption,
-    MatSelect
   ],
   templateUrl: './manage-datasets-form.html',
   styleUrl: './manage-datasets-form.css'
@@ -61,9 +57,7 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
 
     this.axesForm = this.formBuilder.group({
       xAxisName: [this.stat.xAxisName, Validators.required],
-      yAxisName: [this.stat.yAxisName, Validators.required],
-      xAxisScaleType: [this.stat.xAxisScaleType ?? 'time', Validators.required],
-      xAxisUnit: [this.stat.xAxisUnit ?? '']
+      yAxisName: [this.stat.yAxisName, Validators.required]
     });
   }
 
@@ -71,9 +65,7 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     if (changes['stat'] && this.axesForm) {
       this.axesForm.patchValue({
         xAxisName: this.stat.xAxisName,
-        yAxisName: this.stat.yAxisName,
-        xAxisScaleType: this.stat.xAxisScaleType ?? 'time',
-        xAxisUnit: this.stat.xAxisUnit ?? ''
+        yAxisName: this.stat.yAxisName
       });
     }
   }
@@ -123,8 +115,9 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
 
   onRenameAxes(): void {
     if (this.axesForm.invalid) return;
-    const {xAxisName, yAxisName, xAxisScaleType, xAxisUnit} = this.axesForm.value;
-    this.statService.renameAxes(this.stat.id, xAxisName, yAxisName, xAxisScaleType, xAxisUnit?.trim()).subscribe({
+    const {xAxisName, yAxisName} = this.axesForm.value;
+    this.statService.renameAxes(this.stat.id, xAxisName, yAxisName,
+      this.stat.xAxisScaleType ?? 'time', this.stat.xAxisUnit ?? '').subscribe({
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
     });

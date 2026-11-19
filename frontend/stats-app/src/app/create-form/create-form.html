@@ -60,10 +60,12 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Numeric X Axis Unit</mat-label>
-          <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
-        </mat-form-field>
+        @if (statForm.get('xAxisScaleType')?.value === 'linear') {
+          <mat-form-field appearance="outline">
+            <mat-label>Numeric X Axis Unit</mat-label>
+            <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
+          </mat-form-field>
+        }
       </div>
     </fieldset>
 

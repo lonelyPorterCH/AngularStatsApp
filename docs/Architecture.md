@@ -1,0 +1,57 @@
+# StatsApp
+
+A personal statistics tracking app built with Angular 21 and Spring Boot.
+
+## Project Structure
+
+```
+StatsApp/
+├── Dockerfile
+├── frontend/
+│   └── stats-app/      ← Angular 21
+└── backend/            ← Spring Boot
+```
+
+## Development
+
+### Backend
+
+```bash
+cd backend
+./gradlew bootRun
+# runs on http://localhost:8081
+```
+
+### Frontend
+
+```bash
+cd frontend/stats-app
+npm install
+ng serve
+# runs on http://localhost:4200
+```
+
+---
+
+## Deployment (Synology NAS)
+
+### 1. Build the Docker image
+
+Run from the **monorepo root**:
+
+```bash
+docker build -t statsapp .
+```
+
+### 2. Export the image to a tar file
+
+```bash
+docker save statsapp -o statsapp-angular-2.4.x.tar
+```
+
+### 3. Upload to Synology
+
+1. Upload tar file to docker (or any other folder)
+2. Open Container Manager
+3. Image: select statsapp, then Action > Import > Add From File > From this DSM
+4. Container: select statsapp, stop, reset, start

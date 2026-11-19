@@ -100,20 +100,19 @@ describe('ManageDatasetsForm smoothing window', () => {
     fixture.destroy();
   });
 
-  it('groups axis fields and saves their values together', async () => {
+  it('keeps X-axis scale settings out of data management and preserves them when renaming axes', async () => {
     await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
       providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
     const http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(ManageDatasetsForm);
-    fixture.componentRef.setInput('stat', stat);
+    fixture.componentRef.setInput('stat', {...stat, xAxisScaleType: 'linear', xAxisUnit: 'km'});
     fixture.detectChanges();
-    const sections: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.axis-section');
-    expect(sections[0].querySelector('[formControlName="xAxisName"]')).toBeTruthy();
-    expect(sections[0].querySelector('[formControlName="xAxisScaleType"]')).toBeTruthy();
-    expect(sections[0].querySelector('[formControlName="xAxisUnit"]')).toBeTruthy();
-    expect(sections[1].querySelector('[formControlName="yAxisName"]')).toBeTruthy();
-    fixture.componentInstance.axesForm.setValue({xAxisName: 'Distance', yAxisName: 'Speed',
-      xAxisScaleType: 'linear', xAxisUnit: 'km'});
+    expect(fixture.nativeElement.querySelector('[formControlName="xAxisName"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[formControlName="yAxisName"]')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('[formControlName="xAxisScaleType"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[formControlName="xAxisUnit"]')).toBeNull();
+
+    fixture.componentInstance.axesForm.setValue({xAxisName: 'Distance', yAxisName: 'Speed'});
     fixture.componentInstance.onRenameAxes();
     const request = http.expectOne(`${environment.apiBaseUrl}/chart/axes`);
     expect(request.request.body).toEqual({xAxisName: 'Distance', yAxisName: 'Speed',

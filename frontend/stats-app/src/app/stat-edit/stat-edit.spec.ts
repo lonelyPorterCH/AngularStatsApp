@@ -88,6 +88,7 @@ describe('StatEdit', () => {
     fixture.detectChanges();
     expect(hint()).toBeNull();
     component.stat.set({...stat, yAxisFormat: 'pace'});
+    component.yAxisForm.controls.yAxisFormat.setValue('pace');
     fixture.detectChanges();
     expect(hint()?.textContent).toContain('300 = 5:00');
   });

@@ -3,7 +3,7 @@
 ## 1. Adding a player
 
 The frontend calls `POST /api/scores/players/{playerId}`.
-[PlayerService](src/main/java/ch/lonelyporter/statsapp/service/PlayerService.java):
+[PlayerService](../backend/src/main/java/ch/lonelyporter/statsapp/service/PlayerService.java):
 
 1. Validates that the player ID contains 1 to 20 digits.
 2. Checks whether the score repository already tracks the player. If so, it
@@ -23,8 +23,8 @@ For example, the existing `players.json` associates player ID
 
 ## 2. Fetching pages from ScoreSaber
 
-[ScoresConfiguration](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresConfiguration.java)
-and [application.properties](src/main/resources/application.properties)
+[ScoresConfiguration](../backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresConfiguration.java)
+and [application.properties](../backend/src/main/resources/application.properties)
 configure these defaults:
 
 | Purpose      | Default                             |
@@ -36,7 +36,7 @@ configure these defaults:
 These are configurable through `SCORESABER_BASE_URL`,
 `SCORESABER_PLAYER_DETAILS_PATH`, and `SCORESABER_SCORES_PATH`.
 
-[ScoresaberApiAdapter](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresaberApiAdapter.java)
+[ScoresaberApiAdapter](../backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoresaberApiAdapter.java)
 starts at page 1 and requests `page`, `limit=100`, and `sort=recent`.
 For lonelyPorter, the configured default request URL for the first score page is:
 
@@ -66,9 +66,9 @@ empty optional; other HTTP failures propagate. Adding a player translates
 
 ## 3. Mapping API data into score events and leaderboard metadata
 
-[PlayerScoresDto](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/PlayerScoresDto.java)
+[PlayerScoresDto](../backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/PlayerScoresDto.java)
 models both a nested API `score` and a nested `leaderboard`.
-[ScoreMapper](src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoreMapper.java)
+[ScoreMapper](../backend/src/main/java/ch/lonelyporter/statsapp/integration/scoresaber/ScoreMapper.java)
 keeps only entries whose `leaderboard.realm.leaderboardStatus` is `RANKED`,
 then creates a score event and its leaderboard metadata. The metadata is shared
 by the `(leaderboardId, songHash)` pair; a song hash alone is not unique across

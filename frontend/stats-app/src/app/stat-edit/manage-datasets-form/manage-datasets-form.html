@@ -1,31 +1,15 @@
 <div class="datasets-container">
 
-  <!-- Axis rename section -->
-  <h3>Rename Axes</h3>
+  <!-- Axis label section -->
+  <h3>Rename Axis Labels</h3>
   <form (ngSubmit)="onRenameAxes()" [formGroup]="axesForm" class="axes-form">
     <div class="axes-grid">
       <fieldset class="axis-section">
-        <legend>X axis</legend>
+        <legend>Axis labels</legend>
         <mat-form-field appearance="outline">
           <mat-label>X-Axis Name</mat-label>
           <input formControlName="xAxisName" matInput/>
         </mat-form-field>
-        <div class="axis-field-row">
-          <mat-form-field appearance="outline">
-            <mat-label>X-Axis Scale</mat-label>
-            <mat-select formControlName="xAxisScaleType">
-              <mat-option value="time">Date / time</mat-option>
-              <mat-option value="linear">Numeric</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <mat-form-field appearance="outline">
-            <mat-label>Numeric X-Axis Unit</mat-label>
-            <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
-          </mat-form-field>
-        </div>
-      </fieldset>
-      <fieldset class="axis-section">
-        <legend>Y axis</legend>
         <mat-form-field appearance="outline">
           <mat-label>Y-Axis Name</mat-label>
           <input formControlName="yAxisName" matInput/>

@@ -35,36 +35,16 @@ nav {
   font-weight: 500;
 }
 
-.general-section {
-  grid-column: 1 / -1;
-}
-
-.rename-form {
+.section-form {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.rename-form mat-form-field {
-  flex: 1 1 240px;
-  min-width: 0;
-}
-
-.rename-form button {
-  margin-top: 8px;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .form-section mat-slide-toggle {
   display: flex;
   align-items: center;
   min-height: 40px;
-}
-
-.bounds-form {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .field-row {
@@ -75,7 +55,8 @@ nav {
 
 .form-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  margin-top: 8px;
 }
 
 .hint,
