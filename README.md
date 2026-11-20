@@ -1,7 +1,7 @@
 # Overview
 
-Displays all managed (not archived) Charts, each Stat can be expanded for a bigger view and edit options by clicking
-'View Details'.
+The overview shows a card for each active (not archived) chart. Each card includes a chart preview. Select
+**View Details** to open the full chart and its edit and data-management options.
 ![Stats overview with chart cards and additional stats](docs/img/StatsApp_Overview.png)
 
 ## Chart Types
@@ -10,24 +10,23 @@ Displays all managed (not archived) Charts, each Stat can be expanded for a bigg
 
 #### Default
 
-A normal line chart, each point in a dataset is connected by a line.
-Can be filled or unfilled
+A line chart connects the points in each dataset. Dataset lines can be filled or unfilled.
 
 ![Line chart with recorded data points](docs/img/Graph_Type_Linechart.png)
 
-If wished, the datapoints can also be smoothed with a vairable smoothing rate.
+For line charts, you can smooth a dataset's line. The smoothing window controls how many measurements are used.
 
-![Dataset fill, smoothing, measurement window, and gap options](docs/img/Chart_Data_Datasets_Smooth.png)
-![Dataset Percentage Editing](docs/img/Graph_Type_Linechart_Smoothed.png)
-![Dataset Percentage Editing](docs/img/Graph_Type_Linechart_Unsmoothed.png)
+![Dataset smoothing controls and measurement window](docs/img/Chart_Data_Datasets_Smooth.png)
+![Line chart with recorded data points](docs/img/Graph_Type_Linechart_Smoothed.png)
+![Smoothed line chart](docs/img/Graph_Type_Linechart_Unsmoothed.png)
 
-When smoothing is applied, there is also the option to fill gaps of more than 7 days, this helps because otherwise the
-smoothing can make the smoothed graph look different than expected in the areas where data is missing:
+When smoothing is enabled, you can also choose whether to fill gaps of at least 7 days. Without this option, the line
+can appear flat across gaps between measurements:
 
 Without filling the gaps:
-![Smoothed dataset with gaps filled](docs/img/Chart_Data_Datasets_Smooth_Example_1_Fill_Gaps.png)
-With filling the gaps:
 ![Smoothed dataset with gaps left unfilled](docs/img/Chart_Data_Datasets_Smooth_Example_2_Gaps_Not_Filled.png)
+With filling the gaps:
+![Smoothed dataset with gaps filled](docs/img/Chart_Data_Datasets_Smooth_Example_1_Fill_Gaps.png)
 
 #### Stacked
 
@@ -45,33 +44,32 @@ smoothed version of the normal line.
 
 ### Bar Chart
 
-Shows the datapoints as bars, the only option is if they should be stacked or not.
+Shows the data points as bars. You can choose whether to stack them.
 
 ![Bar chart](docs/img/Graph_Type_Bar.png) ![Stacked bar chart](docs/img/Graph_Type_Bar_stacked.png)
 
 ## Value Types
 
-At the moment there are 3 different value Types: Number, Percentage & Pace.
+There are three value formats: Number, Percentage, and Pace.
 
 ### Number
 
-Number is the default, it has no unit, but you can have any string as a unit, which will be displayed next to it.
-
-TODO: image of unit, I thought I've impemented that feature, maybe just for Y-Axis.
+Number is the default format. For a numeric X axis, you can optionally enter a unit, such as `km`, which is displayed
+with the axis values. To show a unit for Y-axis values, include it in the Y-axis name.
 
 ### Pace
 
-Pace values use `m:ss` or `M.SS` notation (for example, `5.1` means `5:10`), datapoints can be entered like the
-mentioned 5.1, as long as it is a valid pace number (not higher than 5.59)
+Enter pace as `m:ss` or `M.SS`. In `M.SS` notation, the part after the dot is the seconds field; a single digit is
+treated as tens of seconds, so `5.1` means `5:10`. If you enter two digits, they must be from `00` to `59`: `5.59`
+means `5:59`, while `5.60` is invalid.
 
 ### Percentage
 
-Percentage values can be entered in 2 ways, as a raw percentage value, or as a number out of a total, from which the
-total will be calculated. The Data itself is saved as the number, the percentage will be calculated out of the given
-100% value.
+Enter a percentage directly, or enter a count and set the dataset's **100% target**. The chart displays the count as a
+percentage of that target.
 
-![Dataset Percentage Editing](docs/img/Chart_Data_Add_Percentage.png)
-![Dataset Percentage Editing](docs/img/Chart_Data_Datasets_percentage.png)
+![Choose whether to enter counts or percentages](docs/img/Chart_Data_Add_Percentage.png)
+![Set the 100% target for each dataset](docs/img/Chart_Data_Datasets_percentage.png)
 
 ## Creating a Chart
 
@@ -134,8 +132,6 @@ The entry-mode control on the data page switches between entering counts and per
 
 ![Rename axis labels and manage dataset labels](docs/img/Chart_Data_Datasets.png)
 
-![Dataset fill, smoothing, measurement window, and gap options](docs/img/Chart_Data_Datasets_Smooth.png)
-
 ### Add, edit, and delete measurements
 
 In **Manage data**, choose **Add Data Point** to select a dataset and enter a
@@ -195,46 +191,44 @@ Select **Archived Graphs** from the overview to see archived charts. Open a char
 review it or select **Unarchive** to return it to the active overview. Archived charts
 cannot be edited or have their data managed until they are restored.
 
-# Scoresaber Scatterplot
+# Beat Saber Score Comparison
 
-On the button of the Overview you find the Additional charts, the first of them is the Beatsaber Scatterplot, click on
-view Details to get to the dedicated tool.
+Open **Beat Saber scores** from the **Additional Stats** cards near the bottom of the overview. The chart plots score
+accuracy against star rating.
 
-Players can be added with their scoresaber id, and scores for existing players can be updated. Player scores as well as
-song information are saved locally, this way, if you improve a score, you can see the score moving up in accuracy as you
-move the slider.
+Enter a **ScoreSaber player ID** and select **Add player** to track a player. Use **Player** to select whose scores to
+view.
 
-- **Update Scores** only loads all new scores for all players.
-- **Update everything** also downloads all song information again, this is only needed when there is a ranking rebalance
-  and
-  star values change.
+- **Update scores only** refreshes score history for tracked players.
+- **Update everything** also refreshes leaderboard star values.
 
-![Import and Edit](docs/img/Beatsaber_Add_Player_Update_Scores.png)
+![Add a player and update scores](docs/img/Beatsaber_Add_Player_Update_Scores.png)
 
 ## Single Player
 
 ![Overview](docs/img/Beatsaber_Overview.png)
 
-On the Overview you can see all the scores of the selected player and can see the values change over time with the
-slider underneath the plot. Additionally, you can highlight all scores that used No Fail (NF), or your top 10 scores at
-the moment. The top 10 are always directly loaded from the scoresaber API.
+In single-player view, the chart shows the selected player's scores. The date slider controls the latest date included
+in the chart. Select **Highlight NF scores** to highlight No Fail scores or **Highlight top 10** to highlight the
+player's current top-ten scores.
 
 ![Top 10](docs/img/Beatsaber_Top_10.png)
 ![No Fail](docs/img/Beatsaber_NF.png)
 
-You can also select songs on the plot by clicking them, this way they are highlighted and shown next to the plot.
-All selected songs (and difficulties) can then be exported as a beatsaber playlist.
+Select points on the chart to add songs to the selection shown beside it. Remove a song with its remove button, or
+select **Export as Beat Saber playlist** to download the selected songs. Difficulty information must be available for
+each selected song to include it in the playlist.
 
 ![Export Playlist](docs/img/Beatsaber_Playlist.png)
 
 ## Compare Players
 
-If you have entered at least 2 players, you can compare their scores.
+Select **Compare scores** and choose a player in **Compare with** to compare two tracked players.
 
 ![Compare Scores](docs/img/Beatsaber_Compare.png)
 
-If both players have played the same songs, their dots will be highlighted and connected with a line. YOu can also see
-both scores in the hover tooltip with the player with the higher score on top.
-There is even a dedicated filter to just show scores that both players have played.
+When both players have a score for the same song and difficulty, their points are connected. Hover over a point to see
+both players' accuracy values, with the higher value first. Select **Only shared songs (same difficulty)** to filter
+the chart to songs both players have played at the same difficulty.
 
 ![Same Score Highlighted](docs/img/Beatsaber_Compare_same_song.png)
