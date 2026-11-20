@@ -69,12 +69,15 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
       fixture.detectChanges();
       expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(0 168 107 / 0.95)');
       expect(dataset.borderColor({dataIndex: 0})).toBe('rgb(0 168 107 / 0.95)');
+      expect(dataset.pointRadius({dataIndex: 0})).toBe(5);
+      expect(dataset.pointHoverRadius({dataIndex: 0})).toBe(6);
       expect(dataset.backgroundColor({dataIndex: 1})).toBe('rgb(0 119 255 / 0.85)');
       expect(component.selectedSongs()).toEqual([]);
       component.toggleScore('player', top);
       expect(dataset.backgroundColor({dataIndex: 0})).toBe(component.selectedSongs()[0].color);
       component.removeSelection(component.selectedSongs()[0].key);
       expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(0 168 107 / 0.95)');
+      expect(dataset.pointRadius({dataIndex: 0})).toBe(5);
       fixture.componentRef.setInput('topScores', []);
       fixture.detectChanges();
       expect(dataset.backgroundColor({dataIndex: 0})).toBe('rgb(255 140 0 / 0.85)');
@@ -245,6 +248,7 @@ describe('selectLatestScoresBySongAndLeaderboard', () => {
       expect(dataset.backgroundColor({dataIndex: 1})).toBe(normalColor);
       expect(dataset.backgroundColor({dataIndex: 2})).toBe(normalColor);
       expect(dataset.pointRadius({dataIndex: 0})).toBe(2);
+      expect(dataset.pointHoverRadius({dataIndex: 0})).toBe(4);
       expect(component.selectedSongs()).toEqual([]);
       expect(fixture.nativeElement.querySelector('.song-selection')).toBeNull();
       fixture.componentRef.setInput('highlightNoFail', false);

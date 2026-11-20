@@ -226,7 +226,12 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
                   return `${dataset.label}: ${item.parsed.y === null || count === undefined ? ''
                     : `${count} / ${dataset.percentageTarget ?? 100}`}`;
                 }
-              } : {}),
+              } : {
+                label: (item: TooltipItem<'line' | 'bar'>) => {
+                  const unit = this.stat.datasets[item.datasetIndex]?.unit?.trim();
+                  return `${item.dataset.label}: ${item.formattedValue}${unit ? ` ${unit}` : ''}`;
+                }
+              }),
               ...(linearXAxis ? {
                 title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
               } : {}),
@@ -237,10 +242,12 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
                 if (!sample) return '';
                 if (!sample.recorded) {
                   return `Interpolated: ${pace ? `${formatPace(sample.rawY)} /km`
-                    : percentage ? countFormat.format(sample.rawY) : sample.rawY}`;
+                    : percentage ? countFormat.format(sample.rawY)
+                      : `${sample.rawY}${dataset.unit?.trim() ? ` ${dataset.unit.trim()}` : ''}`}`;
                 }
                 return `Recorded: ${pace ? `${formatPace(sample.rawY)} /km`
-                  : sample.recorded.y}`;
+                  : percentage ? sample.recorded.y
+                    : `${sample.recorded.y}${dataset.unit?.trim() ? ` ${dataset.unit.trim()}` : ''}`}`;
               }
             }
           }

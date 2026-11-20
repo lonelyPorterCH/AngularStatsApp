@@ -108,9 +108,9 @@ From the detail page:
   restored from **Archived Graphs**.
 - **Delete** removes the chart after confirmation.
 
-The edit page lets you change the chart title, chart type, **Dots + trend** and **Stacked** display options, X-axis
-scale, Y-axis value format, and Y-axis bounds. For a numeric X axis, you can also set its unit. Save each section with
-its own save button.
+The edit page lets you change the chart title, chart type, **Dots + trend** and **Stacked** display options, axis
+labels with **Rename Axis Labels**, X-axis scale, Y-axis value format, and Y-axis bounds. For a numeric X axis, you can
+also set its unit. Save each section with its own save button.
 
 ![Edit chart title, chart display, and axis settings](docs/img/Chart_Edit.png)
 
@@ -118,8 +118,8 @@ its own save button.
 
 Open **Manage data**, then choose the **Manage Datasets** tab to:
 
-- Change the X- and Y-axis labels with **Rename Axis Labels**.
 - Add a dataset by entering a **New Dataset Label** and selecting **Add Dataset**.
+- Set an optional unit for each dataset; it appears beside values in chart tooltips.
 - Rename, reorder, change the color of, or delete a dataset using its controls.
 - Select **Filled** to fill the area beneath a dataset line.
 - Select **Smooth** to smooth a dataset line. Adjust the measurement window to control

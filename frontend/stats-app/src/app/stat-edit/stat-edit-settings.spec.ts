@@ -48,11 +48,29 @@ describe('StatEdit settings sections', () => {
       'Save general settings',
       'Save chart display settings',
       'Save X-axis settings',
-      'Save Y-axis settings'
+      'Save Y-axis settings',
+      'Save axis labels'
     ]);
     expect(buttons.every(button => button.classList.contains('mat-mdc-outlined-button'))).toBe(true);
     expect(Array.from(page.querySelectorAll<HTMLElement>('.settings-grid .form-actions'))
       .every(actions => getComputedStyle(actions).justifyContent === 'flex-start')).toBe(true);
+  });
+
+  it('saves axis labels from chart settings while preserving the X-axis unit and scale', () => {
+    const http = TestBed.inject(HttpTestingController);
+    component.stat.set({...stat, xAxisScaleType: 'linear', xAxisUnit: 'km'});
+    component.axisLabelsForm.setValue({xAxisName: 'Distance', yAxisName: 'Speed'});
+    component.axisLabelsForm.markAsDirty();
+    component.onAxisLabelsSave();
+
+    const request = http.expectOne(`${environment.apiBaseUrl}/weight/axes`);
+    expect(request.request.body).toEqual({
+      xAxisName: 'Distance', yAxisName: 'Speed', xAxisScaleType: 'linear', xAxisUnit: 'km'
+    });
+    request.flush(null);
+    expect(component.stat()).toMatchObject({xAxisName: 'Distance', yAxisName: 'Speed'});
+    expect(component.axisLabelsForm.pristine).toBe(true);
+    http.verify();
   });
 
   it('stages chart display settings and saves changed API operations sequentially', () => {

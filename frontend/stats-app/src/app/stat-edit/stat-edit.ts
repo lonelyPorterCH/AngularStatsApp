@@ -66,6 +66,12 @@ export class StatEdit implements OnInit {
   }, {updateOn: 'blur'});
   xAxisSaving = signal(false);
   xAxisError = signal('');
+  readonly axisLabelsForm = this.formBuilder.nonNullable.group({
+    xAxisName: ['', Validators.required],
+    yAxisName: ['', Validators.required]
+  }, {updateOn: 'blur'});
+  axisLabelsSaving = signal(false);
+  axisLabelsError = signal('');
 
   constructor(
     private statService: StatService,
@@ -86,6 +92,7 @@ export class StatEdit implements OnInit {
   loadStatById(id: string) {
     this.chartDisplayError.set('');
     this.yAxisError.set('');
+    this.axisLabelsError.set('');
 
     forkJoin({
       stat: this.statService.getStatById(id),
@@ -106,6 +113,8 @@ export class StatEdit implements OnInit {
         this.chartDisplayForm.enable();
         this.chartDisplayError.set('');
         this.titleForm.reset({title: result.stat.title});
+        this.axisLabelsForm.reset({xAxisName: result.stat.xAxisName, yAxisName: result.stat.yAxisName});
+        this.axisLabelsForm.enable();
         this.renameError.set('');
         this.renameSaved.set(false);
         this.yAxisForm.reset({
@@ -205,6 +214,36 @@ export class StatEdit implements OnInit {
           this.xAxisForm.enable();
         }
         this.xAxisSaving.set(false);
+      }
+    });
+  }
+
+  onAxisLabelsSave(): void {
+    const stat = this.stat();
+    if (!stat || this.axisLabelsSaving() || this.axisLabelsForm.invalid || this.axisLabelsForm.pristine) return;
+    const {xAxisName, yAxisName} = this.axisLabelsForm.getRawValue();
+    this.axisLabelsError.set('');
+    this.axisLabelsSaving.set(true);
+    this.axisLabelsForm.disable();
+    this.statService.renameAxes(stat.id, xAxisName, yAxisName,
+      stat.xAxisScaleType ?? 'time', stat.xAxisUnit ?? '').subscribe({
+      next: () => {
+        if (this.stat()?.id === stat.id) {
+          this.stat.update(current => current ? {...current, xAxisName, yAxisName} : current);
+          this.axisLabelsForm.reset({xAxisName, yAxisName});
+          this.axisLabelsForm.enable();
+        }
+        this.axisLabelsSaving.set(false);
+      },
+      error: error => {
+        if (this.stat()?.id === stat.id) {
+          this.axisLabelsForm.reset({xAxisName: stat.xAxisName, yAxisName: stat.yAxisName});
+          this.axisLabelsForm.enable();
+          const reason = error.status === 400 && typeof error.error === 'string'
+            ? error.error : 'Could not save axis labels.';
+          this.axisLabelsError.set(`${reason} The previous labels have been restored.`);
+        }
+        this.axisLabelsSaving.set(false);
       }
     });
   }

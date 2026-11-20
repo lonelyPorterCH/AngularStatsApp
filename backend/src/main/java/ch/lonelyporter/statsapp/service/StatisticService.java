@@ -105,6 +105,10 @@ public class StatisticService {
         updateDataset(id, label, (statistic, dataset) -> dataset.setColor(color));
     }
 
+    public void setDatasetUnit(String id, String label, String unit) {
+        updateDataset(id, label, (statistic, dataset) -> dataset.setUnit(unit == null ? "" : unit.strip()));
+    }
+
     public void setDatasetSmoothing(String id, String label, boolean smoothing) {
         updateDataset(id, label, (statistic, dataset) -> dataset.setSmoothing(smoothing));
     }

@@ -146,6 +146,19 @@ describe('Chart', () => {
       .toBe('Recorded: 5:11 /km');
   });
 
+  it('shows dataset units with numeric tooltip values', () => {
+    fixture.componentRef.setInput('stat', {...stat, datasets: [
+      {label: 'Balance', index: 0, unit: ' CHF ', smoothing: true,
+        dataPoints: [{x: '2026-11-01', y: '5'}]}
+    ]});
+    fixture.detectChanges();
+    const tooltip = chartConfig.mock.lastCall![0].options.plugins.tooltip;
+    expect(tooltip.callbacks.label({
+      dataset: {label: 'Balance'}, datasetIndex: 0, formattedValue: '5'
+    })).toBe('Balance: 5 CHF');
+    expect(tooltip.callbacks.afterLabel({datasetIndex: 0, dataIndex: 0})).toBe('Recorded: 5 CHF');
+  });
+
   it('renders stacked bars with exact contributions even when smoothing is stored', () => {
     fixture.componentRef.setInput('stat', {...stat, chartType: 'bar', stacked: true, smoothing: true,
       yAxisMin: 0, datasets: [

@@ -246,6 +246,17 @@ class StatisticServiceTest {
     }
 
     @Test
+    void setDatasetUnitTrimsAndPersistsTheUnitAndAllowsClearingIt() {
+        repository.save(createStatistic("chart", "Chart"));
+
+        service.setDatasetUnit("chart", "Series", " CHF ");
+
+        assertThat(repository.findById("chart").getDatasets().getFirst().getUnit()).isEqualTo("CHF");
+        service.setDatasetUnit("chart", "Series", "");
+        assertThat(repository.findById("chart").getDatasets().getFirst().getUnit()).isEmpty();
+    }
+
+    @Test
     void setSmoothingPersistsPerGraphWithoutChangingMeasurements() {
         Statistic weight = createStatistic("weight", "Weight");
         weight.getDatasets().getFirst().getDataPoints().add(new Statistic.DataPoint("2026-10-30", "64"));

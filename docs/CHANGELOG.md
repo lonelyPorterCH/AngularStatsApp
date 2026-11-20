@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.6.3] - 2026-11-20
+
+### Added
+
+- Optional units per dataset, shown with values in chart tooltips.
+
+### Changed
+
+- Moved **Rename Axis Labels** to chart settings.
+- Enlarge Beat Saber top-ten markers; No Fail marker sizes remain unchanged.
+- Disable point and value editing until the required dataset and point are selected.
+
 ## [2.6.2] - 2026-11-17
 
 ### Added

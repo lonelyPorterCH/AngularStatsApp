@@ -29,6 +29,29 @@ describe('EditDeleteForm', () => {
     expect(component).toBeTruthy();
   });
 
+  it('disables point and value controls until the dataset and point are selected', () => {
+    const stat: Stat = {...component.stat, datasets: [
+      ...component.stat.datasets,
+      {label: 'Other', index: 1, dataPoints: [{x: '2026-11-02', y: '120'}]}
+    ]};
+    fixture.componentRef.setInput('stat', stat);
+    fixture.detectChanges();
+    component.editPointForm.reset();
+    fixture.detectChanges();
+    const pointSelect: HTMLElement = fixture.nativeElement.querySelector('mat-select[formControlName="selectedPoint"]');
+    const valueInput: HTMLInputElement = fixture.nativeElement.querySelector('input[formControlName="value"]');
+    expect(pointSelect.getAttribute('aria-disabled')).toBe('true');
+    expect(valueInput.disabled).toBe(true);
+    component.editPointForm.patchValue({dataset: 'Other'});
+    fixture.detectChanges();
+    expect(pointSelect.getAttribute('aria-disabled')).toBe('false');
+    expect(valueInput.disabled).toBe(true);
+    component.editPointForm.patchValue({selectedPoint: stat.datasets[1].dataPoints[0]});
+    fixture.detectChanges();
+    expect(valueInput.disabled).toBe(false);
+    TestBed.inject(HttpTestingController).verify();
+  });
+
   it('rejects invalid pace before deleting the original measurement', () => {
     component.prefillPoint('Run', component.stat.datasets[0].dataPoints[0]);
     component.editPointForm.patchValue({value: '5:60'});

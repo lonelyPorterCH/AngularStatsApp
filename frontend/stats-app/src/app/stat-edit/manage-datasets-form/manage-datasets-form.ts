@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output, signal} from '@angular/core';
 import {FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators} from '@angular/forms';
 import {Dataset, Stat} from '../../models/stat';
 import {StatService} from '../../services/stat-service';
@@ -27,14 +27,12 @@ import {DEFAULT_DATASET_COLORS} from '../../models/dataset-colors';
   templateUrl: './manage-datasets-form.html',
   styleUrl: './manage-datasets-form.css'
 })
-export class ManageDatasetsForm implements OnInit, OnChanges {
+export class ManageDatasetsForm implements OnInit {
 
   @Input() stat!: Stat;
   @Output() datasetsChanged = new EventEmitter<void>();
 
   addDatasetForm!: FormGroup;
-  axesForm!: FormGroup;
-
   // Map of dataset label -> rename input value (undefined = not editing)
   editingDataset: Record<string, string | undefined> = {};
   smoothingWindowErrors = signal<Record<string, string | undefined>>({});
@@ -43,6 +41,8 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
   interpolateGapsErrors = signal<Record<string, string | undefined>>({});
   percentageTargetSaving = signal<Record<string, boolean>>({});
   percentageTargetErrors = signal<Record<string, string | undefined>>({});
+  datasetUnitSaving = signal<Record<string, boolean>>({});
+  datasetUnitErrors = signal<Record<string, string | undefined>>({});
 
   constructor(
     private statService: StatService,
@@ -54,20 +54,6 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     this.addDatasetForm = this.formBuilder.group({
       label: ['', Validators.required]
     }, {updateOn: 'blur'});
-
-    this.axesForm = this.formBuilder.group({
-      xAxisName: [this.stat.xAxisName, Validators.required],
-      yAxisName: [this.stat.yAxisName, Validators.required]
-    });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['stat'] && this.axesForm) {
-      this.axesForm.patchValue({
-        xAxisName: this.stat.xAxisName,
-        yAxisName: this.stat.yAxisName
-      });
-    }
   }
 
   onAddDataset(): void {
@@ -109,16 +95,6 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
         delete this.editingDataset[oldLabel];
         this.datasetsChanged.emit();
       },
-      error: err => console.error(err)
-    });
-  }
-
-  onRenameAxes(): void {
-    if (this.axesForm.invalid) return;
-    const {xAxisName, yAxisName} = this.axesForm.value;
-    this.statService.renameAxes(this.stat.id, xAxisName, yAxisName,
-      this.stat.xAxisScaleType ?? 'time', this.stat.xAxisUnit ?? '').subscribe({
-      next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
     });
   }
@@ -166,6 +142,26 @@ export class ManageDatasetsForm implements OnInit, OnChanges {
     this.statService.setDatasetColor(this.stat.id, label, color).subscribe({
       next: () => this.datasetsChanged.emit(),
       error: err => console.error(err)
+    });
+  }
+
+  onSetDatasetUnit(dataset: Dataset, input: HTMLInputElement): void {
+    const unit = input.value.trim();
+    this.datasetUnitErrors.update(errors => ({...errors, [dataset.label]: undefined}));
+    if (unit === (dataset.unit ?? '').trim() || this.datasetUnitSaving()[dataset.label]) return;
+    this.datasetUnitSaving.update(saving => ({...saving, [dataset.label]: true}));
+    this.statService.setDatasetUnit(this.stat.id, dataset.label, unit).subscribe({
+      next: () => {
+        this.datasetUnitSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.datasetsChanged.emit();
+      },
+      error: err => {
+        console.error(err);
+        input.value = dataset.unit ?? '';
+        this.datasetUnitSaving.update(saving => ({...saving, [dataset.label]: false}));
+        this.datasetUnitErrors.update(errors => ({...errors, [dataset.label]:
+          'Could not save the unit. Please try again.'}));
+      }
     });
   }
 

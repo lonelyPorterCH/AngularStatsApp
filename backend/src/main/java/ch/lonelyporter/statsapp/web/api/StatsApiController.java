@@ -27,6 +27,9 @@ public class StatsApiController {
     public record ColorRequest(String color) {
     }
 
+    public record DatasetUnitRequest(String unit) {
+    }
+
     public record SmoothingRequest(Boolean smoothing) {
     }
 
@@ -128,6 +131,13 @@ public class StatsApiController {
     public ResponseEntity<Void> setDatasetColor(@PathVariable String id, @PathVariable String label,
                                                 @RequestBody ColorRequest request) {
         statisticService.setDatasetColor(id, label, request.color());
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/dataset/{label}/unit")
+    public ResponseEntity<Void> setDatasetUnit(@PathVariable String id, @PathVariable String label,
+                                               @RequestBody DatasetUnitRequest request) {
+        statisticService.setDatasetUnit(id, label, request.unit());
         return ResponseEntity.ok().build();
     }
 

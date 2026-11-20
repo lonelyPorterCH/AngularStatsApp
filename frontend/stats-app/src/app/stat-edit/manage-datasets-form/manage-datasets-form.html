@@ -1,27 +1,4 @@
 <div class="datasets-container">
-
-  <!-- Axis label section -->
-  <h3>Rename Axis Labels</h3>
-  <form (ngSubmit)="onRenameAxes()" [formGroup]="axesForm" class="axes-form">
-    <div class="axes-grid">
-      <fieldset class="axis-section">
-        <legend>Axis labels</legend>
-        <mat-form-field appearance="outline">
-          <mat-label>X-Axis Name</mat-label>
-          <input formControlName="xAxisName" matInput/>
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label>Y-Axis Name</mat-label>
-          <input formControlName="yAxisName" matInput/>
-        </mat-form-field>
-      </fieldset>
-    </div>
-    <button mat-flat-button type="submit" [disabled]="axesForm.invalid || axesForm.pristine">
-      <mat-icon>save</mat-icon>
-      Save Axes
-    </button>
-  </form>
-
   <!-- Dataset list -->
   <h3>Datasets</h3>
   @if (stat.yAxisFormat === 'percentage') {
@@ -50,6 +27,16 @@
           <div class="dataset-row">
             <div class="dataset-label-section">
               <span>{{ ds.label }}</span>
+                <mat-form-field appearance="outline" class="dataset-unit">
+                  <mat-label>Unit</mat-label>
+                  <input #unitInput matInput [value]="ds.unit ?? ''"
+                         [disabled]="datasetUnitSaving()[ds.label]"
+                         [attr.aria-label]="'Unit for ' + ds.label"
+                         (change)="onSetDatasetUnit(ds, unitInput)"/>
+                </mat-form-field>
+                @if (datasetUnitErrors()[ds.label]) {
+                  <span class="smoothing-error" role="alert">{{ datasetUnitErrors()[ds.label] }}</span>
+                }
                 @if (stat.yAxisFormat === 'percentage') {
                   <mat-form-field appearance="outline" class="percentage-target">
                     <mat-label>100% target</mat-label>

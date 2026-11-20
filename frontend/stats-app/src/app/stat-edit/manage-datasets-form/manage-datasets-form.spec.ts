@@ -100,24 +100,45 @@ describe('ManageDatasetsForm smoothing window', () => {
     fixture.destroy();
   });
 
-  it('keeps X-axis scale settings out of data management and preserves them when renaming axes', async () => {
+  it('keeps axis labels and X-axis scale settings out of data management', async () => {
+    await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
+      providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
+    const fixture = TestBed.createComponent(ManageDatasetsForm);
+    fixture.componentRef.setInput('stat', {...stat, xAxisScaleType: 'linear', xAxisUnit: 'km'});
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[formControlName="xAxisName"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[formControlName="yAxisName"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[formControlName="xAxisScaleType"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[formControlName="xAxisUnit"]')).toBeNull();
+    fixture.destroy();
+  });
+
+  it('saves trimmed dataset units and restores the current unit when saving fails', async () => {
     await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
       providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
     const http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(ManageDatasetsForm);
-    fixture.componentRef.setInput('stat', {...stat, xAxisScaleType: 'linear', xAxisUnit: 'km'});
+    const dataset = {...stat.datasets[0], unit: 'CHF'};
+    fixture.componentRef.setInput('stat', {...stat, datasets: [dataset]});
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('[formControlName="xAxisName"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[formControlName="yAxisName"]')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('[formControlName="xAxisScaleType"]')).toBeNull();
-    expect(fixture.nativeElement.querySelector('[formControlName="xAxisUnit"]')).toBeNull();
-
-    fixture.componentInstance.axesForm.setValue({xAxisName: 'Distance', yAxisName: 'Speed'});
-    fixture.componentInstance.onRenameAxes();
-    const request = http.expectOne(`${environment.apiBaseUrl}/chart/axes`);
-    expect(request.request.body).toEqual({xAxisName: 'Distance', yAxisName: 'Speed',
-      xAxisScaleType: 'linear', xAxisUnit: 'km'});
-    request.flush(null);
+    const input: HTMLInputElement = fixture.nativeElement.querySelector('.dataset-unit input');
+    const changed = vi.spyOn(fixture.componentInstance.datasetsChanged, 'emit');
+    input.value = ' bpm ';
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(input.disabled).toBe(true);
+    const request = http.expectOne(`${environment.apiBaseUrl}/chart/dataset/Series/unit`);
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({unit: 'bpm'});
+    request.flush('Failed', {status: 500, statusText: 'Error'});
+    fixture.detectChanges();
+    expect(input.value).toBe('CHF');
+    expect(fixture.nativeElement.querySelector('[role=alert]').textContent).toContain('Could not save the unit');
+    expect(changed).not.toHaveBeenCalled();
+    input.value = '';
+    input.dispatchEvent(new Event('change'));
+    http.expectOne(`${environment.apiBaseUrl}/chart/dataset/Series/unit`).flush(null);
+    expect(changed).toHaveBeenCalledOnce();
     http.verify();
     fixture.destroy();
   });

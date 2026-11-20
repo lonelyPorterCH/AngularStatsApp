@@ -75,6 +75,14 @@ class StatsApiControllerTest {
     }
 
     @Test
+    void datasetUnitEndpointAcceptsAndPersistsAUnit() throws Exception {
+        mvc.perform(patch("/api/stats/chart/dataset/Series/unit")
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"unit\":\" CHF \"}"))
+                .andExpect(status().isOk());
+        verify(service).setDatasetUnit("chart", "Series", " CHF ");
+    }
+
+    @Test
     void yAxisBoundsEndpointAcceptsOptionalBoundsAndClearingBoth() throws Exception {
         mvc.perform(patch("/api/stats/chart/y-axis-bounds")
                         .contentType(MediaType.APPLICATION_JSON)

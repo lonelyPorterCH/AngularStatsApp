@@ -131,6 +131,27 @@
       </div>
     </form>
   </fieldset>
+
+  <fieldset class="form-section" aria-label="Axis labels">
+    <legend>Rename Axis Labels</legend>
+    <form class="section-form" [formGroup]="axisLabelsForm" (ngSubmit)="onAxisLabelsSave()">
+      <mat-form-field appearance="outline">
+        <mat-label>X-Axis Name</mat-label>
+        <input matInput formControlName="xAxisName">
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+        <mat-label>Y-Axis Name</mat-label>
+        <input matInput formControlName="yAxisName">
+      </mat-form-field>
+      @if (axisLabelsError()) { <p class="setting-error" role="alert">{{ axisLabelsError() }}</p> }
+      <div class="form-actions">
+        <button matButton="outlined" type="submit"
+          [disabled]="axisLabelsSaving() || axisLabelsForm.invalid || axisLabelsForm.pristine">
+          Save axis labels
+        </button>
+      </div>
+    </form>
+  </fieldset>
 </div>
 
 <div class="chart-container">

@@ -74,6 +74,8 @@ public class Statistic {
         private Boolean interpolateGaps = false;
         private String color;
         @Getter(AccessLevel.NONE)
+        private String unit = "";
+        @Getter(AccessLevel.NONE)
         private Double percentageTarget = 100.0;
         private List<DataPoint> dataPoints = new ArrayList<>();
 
@@ -97,6 +99,10 @@ public class Statistic {
 
         public double getPercentageTarget() {
             return percentageTarget == null ? 100.0 : percentageTarget;
+        }
+
+        public String getUnit() {
+            return unit == null ? "" : unit;
         }
     }
 

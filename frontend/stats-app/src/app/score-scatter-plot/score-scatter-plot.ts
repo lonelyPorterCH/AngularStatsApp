@@ -282,11 +282,15 @@ export class ScoreScatterPlot implements OnChanges, AfterViewInit, OnDestroy {
             borderColor: context => this.pointColor(playerId, scores[context.dataIndex], `rgb(${color} / 0.85)`),
             pointRadius: context => {
               const score = scores[context.dataIndex];
-              return score && this.selectionByKey().has(this.selectionKey(playerId, score)) ? 6 : 2;
+              if (!score) return 2;
+              if (this.selectionByKey().has(this.selectionKey(playerId, score))) return 6;
+              return this.canSelect && isExactTopScore(score, this.topScores, this.maximumDate) ? 5 : 2;
             },
             pointHoverRadius: context => {
               const score = scores[context.dataIndex];
-              return score && this.selectionByKey().has(this.selectionKey(playerId, score)) ? 7 : 4;
+              if (!score) return 4;
+              if (this.selectionByKey().has(this.selectionKey(playerId, score))) return 7;
+              return this.canSelect && isExactTopScore(score, this.topScores, this.maximumDate) ? 6 : 4;
             },
           };
         })

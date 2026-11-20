@@ -2,39 +2,6 @@
   padding: 16px 0;
 }
 
-.axes-form {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
-.axes-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-  width: 100%;
-  max-width: 500px;
-}
-
-.axis-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  margin: 0;
-  padding: 8px 16px 16px;
-  border: 1px solid var(--mat-sys-outline-variant, #ccc);
-  border-radius: 12px;
-}
-
-.axis-section legend {
-  padding: 0 4px;
-  font-weight: 500;
-}
-
 .add-dataset-form {
   display: flex;
   align-items: center;
@@ -107,6 +74,11 @@ mat-list-item {
 
 .percentage-target {
   width: 150px;
+  margin-top: 16px;
+}
+
+.dataset-unit {
+  width: 120px;
   margin-top: 16px;
 }
 

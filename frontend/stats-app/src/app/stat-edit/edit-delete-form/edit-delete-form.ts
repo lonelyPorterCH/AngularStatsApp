@@ -63,16 +63,30 @@ export class EditDeleteForm implements OnInit, OnChanges {
   ngOnInit(): void {
     this.editPointForm = this.formBuilder.group({
       dataset: [null, Validators.required],
-      selectedPoint: [null, Validators.required],
-      value: ['']
+      selectedPoint: [{value: null, disabled: true}, Validators.required],
+      value: [{value: '', disabled: true}]
     }, {updateOn: 'blur'});
     this.editPointForm.get('value')!.valueChanges.subscribe(() => this.entryValue.reset());
 
     this.editPointForm.get('dataset')?.valueChanges.subscribe(label => {
       this.entryValue.reset();
       this.selectedDatasetLabel.set(label);
-      this.editPointForm.get('selectedPoint')?.reset();
-      this.editPointForm.get('value')?.reset();
+      const selectedPoint = this.editPointForm.get('selectedPoint')!;
+      selectedPoint.reset();
+      if (label) selectedPoint.enable();
+      else selectedPoint.disable();
+      const value = this.editPointForm.get('value')!;
+      value.reset();
+      value.disable();
+    });
+
+    this.editPointForm.get('selectedPoint')?.valueChanges.subscribe(point => {
+      const value = this.editPointForm.get('value')!;
+      if (point) value.enable();
+      else {
+        value.reset();
+        value.disable();
+      }
     });
 
     this.preselectDatasetIfSingle();
@@ -113,7 +127,9 @@ export class EditDeleteForm implements OnInit, OnChanges {
     const dataset = this.stat.datasets.find(ds => ds.label === this.selectedDatasetLabel());
     const value = dataset && this.stat.yAxisFormat === 'percentage'
       ? this.entryValue.displayCount(point.y, dataset, isPercentageInput(this.stat)) : point.y;
-    this.editPointForm.get('value')!.setValue(value, {emitEvent: false});
+    const control = this.editPointForm.get('value')!;
+    control.enable({emitEvent: false});
+    control.setValue(value, {emitEvent: false});
   }
 
   pointInputValue(point: DataPoint): string {
@@ -122,7 +138,8 @@ export class EditDeleteForm implements OnInit, OnChanges {
   }
 
   onEditPoint(): void {
-    if (this.editPointForm.get('selectedPoint')?.invalid || !this.stat) return;
+    const selectedControl = this.editPointForm.get('selectedPoint');
+    if (!this.stat || !selectedControl?.value || selectedControl.invalid) return;
     this.submissionError.set('');
 
     const datasetLabel: string = this.editPointForm.get('dataset')?.value;

@@ -19,6 +19,7 @@ export interface Stat {
 export interface Dataset {
   label: string;
   index: number;
+  unit?: string;
   filled?: boolean;
   smoothing?: boolean;
   smoothingWindow?: number;

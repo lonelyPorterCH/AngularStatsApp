@@ -120,6 +120,10 @@ export class StatService {
     return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/color`, {color});
   }
 
+  setDatasetUnit(id: string, label: string, unit: string): Observable<void> {
+    return this.http.patch<void>(`${this.baseUrl}/${id}/dataset/${encodeURIComponent(label)}/unit`, {unit});
+  }
+
   renameAxes(id: string, xAxisName: string, yAxisName: string, xAxisScaleType: 'time' | 'linear' = 'time', xAxisUnit = ''): Observable<void> {
     return this.http.patch<void>(`${this.baseUrl}/${id}/axes`, {xAxisName, yAxisName, xAxisScaleType, xAxisUnit});
   }

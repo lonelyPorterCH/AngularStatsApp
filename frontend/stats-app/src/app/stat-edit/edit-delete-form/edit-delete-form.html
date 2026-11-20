@@ -29,7 +29,7 @@
     @if (isPercentageInput(stat)) { <span matTextSuffix>%</span> }
   </mat-form-field>
 
-  <button mat-flat-button type="submit">
+  <button mat-flat-button type="submit" [disabled]="!editPointForm.get('selectedPoint')?.value">
     <mat-icon>save</mat-icon>
     Save
   </button>
