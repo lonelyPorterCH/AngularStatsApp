@@ -1,8 +1,8 @@
 package ch.lonelyporter.statsapp.web;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 /**
  * Forwards all non-API, non-static-asset GET requests to {@code index.html} so
@@ -22,11 +22,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 @Controller
 public class SpaController {
 
-    @RequestMapping(
-            value = {"/{path:[^.]*}", "/**/{path:[^.]*}"},
-            method = RequestMethod.GET
-    )
-    public String forward() {
+    @GetMapping({"/{path:[^.]*}", "/**/{path:[^.]*}"})
+    public String forward(@PathVariable("path") String path) {
         return "forward:/index.html";
     }
 }

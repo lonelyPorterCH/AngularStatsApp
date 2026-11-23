@@ -2,7 +2,6 @@ package ch.lonelyporter.statsapp.service;
 
 import ch.lonelyporter.statsapp.domain.scores.Player;
 import ch.lonelyporter.statsapp.domain.scores.PlayerRepository;
-import ch.lonelyporter.statsapp.domain.scores.Score;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRecord;
 import ch.lonelyporter.statsapp.domain.scores.ScoreRepository;
 import ch.lonelyporter.statsapp.integration.scoresaber.ScoresaberApiAdapter;

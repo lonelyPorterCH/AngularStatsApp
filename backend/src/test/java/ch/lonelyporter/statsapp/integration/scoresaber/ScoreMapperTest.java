@@ -13,22 +13,25 @@ class ScoreMapperTest {
     @Test
     void rejectsMissingTopScoreOrLeaderboardWithAnExplicitError() {
         var score = new PlayerScoresDto.Score(1, 0.9, 900, java.time.Instant.EPOCH, List.of());
+        var missingScore = new PlayerScoresDto.PlayerScore(null, null);
+        var missingLeaderboard = new PlayerScoresDto.PlayerScore(score, null);
         assertThatThrownBy(() -> ScoreMapper.mapTopScore(null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("top score");
-        assertThatThrownBy(() -> ScoreMapper.mapTopScore(new PlayerScoresDto.PlayerScore(null, null)))
+        assertThatThrownBy(() -> ScoreMapper.mapTopScore(missingScore))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("top score");
-        assertThatThrownBy(() -> ScoreMapper.mapTopScore(new PlayerScoresDto.PlayerScore(score, null)))
+        assertThatThrownBy(() -> ScoreMapper.mapTopScore(missingLeaderboard))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("leaderboard");
     }
 
     @Test
     void mapsNoFailOnlyWhenExactNfModifierIsPresent() {
+        var modifiersWithNull = Arrays.asList("NF", null);
         assertThat(ScoreMapper.mapNoFail(List.of("NF"))).isTrue();
         assertThat(ScoreMapper.mapNoFail(List.of("FS", "NF"))).isTrue();
         assertThat(ScoreMapper.mapNoFail(List.of())).isFalse();
         assertThat(ScoreMapper.mapNoFail(List.of("FS", "NFS"))).isFalse();
         assertThatThrownBy(() -> ScoreMapper.mapNoFail(null)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> ScoreMapper.mapNoFail(Arrays.asList("NF", null)))
+        assertThatThrownBy(() -> ScoreMapper.mapNoFail(modifiersWithNull))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -46,10 +49,12 @@ class ScoreMapperTest {
 
     @Test
     void rejectsMissingOrUnknownDifficultyRatherThanGuessing() {
+        var unknownDifficulty = new PlayerScoresDto.Difficulty(2, "SoloStandard");
+        var unknownCharacteristic = new PlayerScoresDto.Difficulty(5, "Unknown");
         assertThatThrownBy(() -> ScoreMapper.mapDifficulty(null)).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> ScoreMapper.mapDifficulty(new PlayerScoresDto.Difficulty(2, "SoloStandard")))
+        assertThatThrownBy(() -> ScoreMapper.mapDifficulty(unknownDifficulty))
                 .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> ScoreMapper.mapDifficulty(new PlayerScoresDto.Difficulty(5, "Unknown")))
+        assertThatThrownBy(() -> ScoreMapper.mapDifficulty(unknownCharacteristic))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }
