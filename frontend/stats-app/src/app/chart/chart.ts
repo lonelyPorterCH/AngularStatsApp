@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, viewChild} from '@angular/core';
-import {Chart, ChartDataset, registerables, TooltipItem} from 'chart.js';
+import {Chart, ChartDataset, ChartOptions, registerables, TooltipItem} from 'chart.js';
 import 'chartjs-adapter-luxon';
 import {DateTime} from 'luxon';
 import {DataPoint, Dataset, Stat} from '../models/stat';
@@ -61,8 +61,235 @@ export function effortTrendPoints(points: DataPoint[], stat: Stat): {x: string |
     const window = raw.slice(Math.max(0, index - 3), index + 4)
       .map(value => value.y).filter(Number.isFinite);
     return {...point, y: Number.isFinite(point.y)
-      ? window.reduce((sum, value) => sum + value, 0) / window.length : NaN};
+      ? window.reduce((sum, value) => sum + value, 0) / window.length : Number.NaN};
   });
+}
+
+type ChartContext = {
+  stat: Stat;
+  bar: boolean;
+  comparison: boolean;
+  pace: boolean;
+  percentage: boolean;
+  linearXAxis: boolean;
+  stacked: boolean;
+  linePoints: ChartSample[][];
+  sourcePoints: (DataPoint | undefined)[][];
+  xValues: (string | number)[];
+  xAxisUnit: string;
+  xAxisTitle: string;
+  barBounds: {suggestedMin?: number; suggestedMax?: number};
+  colors: string[];
+};
+
+function getBarBounds(xValues: (string | number)[], linearXAxis: boolean): ChartContext['barBounds'] {
+  const coordinates = [...new Set(xValues.map(value => linearXAxis
+    ? Number(value) : DateTime.fromISO(String(value)).toMillis()).filter(Number.isFinite))]
+    .sort((first, second) => first - second);
+  if (!coordinates.length) return {};
+  const minimumGap = coordinates.slice(1).reduce((gap, value, index) =>
+    Math.min(gap, value - coordinates[index]), Infinity);
+  const defaultGap = linearXAxis ? 1 : 86_400_000;
+  const padding = (Number.isFinite(minimumGap) ? minimumGap : defaultGap) / 2;
+  return {suggestedMin: coordinates[0] - padding, suggestedMax: coordinates.at(-1)! + padding};
+}
+
+function createChartContext(stat: Stat): ChartContext {
+  const bar = stat.chartType === 'bar';
+  const comparison = !bar && !!stat.effortComparison;
+  const linearXAxis = isLinearXAxis(stat);
+  const sortedPoints = stat.datasets.map(dataset =>
+    [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, stat)));
+  const linePoints = stat.datasets.map(dataset => prepareLinePoints(dataset.dataPoints, stat,
+    !bar && !comparison && !!dataset.smoothing, dataset.smoothingWindow ?? 7, !!dataset.interpolateGaps));
+  const xValues = [...new Set(sortedPoints.flat().map(point => parseXAxisValue(point.x, stat)))]
+    .sort((first, second) => compareDataPoints({x: String(first), y: ''}, {x: String(second), y: ''}, stat));
+  const sourcePoints = bar ? sortedPoints.map(points => {
+    const byX = new Map(points.map(point => [parseXAxisValue(point.x, stat), point]));
+    return xValues.map(x => byX.get(x));
+  }) : linePoints.map(points => points.map(point => point.recorded));
+  const xAxisUnit = linearXAxis ? stat.xAxisUnit?.trim() ?? '' : '';
+  return {
+    stat, bar, comparison, linearXAxis, linePoints, sourcePoints, xValues, xAxisUnit,
+    pace: stat.yAxisFormat === 'pace',
+    percentage: stat.yAxisFormat === 'percentage',
+    stacked: !comparison && !!stat.stacked && stat.datasets.length >= 2,
+    xAxisTitle: xAxisUnit ? `${stat.xAxisName} (${xAxisUnit})` : stat.xAxisName,
+    barBounds: bar ? getBarBounds(xValues, linearXAxis) : {},
+    colors: stat.datasets.map((dataset, index) =>
+      dataset.color || DEFAULT_DATASET_COLORS[index % DEFAULT_DATASET_COLORS.length])
+  };
+}
+
+function chartY(value: number, dataset: Dataset, percentage: boolean): number {
+  return percentage ? value / (dataset.percentageTarget ?? 100) * 100 : value;
+}
+
+function lineFill(dataset: Dataset, context: ChartContext, index: number): string | false {
+  if (context.comparison || !dataset.filled) return false;
+  return context.stacked && index > 0 ? '-1' : 'origin';
+}
+
+function datasetPoints(context: ChartContext, dataset: Dataset, index: number): ChartCoordinate[] {
+  if (!context.bar) {
+    return context.linePoints[index].map(({x, y}) => ({x, y: chartY(y, dataset, context.percentage)}));
+  }
+  return context.sourcePoints[index].map((point, pointIndex) => ({
+    x: context.xValues[pointIndex],
+    y: point ? chartY(parseYAxisValue(point.y, context.stat), dataset, context.percentage) : null
+  }));
+}
+
+function createDatasets(context: ChartContext): ChartDataset<'line' | 'bar', ChartCoordinate[]>[] {
+  const {stat, bar, comparison, colors, percentage} = context;
+  const datasets: ChartDataset<'line' | 'bar', ChartCoordinate[]>[] = stat.datasets.map((dataset, index) => {
+    const color = colors[index];
+    const smoothing = !bar && !comparison && !!dataset.smoothing;
+    return {
+      label: dataset.label,
+      data: datasetPoints(context, dataset, index),
+      ...(!bar ? {
+        showLine: !comparison,
+        fill: lineFill(dataset, context, index),
+        tension: 0,
+        cubicInterpolationMode: smoothing ? 'monotone' as const : 'default' as const,
+        pointRadius: smoothing ? 0 : 2,
+        pointHoverRadius: smoothing ? 0 : 4,
+        pointHitRadius: smoothing ? 6 : 1,
+        pointBackgroundColor: `rgb(${color} / 0.2)`,
+      } : {}),
+      borderWidth: 1,
+      borderColor: `rgb(${color} / 0.85)`,
+      backgroundColor: `rgb(${color} / ${bar ? 0.85 : 0.2})`,
+    };
+  });
+  if (comparison) {
+    datasets.push(...stat.datasets.map((dataset, index): ChartDataset<'line' | 'bar', ChartCoordinate[]> => ({
+      label: `${dataset.label} - trend`,
+      data: effortTrendPoints(dataset.dataPoints, stat).map(({x, y}) => ({x, y: chartY(y, dataset, percentage)})),
+      borderColor: `rgb(${colors[index]} / 0.85)`,
+      backgroundColor: `rgb(${colors[index]} / 0.2)`,
+      borderWidth: 2,
+      showLine: true,
+      fill: false,
+      cubicInterpolationMode: 'monotone',
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      pointHitRadius: 0,
+      order: 1,
+    })));
+  }
+  return datasets;
+}
+
+function withUnit(value: string | number, unit: string | undefined): string {
+  const suffix = unit?.trim();
+  return suffix ? `${value} ${suffix}` : String(value);
+}
+
+function percentageCount(context: ChartContext, item: TooltipItem<'line' | 'bar'>,
+                         countFormat: Intl.NumberFormat): string | undefined {
+  const dataset = context.stat.datasets[item.datasetIndex];
+  const sample = context.linePoints[item.datasetIndex]?.[item.dataIndex];
+  if (context.bar) return context.sourcePoints[item.datasetIndex]?.[item.dataIndex]?.y;
+  if (sample?.recorded && (!dataset.smoothing || context.comparison)) return sample.recorded.y;
+  return sample === undefined ? undefined : countFormat.format(sample.y);
+}
+
+function tooltipLabel(context: ChartContext, item: TooltipItem<'line' | 'bar'>,
+                      countFormat: Intl.NumberFormat): string {
+  if (context.pace) {
+    const value = item.parsed.y === null ? '' : formatPace(item.parsed.y);
+    return `${item.dataset.label}: ${value} /km`;
+  }
+  if (context.percentage) {
+    const dataset = context.stat.datasets[item.datasetIndex];
+    const count = percentageCount(context, item, countFormat);
+    const value = item.parsed.y === null || count === undefined ? '' : `${count} / ${dataset.percentageTarget ?? 100}`;
+    return `${dataset.label}: ${value}`;
+  }
+  const unit = context.stat.datasets[item.datasetIndex]?.unit;
+  return `${item.dataset.label}: ${withUnit(item.formattedValue, unit)}`;
+}
+
+function tooltipAfterLabel(context: ChartContext, item: TooltipItem<'line' | 'bar'>,
+                           countFormat: Intl.NumberFormat): string {
+  const dataset = context.stat.datasets[item.datasetIndex];
+  if (!dataset?.smoothing || context.bar || context.comparison) return '';
+  const sample = context.linePoints[item.datasetIndex]?.[item.dataIndex];
+  if (!sample) return '';
+  const label = sample.recorded ? 'Recorded' : 'Interpolated';
+  if (context.pace) return `${label}: ${formatPace(sample.rawY)} /km`;
+  if (context.percentage) {
+    const value = sample.recorded ? sample.recorded.y : countFormat.format(sample.rawY);
+    return `${label}: ${value}`;
+  }
+  const value = sample.recorded ? sample.recorded.y : sample.rawY;
+  return `${label}: ${withUnit(value, dataset.unit)}`;
+}
+
+function createTooltip(context: ChartContext): NonNullable<ChartOptions<'line' | 'bar'>['plugins']>['tooltip'] {
+  const countFormat = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
+  return {
+    ...(context.comparison ? {
+      filter: (item: TooltipItem<'line' | 'bar'>) => item.datasetIndex < context.stat.datasets.length
+    } : {}),
+    ...(context.stacked ? {
+      mode: context.bar ? 'index' as const : 'nearest' as const,
+      axis: 'x' as const,
+      intersect: false,
+      filter: (item: TooltipItem<'line' | 'bar'>, _index: number, items: TooltipItem<'line' | 'bar'>[]) =>
+        item.parsed.x === items[0]?.parsed.x
+    } : {}),
+    callbacks: {
+      ...(context.stacked && !context.percentage ? {
+        footer: (items: {parsed: {y: number | null}}[]) => {
+          const total = items.reduce((sum, item) => sum + (item.parsed.y ?? 0), 0);
+          return `Total: ${context.pace ? formatPace(total) : total}`;
+        }
+      } : {}),
+      label: item => tooltipLabel(context, item, countFormat),
+      ...(context.linearXAxis ? {
+        title: (items: {parsed: {x: number | null}}[]) => withUnit(items[0]?.parsed.x ?? '', context.xAxisUnit)
+      } : {}),
+      afterLabel: item => tooltipAfterLabel(context, item, countFormat)
+    }
+  };
+}
+
+function yAxisTitle(context: ChartContext): string {
+  if (context.pace) return `${context.stat.yAxisName} (min/km)`;
+  if (context.percentage) return `${context.stat.yAxisName} (%)`;
+  return context.stat.yAxisName;
+}
+
+function createScales(context: ChartContext): ChartOptions<'line' | 'bar'>['scales'] {
+  const {stat, bar, stacked, linearXAxis, xAxisUnit, pace, percentage} = context;
+  const lineStacked = stacked ? 'single' as const : false;
+  let ticks = {};
+  if (pace) ticks = {callback: (value: string | number) => `${formatPace(Number(value))} /km`};
+  else if (percentage) ticks = {callback: (value: string | number) => `${value}%`};
+  return {
+    x: {
+      type: linearXAxis ? 'linear' : 'time',
+      ...(bar ? {stacked, offset: true, ...context.barBounds} : {}),
+      ticks: {
+        maxTicksLimit: 6,
+        ...(linearXAxis ? {callback: (value: string | number) => withUnit(value, xAxisUnit)} : {})
+      },
+      ...(linearXAxis ? {} : {time: {tooltipFormat: 'DD'}}),
+      title: {display: true, text: context.xAxisTitle}
+    },
+    y: {
+      beginAtZero: false,
+      min: stat.yAxisMin ?? undefined,
+      max: stat.yAxisMax ?? undefined,
+      stacked: bar ? stacked : lineStacked,
+      reverse: stat.reverse,
+      ...(pace || percentage ? {ticks} : {}),
+      title: {display: true, text: yAxisTitle(context)}
+    }
+  };
 }
 
 @Component({
@@ -94,92 +321,17 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   private buildChart(): void {
-    if (!this.stat) {
-      return;
-    }
+    if (!this.stat) return;
     this.chart?.destroy();
-    const bar = this.stat.chartType === 'bar';
-    const comparison = !bar && !!this.stat.effortComparison;
-    const pace = this.stat.yAxisFormat === 'pace';
-    const percentage = this.stat.yAxisFormat === 'percentage';
-    const formatPercentage = (value: string | number) => `${value}%`;
-    const chartY = (value: number, dataset: Dataset) =>
-      percentage ? value / (dataset.percentageTarget ?? 100) * 100 : value;
-    const countFormat = new Intl.NumberFormat(undefined, {maximumFractionDigits: 2});
-    const linearXAxis = isLinearXAxis(this.stat);
-    const stacked = !comparison && !!this.stat.stacked && this.stat.datasets.length >= 2;
-    const sortedPoints = this.stat.datasets.map(dataset =>
-      [...dataset.dataPoints].sort((first, second) => compareDataPoints(first, second, this.stat)));
-    const linePoints = this.stat.datasets.map(dataset => prepareLinePoints(dataset.dataPoints, this.stat,
-      !bar && !comparison && !!dataset.smoothing, dataset.smoothingWindow ?? 7, !!dataset.interpolateGaps));
-    const xValues = [...new Set(sortedPoints.flat().map(point => parseXAxisValue(point.x, this.stat)))]
-      .sort((first, second) => compareDataPoints({x: String(first), y: ''}, {x: String(second), y: ''}, this.stat));
-    const sourcePoints = bar ? sortedPoints.map(points => {
-      const byX = new Map(points.map(point => [parseXAxisValue(point.x, this.stat), point]));
-      return xValues.map(x => byX.get(x));
-    }) : linePoints.map(points => points.map(point => point.recorded));
-    const coordinates = bar ? [...new Set(xValues.map(value => linearXAxis
-      ? Number(value) : DateTime.fromISO(String(value)).toMillis()).filter(Number.isFinite))]
-      .sort((first, second) => first - second) : [];
-    const minimumGap = coordinates.slice(1).reduce((gap, value, index) =>
-      Math.min(gap, value - coordinates[index]), Infinity);
-    const padding = (Number.isFinite(minimumGap) ? minimumGap : linearXAxis ? 1 : 86_400_000) / 2;
-    const barBounds = coordinates.length ? {
-      suggestedMin: coordinates[0] - padding,
-      suggestedMax: coordinates[coordinates.length - 1] + padding
-    } : {};
-    const xAxisUnit = linearXAxis ? this.stat.xAxisUnit?.trim() ?? '' : '';
-    const xAxisTitle = xAxisUnit ? `${this.stat.xAxisName} (${xAxisUnit})` : this.stat.xAxisName;
-    const colors = this.stat.datasets.map((ds, i) => ds.color || DEFAULT_DATASET_COLORS[i % DEFAULT_DATASET_COLORS.length]);
-    const datasets: ChartDataset<'line' | 'bar', ChartCoordinate[]>[] = this.stat.datasets.map((ds, i) => {
-      const color = colors[i];
-      const smoothing = !bar && !comparison && !!ds.smoothing;
-      return {
-        label: ds.label,
-        data: (bar ? sourcePoints[i].map((point, index) => ({
-          x: xValues[index], y: point ? chartY(parseYAxisValue(point.y, this.stat), ds) : null
-        })) : linePoints[i].map(({x, y}) => ({x, y: chartY(y, ds)}))),
-        ...(!bar ? {
-          showLine: !comparison,
-          fill: !comparison && ds.filled ? (stacked && i > 0 ? '-1' : 'origin') : false,
-          tension: 0,
-          cubicInterpolationMode: smoothing ? 'monotone' as const : 'default' as const,
-          pointRadius: smoothing ? 0 : 2,
-          pointHoverRadius: smoothing ? 0 : 4,
-          pointHitRadius: smoothing ? 6 : 1,
-          pointBackgroundColor: `rgb(${color} / 0.2)`,
-        } : {}),
-        borderWidth: 1,
-        borderColor: `rgb(${color} / 0.85)`,
-        backgroundColor: `rgb(${color} / ${bar ? 0.85 : 0.2})`,
-      };
-    });
-    if (comparison) {
-      datasets.push(...this.stat.datasets.map((ds, i): ChartDataset<'line' | 'bar', ChartCoordinate[]> => ({
-        label: `${ds.label} - trend`,
-        data: effortTrendPoints(ds.dataPoints, this.stat).map(({x, y}) => ({x, y: chartY(y, ds)})),
-        borderColor: `rgb(${colors[i]} / 0.85)`,
-        backgroundColor: `rgb(${colors[i]} / 0.2)`,
-        borderWidth: 2,
-        showLine: true,
-        fill: false,
-        cubicInterpolationMode: 'monotone',
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        pointHitRadius: 0,
-        order: 1,
-      })));
-    }
+    const context = createChartContext(this.stat);
     this.chart = new Chart<'line' | 'bar', ChartCoordinate[]>(this.canvas().nativeElement, {
-      type: bar ? 'bar' : 'line',
-      data: {
-        datasets
-      },
+      type: context.bar ? 'bar' : 'line',
+      data: {datasets: createDatasets(context)},
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          ...(comparison ? {
+          ...(context.comparison ? {
             legend: {
               labels: {filter: (item: {datasetIndex?: number}) => (item.datasetIndex ?? 0) < this.stat.datasets.length},
               onClick: (_event: unknown, item: {datasetIndex?: number},
@@ -196,97 +348,21 @@ export class ChartComponent implements OnChanges, AfterViewInit, OnDestroy {
               }
             }
           } : {}),
-          tooltip: {
-            ...(comparison ? {
-              filter: (item: TooltipItem<'line' | 'bar'>) => item.datasetIndex < this.stat.datasets.length
-            } : {}),
-            ...(stacked ? {
-              mode: bar ? 'index' as const : 'nearest' as const,
-              axis: 'x' as const,
-              intersect: false,
-              filter: (item: TooltipItem<'line' | 'bar'>, _index: number, items: TooltipItem<'line' | 'bar'>[]) =>
-                item.parsed.x === items[0]?.parsed.x
-            } : {}),
-            callbacks: {
-              ...(stacked && !percentage ? {
-                footer: (items: {parsed: {y: number | null}}[]) =>
-                  `Total: ${pace ? formatPace(items.reduce((total, item) => total + (item.parsed.y ?? 0), 0))
-                    : items.reduce((total, item) => total + (item.parsed.y ?? 0), 0)}`
-              } : {}),
-              ...(pace ? {
-                label: (item: TooltipItem<'line' | 'bar'>) =>
-                  `${item.dataset.label}: ${item.parsed.y === null ? '' : formatPace(item.parsed.y)} /km`
-              } : percentage ? {
-                label: (item: TooltipItem<'line' | 'bar'>) => {
-                  const dataset = this.stat.datasets[item.datasetIndex];
-                  const sample = linePoints[item.datasetIndex]?.[item.dataIndex];
-                  const count = bar ? sourcePoints[item.datasetIndex]?.[item.dataIndex]?.y
-                    : sample?.recorded && (!dataset.smoothing || comparison) ? sample.recorded.y
-                      : sample === undefined ? undefined : countFormat.format(sample.y);
-                  return `${dataset.label}: ${item.parsed.y === null || count === undefined ? ''
-                    : `${count} / ${dataset.percentageTarget ?? 100}`}`;
-                }
-              } : {
-                label: (item: TooltipItem<'line' | 'bar'>) => {
-                  const unit = this.stat.datasets[item.datasetIndex]?.unit?.trim();
-                  return `${item.dataset.label}: ${item.formattedValue}${unit ? ` ${unit}` : ''}`;
-                }
-              }),
-              ...(linearXAxis ? {
-                title: (items: {parsed: {x: number | null}}[]) => `${items[0]?.parsed.x ?? ''}${xAxisUnit ? ` ${xAxisUnit}` : ''}`
-              } : {}),
-              afterLabel: item => {
-                const dataset = this.stat.datasets[item.datasetIndex];
-                if (!dataset?.smoothing || bar || comparison) return '';
-                const sample = linePoints[item.datasetIndex]?.[item.dataIndex];
-                if (!sample) return '';
-                if (!sample.recorded) {
-                  return `Interpolated: ${pace ? `${formatPace(sample.rawY)} /km`
-                    : percentage ? countFormat.format(sample.rawY)
-                      : `${sample.rawY}${dataset.unit?.trim() ? ` ${dataset.unit.trim()}` : ''}`}`;
-                }
-                return `Recorded: ${pace ? `${formatPace(sample.rawY)} /km`
-                  : percentage ? sample.recorded.y
-                    : `${sample.recorded.y}${dataset.unit?.trim() ? ` ${dataset.unit.trim()}` : ''}`}`;
-              }
-            }
-          }
+          tooltip: createTooltip(context)
         },
         onClick: (_event, elements) => {
           if (elements.length > 0) {
             const el = elements.find(element => element.datasetIndex < this.stat.datasets.length
-              && sourcePoints[element.datasetIndex]?.[element.index]);
+              && context.sourcePoints[element.datasetIndex]?.[element.index]);
             if (!el) return;
             const ds = this.stat.datasets[el.datasetIndex];
-            const point = sourcePoints[el.datasetIndex]?.[el.index];
+            const point = context.sourcePoints[el.datasetIndex]?.[el.index];
             if (ds && point) {
               this.pointClick.emit({datasetLabel: ds.label, point});
             }
           }
         },
-        scales: {
-          x: {
-            type: linearXAxis ? 'linear' : 'time',
-            ...(bar ? {stacked, offset: true, ...barBounds} : {}),
-            ticks: {
-              maxTicksLimit: 6,
-              ...(linearXAxis ? {callback: value => `${value}${xAxisUnit ? ` ${xAxisUnit}` : ''}`} : {})
-            },
-            ...(linearXAxis ? {} : {time: {tooltipFormat: 'DD'}}),
-            title: {display: true, text: xAxisTitle}
-          },
-          y: {
-            beginAtZero: false,
-            min: this.stat.yAxisMin ?? undefined,
-            max: this.stat.yAxisMax ?? undefined,
-            stacked: bar ? stacked : stacked ? 'single' : false,
-            reverse: this.stat.reverse,
-            ...(pace ? {ticks: {callback: (value: string | number) => `${formatPace(Number(value))} /km`}}
-              : percentage ? {ticks: {callback: formatPercentage}} : {}),
-            title: {display: true, text: pace ? `${this.stat.yAxisName} (min/km)`
-              : percentage ? `${this.stat.yAxisName} (%)` : this.stat.yAxisName}
-          }
-        }
+        scales: createScales(context)
       }
     });
   }

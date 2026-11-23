@@ -24,8 +24,9 @@
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>{{ isPercentageInput(stat) ? 'Completed percentage' : stat.yAxisFormat === 'percentage' ? 'Completed count' : 'Value' }}</mat-label>
-    <input formControlName="value" matInput step="any" [type]="stat.yAxisFormat === 'pace' ? 'text' : 'number'"/>
+    @let valueLabel = isPercentageInput(stat) ? 'Completed percentage' : stat.yAxisFormat === 'percentage' ? 'Completed count' : 'Value';
+    <mat-label>{{ valueLabel }}</mat-label>
+    <input formControlName="value" matInput step="any" [type]="stat.yAxisFormat === 'pace' ? 'text' : 'number'" [attr.aria-label]="valueLabel"/>
     @if (isPercentageInput(stat)) { <span matTextSuffix>%</span> }
   </mat-form-field>
 

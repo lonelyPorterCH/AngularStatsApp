@@ -53,6 +53,33 @@ export function numericValue(value: string | undefined): string | null {
   return Number.isFinite(numeric) ? String(numeric) : null;
 }
 
+function validIsoDateTime(token: string): boolean {
+  const [isoDate, isoTime, ...extra] = token.split(/[ T]/);
+  if (extra.length || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate) || isoTime === '') return false;
+  if (isoTime === undefined) return true;
+  let clock = isoTime;
+  const offsetIndex = isoTime.search(/[Z+-]/);
+  if (offsetIndex >= 0) {
+    if (!/^(?:Z|[+-]\d{2}:?\d{2})$/.test(isoTime.slice(offsetIndex))) return false;
+    clock = isoTime.slice(0, offsetIndex);
+  }
+  return /^\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?$/.test(clock) && Number(clock.slice(0, 2)) <= 23;
+}
+
+function swissDateValue(swiss: RegExpExecArray, options: {zone: string; setZone: boolean; locale: string}): string | null {
+  const [, day, month, year, time] = swiss;
+  const clock = time ? /^(\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/.exec(time) : null;
+  if (time && !clock) return null;
+  const [, hour = '0', minute = '0', second = '0', millisecond = '0'] = clock ?? [];
+  if (Number(hour) > 23) return null;
+  const date = DateTime.fromObject({
+    year: Number(year), month: Number(month), day: Number(day),
+    hour: Number(hour), minute: Number(minute), second: Number(second),
+    millisecond: Number(millisecond.padEnd(3, '0'))
+  }, options);
+  return date.isValid ? date.toISODate() : null;
+}
+
 export function dateValue(value: string | undefined, format = ''): string | null {
   const token = value?.trim() ?? '';
   const options = {zone: 'UTC', setZone: true, locale: 'en'};
@@ -61,20 +88,10 @@ export function dateValue(value: string | undefined, format = ''): string | null
     const date = DateTime.fromFormat(token, format.trim(), options);
     return date.isValid ? date.toISODate() : null;
   }
-  const swiss = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?)?$/.exec(token);
-  if (swiss) {
-    const [, day, month, year, hour = '0', minute = '0', second = '0', millisecond = '0'] = swiss;
-    if (Number(hour) > 23) return null;
-    const date = DateTime.fromObject({
-      year: Number(year), month: Number(month), day: Number(day),
-      hour: Number(hour), minute: Number(minute), second: Number(second),
-      millisecond: Number(millisecond.padEnd(3, '0'))
-    }, options);
-    return date.isValid ? date.toISODate() : null;
-  }
+  const swiss = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:[ T](\S+))?$/.exec(token);
+  if (swiss) return swissDateValue(swiss, options);
   // Reject ISO's next-day 24:00 notation rather than silently changing the measurement date.
-  if (!/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/.test(token)
-    || Number(token.slice(11, 13)) > 23) return null;
+  if (!validIsoDateTime(token)) return null;
   const date = DateTime.fromISO(token.replace(' ', 'T'), options);
   return date.isValid ? date.toISODate() : null;
 }
@@ -88,9 +105,10 @@ export function previewCsv(table: CsvTable, dateColumn: number, columns: number[
   const toText = range.to?.trim() ?? '';
   const from = fromText ? dateValue(fromText, 'd.M.yyyy') : null;
   const to = toText ? dateValue(toText, 'd.M.yyyy') : null;
-  const rangeError = fromText && !from ? 'Enter a valid From date in dd.MM.yyyy format.'
-    : toText && !to ? 'Enter a valid To date in dd.MM.yyyy format.'
-    : from && to && from > to ? 'From date must be on or before To date.' : '';
+  let rangeError = '';
+  if (fromText && !from) rangeError = 'Enter a valid From date in dd.MM.yyyy format.';
+  else if (toText && !to) rangeError = 'Enter a valid To date in dd.MM.yyyy format.';
+  else if (from && to && from > to) rangeError = 'From date must be on or before To date.';
   if (rangeError) {
     return {datasets, issues: [], duplicateDates: 0, excludedRows: 0, rangeError};
   }

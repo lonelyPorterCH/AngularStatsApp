@@ -25,6 +25,25 @@ describe('CreateForm', () => {
     expect(component).toBeTruthy();
   });
 
+  it('associates each input with a visible and accessible label', () => {
+    component.statForm.patchValue({xAxisScaleType: 'linear'});
+    fixture.detectChanges();
+
+    for (const [name, label] of [
+      ['id', 'ID'],
+      ['title', 'Title'],
+      ['xAxisName', 'X Axis Name (Date)'],
+      ['xAxisUnit', 'Numeric X Axis Unit'],
+      ['yAxisName', 'Y Axis Name (Value)'],
+      ['yAxisMin', 'Y-axis minimum'],
+      ['yAxisMax', 'Y-axis maximum']
+    ]) {
+      const input: HTMLInputElement = fixture.nativeElement.querySelector(`input[formControlName="${name}"]`);
+      expect(input.getAttribute('aria-label')).toBe(label);
+      expect(input.labels?.[0]?.querySelector('mat-label')?.textContent?.trim()).toBe(label);
+    }
+  });
+
   it('marks required axis fields with an asterisk and leaves optional axis fields unmarked', () => {
     const page: HTMLElement = fixture.nativeElement;
     for (const name of ['xAxisName', 'yAxisName', 'xAxisScaleType']) {
@@ -84,6 +103,24 @@ describe('CreateForm', () => {
     expect(request.request.body.datasets).toEqual([]);
     request.flush(null);
     http.verify();
+  });
+
+  it('reports navigation failures after creating a chart', async () => {
+    const http = TestBed.inject(HttpTestingController);
+    const failure = new Error('Navigation failed');
+    vi.spyOn(TestBed.inject(Router), 'navigate').mockRejectedValue(failure);
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      component.statForm.patchValue({id: 'new-chart', title: 'Chart', xAxisName: 'Date', yAxisName: 'Value'});
+      http.expectOne(`${environment.apiBaseUrl}/new-chart`).flush('Not found', {status: 404, statusText: 'Not Found'});
+      fixture.debugElement.query(element => element.name === 'form').triggerEventHandler('ngSubmit');
+      http.expectOne(environment.apiBaseUrl).flush(null);
+      await Promise.resolve();
+      expect(logError).toHaveBeenCalledWith('Could not navigate to the new chart.', failure);
+      http.verify();
+    } finally {
+      logError.mockRestore();
+    }
   });
 
   it('creates a bar chart with stacking and automatic bounds by default', () => {

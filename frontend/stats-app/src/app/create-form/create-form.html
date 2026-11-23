@@ -6,7 +6,7 @@
       <legend>General</legend>
       <mat-form-field appearance="outline">
         <mat-label>ID</mat-label>
-        <input formControlName="id" matInput/>
+        <input formControlName="id" matInput aria-label="ID"/>
         @if (statForm.get('id')?.errors?.['required']) {
         <mat-error>ID is required</mat-error>
         }
@@ -17,7 +17,7 @@
 
       <mat-form-field appearance="outline">
         <mat-label>Title</mat-label>
-        <input formControlName="title" matInput/>
+        <input formControlName="title" matInput aria-label="Title"/>
         @if (statForm.get('title')?.errors?.['required']) {
         <mat-error>Title is required</mat-error>
         }
@@ -45,7 +45,7 @@
       <legend>X axis</legend>
       <mat-form-field appearance="outline">
         <mat-label>X Axis Name (Date)</mat-label>
-        <input formControlName="xAxisName" matInput/>
+        <input formControlName="xAxisName" matInput aria-label="X Axis Name (Date)"/>
         @if (statForm.get('xAxisName')?.errors?.['required']) {
         <mat-error>X Axis Name is required</mat-error>
         }
@@ -63,7 +63,7 @@
         @if (statForm.get('xAxisScaleType')?.value === 'linear') {
           <mat-form-field appearance="outline">
             <mat-label>Numeric X Axis Unit</mat-label>
-            <input formControlName="xAxisUnit" matInput placeholder="e.g. km"/>
+            <input formControlName="xAxisUnit" matInput placeholder="e.g. km" aria-label="Numeric X Axis Unit"/>
           </mat-form-field>
         }
       </div>
@@ -73,7 +73,7 @@
       <legend>Y axis</legend>
       <mat-form-field appearance="outline">
         <mat-label>Y Axis Name (Value)</mat-label>
-        <input formControlName="yAxisName" matInput/>
+        <input formControlName="yAxisName" matInput aria-label="Y Axis Name (Value)"/>
         @if (statForm.get('yAxisName')?.errors?.['required']) {
         <mat-error>Y Axis Name is required</mat-error>
         }
@@ -95,11 +95,11 @@
       <div class="field-row">
         <mat-form-field appearance="outline">
           <mat-label>Y-axis minimum</mat-label>
-          <input formControlName="yAxisMin" matInput type="number" step="any" placeholder="Automatic"/>
+          <input formControlName="yAxisMin" matInput type="number" step="any" placeholder="Automatic" aria-label="Y-axis minimum"/>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Y-axis maximum</mat-label>
-          <input formControlName="yAxisMax" matInput type="number" step="any" placeholder="Automatic"/>
+          <input formControlName="yAxisMax" matInput type="number" step="any" placeholder="Automatic" aria-label="Y-axis maximum"/>
         </mat-form-field>
       </div>
       @if (statForm.get('yAxisFormat')?.value === 'pace') {

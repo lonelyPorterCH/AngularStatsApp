@@ -56,6 +56,28 @@ describe('StatEdit settings sections', () => {
       .every(actions => getComputedStyle(actions).justifyContent === 'flex-start')).toBe(true);
   });
 
+  it('associates settings inputs with their visible labels and exposes rename status', () => {
+    component.stat.set(stat);
+    component.xAxisForm.controls.xAxisScaleType.setValue('linear');
+    component.renameSaved.set(true);
+    fixture.detectChanges();
+
+    const page: HTMLElement = fixture.nativeElement;
+    for (const [name, label] of [
+      ['title', 'Graph Title'],
+      ['xAxisUnit', 'Numeric X-Axis Unit'],
+      ['yAxisMin', 'Y-axis minimum'],
+      ['yAxisMax', 'Y-axis maximum'],
+      ['xAxisName', 'X-Axis Name'],
+      ['yAxisName', 'Y-Axis Name']
+    ]) {
+      const input = page.querySelector<HTMLInputElement>(`input[formControlName="${name}"]`)!;
+      expect(input.getAttribute('aria-label')).toBe(label);
+      expect(input.labels?.[0]?.querySelector('mat-label')?.textContent?.trim()).toBe(label);
+    }
+    expect(page.querySelector('output')?.textContent).toBe('Graph renamed.');
+  });
+
   it('saves axis labels from chart settings while preserving the X-axis unit and scale', () => {
     const http = TestBed.inject(HttpTestingController);
     component.stat.set({...stat, xAxisScaleType: 'linear', xAxisUnit: 'km'});

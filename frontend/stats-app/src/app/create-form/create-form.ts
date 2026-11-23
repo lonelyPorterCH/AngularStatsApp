@@ -82,7 +82,8 @@ export class CreateForm implements OnInit {
 
     this.statService.addStat(newStat).subscribe({
       next: () => {
-        this.router.navigate(['/stats', this.statForm.get('id')?.value]);
+        this.router.navigate(['/stats', this.statForm.get('id')?.value])
+          .catch(error => console.error('Could not navigate to the new chart.', error));
       },
       error: err => {
         console.error(err);

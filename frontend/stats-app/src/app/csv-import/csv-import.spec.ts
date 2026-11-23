@@ -4,7 +4,7 @@ import {HttpErrorResponse} from '@angular/common/http';
 import {By} from '@angular/platform-browser';
 import {MatDatepicker} from '@angular/material/datepicker';
 import {DateTime} from 'luxon';
-import {of, throwError} from 'rxjs';
+import {of, Subject, throwError} from 'rxjs';
 import {CsvImport} from './csv-import';
 import {StatService} from '../services/stat-service';
 import {parseCsv} from './csv-mapper';
@@ -29,6 +29,59 @@ describe('CsvImport', () => {
     fixture.componentInstance.table.set(component.table());
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Weight (kg)');
+  });
+
+  it('labels the file, date, and repeated graph metadata inputs', () => {
+    const fixture = TestBed.createComponent(CsvImport);
+    const instance = fixture.componentInstance;
+    instance.table.set(component.table());
+    instance.selected.set([1, 2]);
+    instance.setSeparate(true);
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.querySelector('input[type="file"]')?.getAttribute('aria-label')).toBe('Choose CSV file');
+    for (const [selector, label] of [
+      ['input[placeholder="e.g. dd.MM.yyyy"]', 'Date Format (optional)'],
+      ['input[placeholder="01.01.2026"]', 'From date'],
+      ['input[placeholder="31.12.2026"]', 'To date']
+    ]) {
+      const input = page.querySelector<HTMLInputElement>(selector)!;
+      expect(input.getAttribute('aria-label')).toBe(label);
+      expect(input.labels?.[0]?.querySelector('mat-label')?.textContent?.trim()).toBe(label);
+    }
+
+    instance.review();
+    fixture.detectChanges();
+    const graphs = page.querySelectorAll('.metadata');
+    expect(graphs.length).toBe(2);
+    for (const graph of graphs) {
+      for (const [name, label] of [
+        ['title', 'Title'], ['id', 'Graph ID'], ['xAxisName', 'X Axis'], ['yAxisName', 'Y Axis']
+      ]) {
+        const input = graph.querySelector<HTMLInputElement>(`input[formControlName="${name}"]`)!;
+        expect(input.getAttribute('aria-label')).toBe(label);
+        expect(input.labels?.[0]?.querySelector('mat-label')?.textContent?.trim()).toBe(label);
+      }
+    }
+  });
+
+  it('uses status outputs and preserves keyboard focus on the preview', () => {
+    const fixture = TestBed.createComponent(CsvImport);
+    const instance = fixture.componentInstance;
+    instance.table.set(parseCsv('Date,Note\n2026-01-01,text'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.column-list output').textContent)
+      .toContain('No numeric measurement columns found.');
+
+    instance.table.set(parseCsv('Date,Weight\n2025-01-01,60\n2026-01-01,65'));
+    instance.selected.set([1]);
+    instance.rangeForm.controls.from.setValue(DateTime.fromISO('2026-01-01'));
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    expect(page.querySelector('output')?.textContent).toContain('1 rows outside the date range');
+    const preview = page.querySelector<HTMLElement>('.table-scroll')!;
+    expect(preview.tabIndex).toBe(0);
+    expect(preview.getAttribute('aria-label')).toBe('Measurement preview');
   });
 
   it('clears prepared graph details when mapping changes', () => {
@@ -233,6 +286,30 @@ describe('CsvImport', () => {
     expect(service.addStat).toHaveBeenCalledTimes(1);
     expect(service.addStat.mock.calls[0][0].datasets).toHaveLength(2);
     expect(component.allSaved()).toBe(true);
+  });
+
+  it.each(['saved', 'unknown'] as const)('saves graphs in order when the first result is %s', async firstResult => {
+    component.setSeparate(true);
+    component.review();
+    component.confirmed.set(true);
+    const firstPost = new Subject<null>();
+    service.addStat.mockReturnValueOnce(firstPost.asObservable()).mockReturnValueOnce(of(null));
+    const ids = component.graphs.getRawValue().map(graph => graph.id);
+
+    const saving = component.save();
+    await vi.waitFor(() => expect(service.addStat).toHaveBeenCalledTimes(1));
+    expect(component.busy()).toBe(true);
+    expect(component.form.disabled).toBe(true);
+    expect(service.getStatById.mock.calls.map(call => call[0])).toEqual([ids[0]]);
+    if (firstResult === 'saved') firstPost.next(null);
+    else firstPost.error(new HttpErrorResponse({status: 0}));
+    await saving;
+
+    expect(service.getStatById.mock.calls.map(call => call[0])).toEqual(ids);
+    expect(service.addStat.mock.calls.map(call => call[0].id)).toEqual(ids);
+    expect(component.results().map(result => result.status)).toEqual([firstResult, 'saved']);
+    expect(component.busy()).toBe(false);
+    expect(component.form.enabled).toBe(true);
   });
 
   it('does not resubmit successful graphs on retry', async () => {

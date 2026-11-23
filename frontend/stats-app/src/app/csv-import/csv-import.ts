@@ -61,8 +61,13 @@ export class CsvImport {
   }));
   readonly rangeInputError = computed(() => {
     this.rangeValues();
-    return this.rangeForm.controls.from.hasError('matDatepickerParse') ? 'Enter a valid From date in dd.MM.yyyy format.'
-      : this.rangeForm.controls.to.hasError('matDatepickerParse') ? 'Enter a valid To date in dd.MM.yyyy format.' : '';
+    if (this.rangeForm.controls.from.hasError('matDatepickerParse')) {
+      return 'Enter a valid From date in dd.MM.yyyy format.';
+    }
+    if (this.rangeForm.controls.to.hasError('matDatepickerParse')) {
+      return 'Enter a valid To date in dd.MM.yyyy format.';
+    }
+    return '';
   });
   readonly selected = signal<number[]>([]);
   readonly separate = signal(false);
@@ -124,7 +129,7 @@ export class CsvImport {
       const table = parseCsv(await file.text());
       this.table.set(table);
       const dateColumn = table.headers.findIndex(header => header.toLowerCase() === 'date');
-      this.dateColumn.set(dateColumn < 0 ? 0 : dateColumn);
+      this.dateColumn.set(Math.max(0, dateColumn));
       this.separate.set(false);
     } catch (error) {
       this.error.set(error instanceof Error ? error.message : 'The CSV file could not be read.');
@@ -199,32 +204,39 @@ export class CsvImport {
     this.busy.set(true);
     this.form.disable();
     try {
-      for (let index = 0; index < this.graphs.length; index++) {
-        if (this.results()[index].status === 'saved') continue;
-        const payload = this.payload(index);
-        let posting = false;
-        try {
-          try {
-            await firstValueFrom(this.service.getStatById(payload.id));
-            this.result(index, {status: 'failed', message: 'ID already exists. Choose a different ID.'});
-            continue;
-          } catch (error) {
-            if (!(error instanceof HttpErrorResponse) || error.status !== 404) throw error;
-          }
-          posting = true;
-          await firstValueFrom(this.service.addStat(payload));
-          this.result(index, {status: 'saved', message: 'Saved', payload});
-        } catch (error) {
-          const definite = error instanceof HttpErrorResponse && [400, 409].includes(error.status);
-          this.result(index, posting && !definite
-            ? {status: 'unknown', message: 'Save outcome unknown. Check before retrying.', payload}
-            : {status: 'failed', message: definite ? 'ID conflict or invalid graph. Review the details.'
-              : 'Availability could not be checked. Nothing was submitted for this graph.'});
-        }
-      }
+      await this.graphs.controls.reduce(
+        (previous, _graph, index) => previous.then(() => this.saveGraph(index)), Promise.resolve());
     } finally {
       this.form.enable();
       this.busy.set(false);
+    }
+  }
+
+  private async saveGraph(index: number): Promise<void> {
+    if (this.results()[index].status === 'saved') return;
+    const payload = this.payload(index);
+    let posting = false;
+    try {
+      try {
+        await firstValueFrom(this.service.getStatById(payload.id));
+        this.result(index, {status: 'failed', message: 'ID already exists. Choose a different ID.'});
+        return;
+      } catch (error) {
+        if (!(error instanceof HttpErrorResponse) || error.status !== 404) throw error;
+      }
+      posting = true;
+      await firstValueFrom(this.service.addStat(payload));
+      this.result(index, {status: 'saved', message: 'Saved', payload});
+    } catch (error) {
+      const definite = error instanceof HttpErrorResponse && [400, 409].includes(error.status);
+      if (posting && !definite) {
+        this.result(index, {status: 'unknown', message: 'Save outcome unknown. Check before retrying.', payload});
+      } else if (definite) {
+        this.result(index, {status: 'failed', message: 'ID conflict or invalid graph. Review the details.'});
+      } else {
+        this.result(index, {status: 'failed',
+          message: 'Availability could not be checked. Nothing was submitted for this graph.'});
+      }
     }
   }
 

@@ -75,6 +75,20 @@ describe('CSV import mapping', () => {
     expect(dateValue('2026-10-30T12:11Z')).toBe('2026-10-30');
   });
 
+  it('preserves automatic date and timestamp syntax boundaries', () => {
+    for (const token of ['30.10.2026', '30.10.2026T9:05', '30.10.2026 9:05:07.12',
+      '2026-10-30', '2026-10-30 09:05', '2026-10-30T09:05:07.123456789Z',
+      '2026-10-30T09:05+0230', '2026-10-30T09:05-02:30']) {
+      expect(dateValue(token)).toBe('2026-10-30');
+    }
+    for (const token of ['30.10.2026T', '30.10.2026 9:05.1', '30.10.2026 9:05:07.1234',
+      '2026-10-30T', '2026-10-30T9:05', '2026-10-30T09:05.1',
+      '2026-10-30T09:05:07.1234567890Z', '2026-10-30T09:05Z+0200',
+      '2026-10-30T09:05+02', '2026-10-30  09:05', '2026-10-30T24:00Z']) {
+      expect(dateValue(token)).toBeNull();
+    }
+  });
+
   it('uses explicit Luxon formats rather than guessing ambiguous dates', () => {
     expect(dateValue('03/04/2026')).toBeNull();
     expect(dateValue('03/04/2026', 'dd/MM/yyyy')).toBe('2026-04-03');
@@ -134,6 +148,11 @@ describe('CSV import mapping', () => {
     const preview = previewCsv(parseCsv(SAMPLE), 0, [1], '', range);
     expect(preview.rangeError).toContain(message);
     expect(preview.datasets[0].dataPoints).toEqual([]);
+  });
+
+  it('reports the From date first when both range dates are invalid', () => {
+    const preview = previewCsv(parseCsv(SAMPLE), 0, [1], '', {from: 'invalid', to: 'invalid'});
+    expect(preview.rangeError).toContain('valid From date');
   });
 
   it('rejects unsafe and reserved graph identifiers', () => {

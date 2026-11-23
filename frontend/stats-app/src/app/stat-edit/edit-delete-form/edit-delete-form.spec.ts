@@ -29,6 +29,20 @@ describe('EditDeleteForm', () => {
     expect(component).toBeTruthy();
   });
 
+  it('labels the value input for each entry mode', () => {
+    for (const [yAxisFormat, percentageInputMode, label] of [
+      ['pace', 'number', 'Value'],
+      ['percentage', 'number', 'Completed count'],
+      ['percentage', 'percentage', 'Completed percentage']
+    ] as const) {
+      fixture.componentRef.setInput('stat', {...component.stat, yAxisFormat, percentageInputMode});
+      fixture.detectChanges();
+      const input: HTMLInputElement = fixture.nativeElement.querySelector('input[formControlName="value"]');
+      expect(input.getAttribute('aria-label')).toBe(label);
+      expect(input.labels?.[0].textContent).toContain(label);
+    }
+  });
+
   it('disables point and value controls until the dataset and point are selected', () => {
     const stat: Stat = {...component.stat, datasets: [
       ...component.stat.datasets,

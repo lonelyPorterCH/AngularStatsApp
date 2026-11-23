@@ -17,11 +17,11 @@
     <form class="section-form" [formGroup]="titleForm" (ngSubmit)="renameGraph()">
       <mat-form-field appearance="outline">
         <mat-label>Graph Title</mat-label>
-        <input matInput formControlName="title">
+        <input matInput formControlName="title" aria-label="Graph Title">
         @if (titleForm.controls.title.invalid) { <mat-error>A graph title is required.</mat-error> }
       </mat-form-field>
       @if (renameError()) { <p class="setting-error" role="alert">{{ renameError() }}</p> }
-      @if (renameSaved()) { <p class="hint" role="status">Graph renamed.</p> }
+      @if (renameSaved()) { <p class="hint"><output>Graph renamed.</output></p> }
       <div class="form-actions">
         <button matButton="outlined" type="submit"
           [disabled]="renaming() || titleForm.invalid || titleForm.pristine">
@@ -77,7 +77,7 @@
         @if (xAxisForm.controls.xAxisScaleType.value === 'linear') {
           <mat-form-field appearance="outline">
             <mat-label>Numeric X-Axis Unit</mat-label>
-            <input matInput formControlName="xAxisUnit" placeholder="e.g. km"/>
+            <input matInput formControlName="xAxisUnit" placeholder="e.g. km" aria-label="Numeric X-Axis Unit"/>
           </mat-form-field>
         }
       </div>
@@ -107,12 +107,12 @@
       <div class="field-row">
         <mat-form-field appearance="outline">
           <mat-label>Y-axis minimum</mat-label>
-          <input matInput type="number" step="any" formControlName="yAxisMin" placeholder="Automatic"
+          <input matInput type="number" step="any" formControlName="yAxisMin" placeholder="Automatic" aria-label="Y-axis minimum"
             [disabled]="archived() || yAxisSaving()"/>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Y-axis maximum</mat-label>
-          <input matInput type="number" step="any" formControlName="yAxisMax" placeholder="Automatic"
+          <input matInput type="number" step="any" formControlName="yAxisMax" placeholder="Automatic" aria-label="Y-axis maximum"
             [disabled]="archived() || yAxisSaving()"/>
         </mat-form-field>
       </div>
@@ -137,11 +137,11 @@
     <form class="section-form" [formGroup]="axisLabelsForm" (ngSubmit)="onAxisLabelsSave()">
       <mat-form-field appearance="outline">
         <mat-label>X-Axis Name</mat-label>
-        <input matInput formControlName="xAxisName">
+        <input matInput formControlName="xAxisName" aria-label="X-Axis Name">
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Y-Axis Name</mat-label>
-        <input matInput formControlName="yAxisName">
+        <input matInput formControlName="yAxisName" aria-label="Y-Axis Name">
       </mat-form-field>
       @if (axisLabelsError()) { <p class="setting-error" role="alert">{{ axisLabelsError() }}</p> }
       <div class="form-actions">

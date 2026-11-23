@@ -35,7 +35,7 @@ export class PercentageInputValue {
 
   toCount(value: string, dataset: Dataset, percentage: boolean): string {
     const original = this.original;
-    if (original && original.label === dataset.label && original.target === (dataset.percentageTarget ?? 100)
+    if (original?.label === dataset.label && original.target === (dataset.percentageTarget ?? 100)
       && original.percentage === percentage && Number(original.display) === Number(value)
       && original.display.startsWith('+') === value.startsWith('+')) {
       return original.count;
@@ -52,10 +52,11 @@ export class PercentageInputValue {
 export function parseYAxisValue(value: string, stat: Stat): number {
   if (stat.yAxisFormat !== 'pace') return Number.parseFloat(value);
   const match = /^(\d+)(?:([.:])(\d{1,2}))?$/.exec(value.trim());
-  if (!match) return NaN;
-  const seconds = Number(match[3] ? (match[2] === '.' ? match[3].padEnd(2, '0') : match[3]) : 0);
+  if (!match) return Number.NaN;
+  const fraction = match[3] ?? '0';
+  const seconds = Number(match[2] === '.' ? fraction.padEnd(2, '0') : fraction);
   const total = Number(match[1]) * 60 + seconds;
-  return seconds < 60 && Number.isFinite(total) ? total : NaN;
+  return seconds < 60 && Number.isFinite(total) ? total : Number.NaN;
 }
 
 export function formatPace(seconds: number): string {

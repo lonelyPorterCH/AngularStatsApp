@@ -23,7 +23,7 @@ describe('ScoreComparison player registration', () => {
       addPlayer: vi.fn(),
       updateAllScores: vi.fn()
     };
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({providers: [{provide: ScoreService, useValue: service}]});
     component = TestBed.runInInjectionContext(() => new ScoreComparison(service as unknown as ScoreService));
     component.ngOnInit();
   });
@@ -194,5 +194,25 @@ describe('ScoreComparison player registration', () => {
     expect(component.updateSummary()).toEqual(summary);
     expect(component.refreshing()).toBe(false);
     expect(service.getScores).toHaveBeenCalledWith(player.id);
+  });
+
+  it('renders the update summary as a labeled dialog and dismisses it', () => {
+    const fixture = TestBed.createComponent(ScoreComparison);
+    const summary: ScoreUpdateSummary = {
+      players: [{playerId: player.id, playerName: player.name, scoresAdded: 5}],
+      leaderboardStarsRefreshed: false,
+      leaderboardsChanged: 0,
+      leaderboardsChecked: 0
+    };
+    fixture.componentInstance.updateSummary.set(summary);
+    fixture.detectChanges();
+    const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
+    expect(dialog.open).toBe(true);
+    expect(dialog.getAttribute('aria-labelledby')).toBe('update-summary-title');
+    expect(dialog.textContent).toContain('New player: 5 scores');
+    dialog.querySelector<HTMLButtonElement>('[aria-label="Close update summary"]')!.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('dialog')).toBeNull();
+    fixture.destroy();
   });
 });

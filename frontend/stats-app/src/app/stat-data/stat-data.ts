@@ -97,7 +97,7 @@ export class StatData implements OnInit {
 
   onInputModeChange(percentageInputMode: 'number' | 'percentage', toggleGroup: MatButtonToggleGroup): void {
     const stat = this.stat();
-    if (!stat || stat.yAxisFormat !== 'percentage' || this.inputModeSaving()
+    if (stat?.yAxisFormat !== 'percentage' || this.inputModeSaving()
       || (stat.percentageInputMode ?? 'number') === percentageInputMode) return;
     this.inputModeSaving.set(true);
     this.inputModeError.set('');

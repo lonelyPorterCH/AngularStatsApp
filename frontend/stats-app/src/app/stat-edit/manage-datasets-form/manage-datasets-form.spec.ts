@@ -9,6 +9,29 @@ describe('ManageDatasetsForm smoothing window', () => {
   const stat: Stat = {id: 'chart', title: 'Chart', xAxisName: 'X', yAxisName: 'Y', reverse: false,
     datasets: [{label: 'Series', index: 0, smoothing: true, dataPoints: []}]};
 
+  it('gives dataset inputs accessible names and associates the new dataset label', async () => {
+    await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
+      providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();
+    const fixture = TestBed.createComponent(ManageDatasetsForm);
+    fixture.componentRef.setInput('stat', {...stat, datasets: [
+      stat.datasets[0], {label: 'Other', index: 1, dataPoints: []}
+    ]});
+    fixture.detectChanges();
+
+    const colors: HTMLInputElement[] = Array.from(fixture.nativeElement.querySelectorAll('input[type=color]'));
+    expect(colors.map(input => input.getAttribute('aria-label'))).toEqual(['Color for Series', 'Color for Other']);
+    const newDataset: HTMLInputElement = fixture.nativeElement.querySelector('input[formControlName=label]');
+    expect(newDataset.getAttribute('aria-label')).toBe('New Dataset Label');
+    expect(newDataset.labels?.[0].textContent).toContain('New Dataset Label');
+
+    const renameButtons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('button[aria-label="Rename dataset"]'));
+    renameButtons[1].click();
+    fixture.detectChanges();
+    const rename: HTMLInputElement = fixture.nativeElement.querySelector('.rename-input');
+    expect(rename.getAttribute('aria-label')).toBe('Rename dataset Other');
+    fixture.destroy();
+  });
+
   it('saves a percentage target without changing counts and restores the input on failure', async () => {
     await TestBed.configureTestingModule({imports: [ManageDatasetsForm],
       providers: [provideHttpClient(), provideHttpClientTesting()]}).compileComponents();

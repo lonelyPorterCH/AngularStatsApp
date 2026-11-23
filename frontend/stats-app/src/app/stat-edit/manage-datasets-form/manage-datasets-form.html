@@ -14,6 +14,7 @@
             [ngModelOptions]="{standalone: true}"
             matInput
             class="rename-input"
+            [attr.aria-label]="'Rename dataset ' + ds.label"
             (keyup.enter)="onRenameDataset(ds.label)"
             (keyup.escape)="cancelRenameDataset(ds.label)"
           />
@@ -56,6 +57,7 @@
                   [value]="rgbToHex(ds.color, datasetIndex)"
                   (change)="onSetDatasetColor(ds.label, $event)"
                   [title]="'Dataset color'"
+                  [attr.aria-label]="'Color for ' + ds.label"
                 />
                 @if (stat.chartType !== 'bar' && !stat.effortComparison) {
                 <mat-checkbox
@@ -129,7 +131,7 @@
   <form (ngSubmit)="onAddDataset()" [formGroup]="addDatasetForm" class="add-dataset-form">
     <mat-form-field appearance="outline">
       <mat-label>New Dataset Label</mat-label>
-      <input formControlName="label" matInput/>
+      <input formControlName="label" matInput aria-label="New Dataset Label"/>
     </mat-form-field>
     <button mat-flat-button type="submit" [disabled]="addDatasetForm.invalid">
       <mat-icon>add</mat-icon>

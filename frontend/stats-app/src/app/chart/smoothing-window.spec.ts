@@ -136,4 +136,89 @@ describe('dataset smoothing windows', () => {
     expect(chartConfig.mock.lastCall![0].data.datasets[0].data).toHaveLength(2);
     fixture.destroy();
   });
+
+  it('preserves percentage tooltip counts for bars, smoothed lines, and comparison dots', async () => {
+    await TestBed.configureTestingModule({imports: [ChartComponent]}).compileComponents();
+    const fixture = TestBed.createComponent(ChartComponent);
+    const dataset = {label: 'Progress', index: 0, percentageTarget: 50, smoothing: true, smoothingWindow: 2,
+      dataPoints: [{x: '1', y: '04'}, {x: '2', y: '8'}]};
+    const item = {datasetIndex: 0, dataIndex: 1, parsed: {y: 12}};
+
+    fixture.componentRef.setInput('stat', {...stat, yAxisFormat: 'percentage', datasets: [dataset]});
+    fixture.detectChanges();
+    let callbacks = chartConfig.mock.lastCall![0].options.plugins.tooltip.callbacks;
+    expect(callbacks.label(item)).toBe('Progress: 6 / 50');
+    expect(callbacks.afterLabel(item)).toBe('Recorded: 8');
+    expect(callbacks.label({...item, parsed: {y: null}})).toBe('Progress: ');
+    expect(callbacks.label({...item, dataIndex: 99})).toBe('Progress: ');
+
+    for (const settings of [{chartType: 'bar' as const}, {effortComparison: true}]) {
+      fixture.componentRef.setInput('stat', {...stat, ...settings, yAxisFormat: 'percentage', datasets: [dataset]});
+      fixture.detectChanges();
+      const config = chartConfig.mock.lastCall![0];
+      callbacks = config.options.plugins.tooltip.callbacks;
+      expect(callbacks.label({...item, dataIndex: 0})).toBe('Progress: 04 / 50');
+      expect(callbacks.afterLabel(item)).toBe('');
+      if ('chartType' in settings) {
+        expect(config.options.scales.x.suggestedMin).toBe(0.5);
+        expect(config.options.scales.x.suggestedMax).toBe(2.5);
+      }
+    }
+
+    fixture.componentRef.setInput('stat', {...stat, xAxisScaleType: 'time', yAxisFormat: 'percentage', datasets: [
+      {...dataset, interpolateGaps: true, dataPoints: [{x: '2026-11-01', y: '0'}, {x: '2026-11-08', y: '14'}]}
+    ]});
+    fixture.detectChanges();
+    callbacks = chartConfig.mock.lastCall![0].options.plugins.tooltip.callbacks;
+    expect(callbacks.afterLabel({datasetIndex: 0, dataIndex: 1})).toBe('Interpolated: 2');
+    fixture.destroy();
+  });
+
+  it('preserves stacked pace totals, numeric axis units, and comparison legend behavior', async () => {
+    await TestBed.configureTestingModule({imports: [ChartComponent]}).compileComponents();
+    const fixture = TestBed.createComponent(ChartComponent);
+    const datasets = [
+      {label: 'Run', index: 0, filled: true, dataPoints: [{x: '1', y: '5:00'}]},
+      {label: 'Other', index: 1, filled: true, dataPoints: [{x: '1', y: '6:00'}]}
+    ];
+    fixture.componentRef.setInput('stat', {...stat, xAxisUnit: ' km ', yAxisFormat: 'pace', stacked: true, datasets});
+    fixture.detectChanges();
+    let config = chartConfig.mock.lastCall![0];
+    expect(config.data.datasets.map((dataset: {fill: string}) => dataset.fill)).toEqual(['origin', '-1']);
+    expect(config.options.scales.y.stacked).toBe('single');
+    expect(config.options.scales.y.title.text).toBe('Y (min/km)');
+    expect(config.options.scales.y.ticks.callback(300)).toBe('5:00 /km');
+    expect(config.options.scales.x.ticks.callback(1)).toBe('1 km');
+    expect(config.options.plugins.tooltip.callbacks.title([{parsed: {x: 1}}])).toBe('1 km');
+    expect(config.options.plugins.tooltip.callbacks.footer([{parsed: {y: 300}}, {parsed: {y: 360}}]))
+      .toBe('Total: 11:00');
+
+    fixture.componentRef.setInput('stat', {...stat, xAxisUnit: ' km ', yAxisFormat: 'pace',
+      effortComparison: true, stacked: true, datasets});
+    fixture.detectChanges();
+    config = chartConfig.mock.lastCall![0];
+    expect(config.options.scales.y.stacked).toBe(false);
+    expect(config.options.plugins.tooltip.filter({datasetIndex: 2})).toBe(false);
+    const chart = {isDatasetVisible: vi.fn().mockReturnValue(true), setDatasetVisibility: vi.fn(), update: vi.fn()};
+    config.options.plugins.legend.onClick(null, {datasetIndex: 0}, {chart});
+    expect(chart.setDatasetVisibility.mock.calls).toEqual([[0, false], [2, false]]);
+    expect(chart.update).toHaveBeenCalledOnce();
+    fixture.destroy();
+  });
+
+  it('formats interpolated and recorded numeric values with a trimmed dataset unit', async () => {
+    await TestBed.configureTestingModule({imports: [ChartComponent]}).compileComponents();
+    const fixture = TestBed.createComponent(ChartComponent);
+    fixture.componentRef.setInput('stat', {...stat, xAxisScaleType: 'time', datasets: [
+      {label: 'Balance', index: 0, unit: ' CHF ', smoothing: true, smoothingWindow: 1, interpolateGaps: true,
+        dataPoints: [{x: '2026-11-01', y: '5'}, {x: '2026-11-08', y: '12'}]}
+    ]});
+    fixture.detectChanges();
+    const callbacks = chartConfig.mock.lastCall![0].options.plugins.tooltip.callbacks;
+    expect(callbacks.label({datasetIndex: 0, dataset: {label: 'Balance'}, formattedValue: '5'}))
+      .toBe('Balance: 5 CHF');
+    expect(callbacks.afterLabel({datasetIndex: 0, dataIndex: 0})).toBe('Recorded: 5 CHF');
+    expect(callbacks.afterLabel({datasetIndex: 0, dataIndex: 1})).toBe('Interpolated: 6 CHF');
+    fixture.destroy();
+  });
 });

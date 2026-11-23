@@ -6,7 +6,7 @@
 
   <section class="file-section" aria-labelledby="file-heading">
     <h3 id="file-heading">CSV File</h3>
-    <input #fileInput type="file" accept=".csv,text/csv" hidden (change)="loadFile($event)"
+    <input #fileInput type="file" accept=".csv,text/csv" hidden aria-label="Choose CSV file" (change)="loadFile($event)"
       [disabled]="busy() || reading() || attempted()">
     <button matButton="outlined" type="button" (click)="fileInput.click()" [disabled]="busy() || reading() || attempted()">
       <mat-icon>upload_file</mat-icon>{{ reading() ? 'Reading...' : 'Choose CSV' }}
@@ -27,7 +27,7 @@
       </mat-form-field>
       <mat-form-field appearance="outline">
         <mat-label>Date Format (optional)</mat-label>
-        <input matInput #dateFormatInput [value]="dateFormat()" (input)="setDateFormat(dateFormatInput.value)"
+        <input matInput #dateFormatInput aria-label="Date Format (optional)" [value]="dateFormat()" (input)="setDateFormat(dateFormatInput.value)"
           placeholder="e.g. dd.MM.yyyy" [disabled]="prepared() || busy()" aria-describedby="date-format-help">
         <mat-hint>Blank: ISO or Swiss dates, with optional time.</mat-hint>
       </mat-form-field>
@@ -42,14 +42,14 @@
       <div class="date-range">
         <mat-form-field appearance="outline">
           <mat-label>From date</mat-label>
-          <input matInput [matDatepicker]="fromPicker" [formControl]="rangeForm.controls.from"
+          <input matInput aria-label="From date" [matDatepicker]="fromPicker" [formControl]="rangeForm.controls.from"
             placeholder="01.01.2026" [readonly]="prepared() || busy()" aria-describedby="date-range-help">
           <mat-datepicker-toggle matSuffix [for]="fromPicker"></mat-datepicker-toggle>
           <mat-datepicker #fromPicker [disabled]="prepared() || busy()"></mat-datepicker>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>To date</mat-label>
-          <input matInput [matDatepicker]="toPicker" [formControl]="rangeForm.controls.to"
+          <input matInput aria-label="To date" [matDatepicker]="toPicker" [formControl]="rangeForm.controls.to"
             placeholder="31.12.2026" [readonly]="prepared() || busy()" aria-describedby="date-range-help">
           <mat-datepicker-toggle matSuffix [for]="toPicker"></mat-datepicker-toggle>
           <mat-datepicker #toPicker [disabled]="prepared() || busy()"></mat-datepicker>
@@ -66,7 +66,7 @@
               [disabled]="prepared() || busy()">{{ column.label }}</mat-checkbox>
             <span class="sample">{{ column.sample }}</span>
           </div>
-        } @empty { <p role="status">No numeric measurement columns found.</p> }
+        } @empty { <p><output>No numeric measurement columns found.</output></p> }
       </div>
       <mat-button-toggle-group aria-label="Graph layout" [value]="separate()" (change)="setSeparate($event.value)"
         [disabled]="prepared() || busy()">
@@ -79,6 +79,7 @@
       @if (selected().length) {
         <section aria-labelledby="preview-heading">
           <h3 id="preview-heading">Import Preview</h3>
+          <!-- Keep the scrollable preview keyboard-focusable. -->
           <div class="table-scroll" tabindex="0" aria-label="Measurement preview">
             <table>
               <thead><tr><th>Measurement</th><th>Valid Values</th><th>First Date</th><th>First Value</th></tr></thead>
@@ -94,7 +95,7 @@
             <p class="error">Every selected measurement needs at least one valid value within the selected date range.</p>
           }
           @if (current.excludedRows) {
-            <p role="status">{{ current.excludedRows }} rows outside the date range will not be imported.</p>
+            <p><output>{{ current.excludedRows }} rows outside the date range will not be imported.</output></p>
           }
           @if (current.duplicateDates) {
             <p class="warning">{{ current.duplicateDates }} repeated dates. All measurements will be kept.</p>
@@ -124,13 +125,13 @@
                 <legend>Graph {{ index + 1 }}</legend>
                 <div class="metadata">
                   <mat-form-field appearance="outline"><mat-label>Title</mat-label>
-                    <input matInput formControlName="title" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                    <input matInput formControlName="title" aria-label="Title" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
                   <mat-form-field appearance="outline"><mat-label>Graph ID</mat-label>
-                    <input matInput formControlName="id" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                    <input matInput formControlName="id" aria-label="Graph ID" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
                   <mat-form-field appearance="outline"><mat-label>X Axis</mat-label>
-                    <input matInput formControlName="xAxisName" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                    <input matInput formControlName="xAxisName" aria-label="X Axis" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
                   <mat-form-field appearance="outline"><mat-label>Y Axis</mat-label>
-                    <input matInput formControlName="yAxisName" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
+                    <input matInput formControlName="yAxisName" aria-label="Y Axis" [readonly]="results()[index].status === 'saved' || results()[index].status === 'unknown'"></mat-form-field>
                 </div>
                 <div class="result" aria-live="polite">
                   <span>{{ results()[index].message }}</span>

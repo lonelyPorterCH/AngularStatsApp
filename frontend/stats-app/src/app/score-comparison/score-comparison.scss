@@ -19,7 +19,9 @@
   width: min(100%, 560px);
   max-height: min(80vh, 720px);
   overflow: auto;
+  margin: 0;
   padding: 24px;
+  border: 0;
   color: var(--mat-sys-on-surface);
   background: var(--mat-sys-surface-container);
   border-radius: 12px;

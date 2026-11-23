@@ -38,7 +38,7 @@ export class ScoreComparison implements OnInit, OnDestroy {
   addingPlayer = signal(false);
   addPlayerError = signal('');
   readonly addPlayerForm = inject(FormBuilder).nonNullable.group({
-    playerId: ['', [Validators.required, Validators.pattern(/^[0-9]{1,20}$/)]]
+    playerId: ['', [Validators.required, Validators.pattern(/^\d{1,20}$/)]]
   }, {updateOn: 'blur'});
 
   constructor(private readonly scoreService: ScoreService) {
