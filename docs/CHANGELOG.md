@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.7.0] - 2026-11-23
+
+### Added
+
+- Arrange charts in resizable dashboard groups, with drag-and-drop layout editing.
+
+### Changed
+
+- Chart positions are stored in a dashboard layout instead of statistic indices.
+
 ## [2.6.3] - 2026-11-20
 
 ### Added

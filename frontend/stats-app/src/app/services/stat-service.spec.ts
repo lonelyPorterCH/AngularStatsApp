@@ -44,6 +44,21 @@ describe('StatService', () => {
     expect(service).toBeTruthy();
   });
 
+  it('loads and saves the dashboard layout and reserves its id', async () => {
+    const layout = {groups: [{id: 'ungrouped', title: 'Ungrouped', charts: []}]};
+    const loading = firstValueFrom(service.getLayout());
+    httpTesting.expectOne(`${environment.apiBaseUrl}/layout`).flush(layout);
+    expect(await loading).toEqual(layout);
+
+    const saving = firstValueFrom(service.saveLayout(layout));
+    const request = httpTesting.expectOne(`${environment.apiBaseUrl}/layout`);
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual(layout);
+    request.flush(null);
+    await saving;
+    expect(await firstValueFrom(service.existsById('LAYOUT'))).toBe(true);
+  });
+
   it('should rename a graph without changing its ID', async () => {
     const promise = firstValueFrom(service.renameStat('weight', 'Weight'));
     const request = httpTesting.expectOne(`${environment.apiBaseUrl}/weight/title`);

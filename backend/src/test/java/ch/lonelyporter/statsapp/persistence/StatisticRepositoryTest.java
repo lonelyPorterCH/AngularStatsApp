@@ -66,7 +66,7 @@ class StatisticRepositoryTest {
     @Test
     void createRejectsUnsafeAndReservedIds() {
         Statistic statistic = createStatisticWithUnsortedDataset();
-        for (String id : List.of("", "../escape", "a/b", "a\\b", "archived", "ARCHIVED", "new", "NEW", "import", "IMPORT",
+        for (String id : List.of("", "../escape", "a/b", "a\\b", "archived", "ARCHIVED", "layout", "LAYOUT", "new", "NEW", "import", "IMPORT",
             "CON", "prn", "aux", "nul", "com1", "lpt1", "a:b")) {
             statistic.setId(id);
             assertThatThrownBy(() -> repository.create(statistic))

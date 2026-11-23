@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 public class StatisticRepository {
 
     private static final String ARCHIVED_FOLDER = "archived";
-    private static final Set<String> RESERVED_CREATE_IDS = Set.of(ARCHIVED_FOLDER, "new", "import", "con", "prn", "aux", "nul");
+    private static final Set<String> RESERVED_CREATE_IDS = Set.of(ARCHIVED_FOLDER, "layout", "new", "import", "con", "prn", "aux", "nul");
     private static final java.lang.String JSON_FILE_ENDING = ".json";
 
     private final StorageProperties storageProperties;
@@ -157,7 +157,8 @@ public class StatisticRepository {
     }
 
     private boolean isJsonFile(Path path) {
-        return path.toString().endsWith(JSON_FILE_ENDING);
+        return path.toString().endsWith(JSON_FILE_ENDING)
+                && !path.getFileName().toString().equalsIgnoreCase("layout.json");
     }
 
     private void validateCreateId(String id) {
@@ -170,7 +171,7 @@ public class StatisticRepository {
     }
 
     private void validateWritableId(String id) {
-        if (ARCHIVED_FOLDER.equals(id)) {
+        if (ARCHIVED_FOLDER.equals(id) || "layout".equalsIgnoreCase(id)) {
             throw new StatisticConflictException("Statistic id is reserved: " + id);
         }
     }
@@ -184,10 +185,12 @@ public class StatisticRepository {
     }
 
     private Path activeFile(String id) {
+        validateWritableId(id);
         return activeFolder().resolve(id + JSON_FILE_ENDING);
     }
 
     private Path archivedFile(String id) {
+        validateWritableId(id);
         return archivedFolder().resolve(id + JSON_FILE_ENDING);
     }
 

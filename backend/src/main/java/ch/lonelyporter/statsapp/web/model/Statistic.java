@@ -12,7 +12,6 @@ import java.util.List;
 public class Statistic {
     private static final String NUMBER = "number";
     private String id;
-    private Integer index;
     private String title;
     private String chartType = "line";
     private boolean reverse;

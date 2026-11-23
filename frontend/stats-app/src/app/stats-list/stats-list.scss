@@ -1,6 +1,72 @@
-/* Grid Container */
-h2 {
+h2, h3 {
   color: var(--mat-sys-on-surface);
+}
+
+.overview-heading, .group-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dashboard-group {
+  margin: 24px 0;
+}
+
+.group-heading input {
+  font: inherit;
+  padding: 6px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-rows: 100px;
+  gap: 16px;
+}
+
+.dashboard-grid.editing {
+  min-height: 100px;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / 12 - 1px), rgba(127, 127, 127, .15) calc(100% / 12 - 1px), rgba(127, 127, 127, .15) calc(100% / 12));
+}
+
+.dashboard-chart {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.dashboard-chart app-stats-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.chart-controls {
+  position: absolute;
+  z-index: 1;
+  top: 2px;
+  right: 2px;
+}
+
+.drag-handle, .resize-handle {
+  cursor: grab;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.resize-handle {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.error {
+  color: var(--mat-sys-error);
 }
 
 .stats-overview {
@@ -11,10 +77,17 @@ h2 {
 }
 
 @media (max-width: 600px) {
+  .edit-layout { display: none; }
+  .dashboard-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .dashboard-chart { height: 300px; }
+  .chart-controls, .resize-handle { display: none; }
   .stats-overview {
     grid-template-columns: 1fr;
     gap: 0;
     padding: 0;
   }
 }
-

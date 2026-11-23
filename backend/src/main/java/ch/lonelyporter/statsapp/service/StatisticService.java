@@ -16,23 +16,20 @@ public class StatisticService {
 
     public static final String LINEAR = "linear";
     private final StatisticRepository repository;
+    private final LayoutService layoutService;
 
     public List<Statistic> getStatistics() {
         List<Statistic> stats = new ArrayList<>(repository.findAll());
-        prepareStatistics(stats, true);
+        stats.forEach(this::sortDatasets);
         return stats;
     }
 
     public List<Statistic> getArchivedStatistics() {
         List<Statistic> stats = new ArrayList<>(repository.findAllArchived());
-        prepareStatistics(stats, false);
+        stats.forEach(this::sortDatasets);
         return stats;
     }
 
-    /**
-     * Saves the statistic, the given index will be 1 higher than the current highest index (or 0 if none found)
-     *
-     */
     public void createStatistic(Statistic statistic) {
         validateChartType(statistic.getChartType());
         validateYAxisFormat(statistic);
@@ -41,12 +38,6 @@ public class StatisticService {
         validateBarDatasets(statistic);
         statistic.getDatasets().forEach(dataset -> validateSmoothingWindow(dataset.getSmoothingWindow()));
         statistic.getDatasets().forEach(dataset -> validatePercentageTarget(dataset.getPercentageTarget()));
-        int nextStatisticIndex = repository.findAll().stream()
-                .map(Statistic::getIndex)
-                .filter(Objects::nonNull)
-                .max(Integer::compareTo)
-                .orElse(-1) + 1;
-        statistic.setIndex(nextStatisticIndex);
         repository.create(statistic);
     }
 
@@ -69,6 +60,7 @@ public class StatisticService {
 
     public void deleteStatisticById(String id) {
         repository.deleteById(id);
+        layoutService.removeStatistic(id);
     }
 
     /**
@@ -328,33 +320,6 @@ public class StatisticService {
                 .findFirst()
                 .orElseThrow(() -> new StatisticNotFoundException(
                         "dataset '" + label + "' in statistic '" + statisticId + "'"));
-    }
-
-    private void assignMissingStatisticIndices(List<Statistic> statistics) {
-        int highestExistingIndex = statistics.stream()
-                .map(Statistic::getIndex)
-                .filter(Objects::nonNull)
-                .max(Integer::compareTo)
-                .orElse(-1);
-
-        for (Statistic statistic : statistics) {
-            if (statistic.getIndex() == null) {
-                statistic.setIndex(++highestExistingIndex);
-                repository.save(statistic);
-            }
-        }
-    }
-
-    private void prepareStatistics(List<Statistic> statistics, boolean persistMissingIndices) {
-        if (persistMissingIndices) {
-            assignMissingStatisticIndices(statistics);
-        }
-
-        statistics.sort(Comparator.comparing(
-                Statistic::getIndex,
-                Comparator.nullsLast(Integer::compareTo)
-        ));
-        statistics.forEach(this::sortDatasets);
     }
 
     private void sortDatasets(Statistic statistic) {

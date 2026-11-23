@@ -1,4 +1,15 @@
-<h2>Stats Overview</h2>
+<div class="overview-heading">
+  <h2>Stats Overview</h2>
+  @if (layout()) {
+    @if (editing()) {
+      <button matButton="filled" (click)="save()" [disabled]="saving()">Save layout</button>
+      <button matButton="outlined" (click)="cancelEditing()" [disabled]="saving()">Cancel</button>
+      <button matButton="outlined" (click)="addGroup()" [disabled]="saving()">Add group</button>
+    } @else {
+      <button class="edit-layout" matButton="outlined" (click)="startEditing()">Edit layout</button>
+    }
+  }
+</div>
 <button [routerLink]="['/stats/new']" matButton="filled">
   <mat-icon>add</mat-icon>
   <span>New Statistic</span>
@@ -7,11 +18,46 @@
   <mat-icon>upload_file</mat-icon>
   <span>Import CSV</span>
 </a>
-<div class="stats-overview">
-  @for (stat of stats(); track stat.id) {
-    <app-stats-card [stat]="stat"></app-stats-card>
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}
+@if (layout(); as dashboard) {
+  @for (group of dashboard.groups; track group.id) {
+    <section class="dashboard-group">
+      <div class="group-heading">
+        @if (editing()) {
+          <label>Group name <input #groupName [value]="group.title" (input)="renameGroup(group.id, groupName.value)" [disabled]="saving()"></label>
+          @if (group.id !== 'ungrouped') {
+            <button matButton="text" (click)="deleteGroup(group.id)" [disabled]="saving()">Delete group</button>
+          }
+        } @else {
+          <h3>{{ group.title }}</h3>
+        }
+      </div>
+      <div class="dashboard-grid" [class.editing]="editing()" (dragover)="allowDrop($event)" (drop)="drop($event, group.id)">
+        @for (chart of visibleCharts(group); track chart.statisticId) {
+          <div class="dashboard-chart"
+               [style.grid-column]="(chart.x + 1) + ' / span ' + chart.width"
+               [style.grid-row]="(chart.y + 1) + ' / span ' + chart.height">
+            @if (editing()) {
+              <div class="chart-controls">
+                <button class="drag-handle" type="button" draggable="true"
+                        (dragstart)="dragStart($event, chart.statisticId)" (dragend)="dragEnd()"
+                        [attr.aria-label]="'Drag ' + statFor(chart.statisticId).title" title="Drag to move">⠿ Move</button>
+              </div>
+            }
+            <app-stats-card [stat]="statFor(chart.statisticId)"></app-stats-card>
+            @if (editing()) {
+              <button class="resize-handle" type="button" (pointerdown)="startResize($event, group.id, chart)"
+                      (pointermove)="resizeChart($event)" (pointerup)="stopResize()" (pointercancel)="stopResize()"
+                      [attr.aria-label]="'Resize ' + statFor(chart.statisticId).title" title="Drag to resize">◢</button>
+            }
+          </div>
+        }
+      </div>
+    </section>
   }
-</div>
+}
 
 <h2>Additional Stats</h2>
 <div class="stats-overview">

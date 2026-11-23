@@ -2,6 +2,7 @@ package ch.lonelyporter.statsapp.service;
 
 import ch.lonelyporter.statsapp.StorageProperties;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
+import ch.lonelyporter.statsapp.persistence.LayoutRepository;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +13,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +31,7 @@ class StatisticServiceTest {
         StorageProperties props = new StorageProperties();
         props.setStoragePath(tempDir.toString());
         repository = new StatisticRepository(props, new ObjectMapper());
-        service = new StatisticService(repository);
+        service = new StatisticService(repository, new LayoutService(new LayoutRepository(props, new ObjectMapper())));
     }
 
     @Test
@@ -50,19 +50,6 @@ class StatisticServiceTest {
         assertThat(loaded.getDatasets().get(1).getDataPoints().getFirst().getY()).isEqualTo("8.8");
         assertThatThrownBy(() -> service.createStatistic(statistic))
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
-    }
-
-    @Test
-    void createStatisticAssignsNextIndex() {
-        Statistic first = createStatistic("chart-1", "Chart 1");
-        first.setIndex(0);
-        repository.save(first);
-
-        Statistic second = createStatistic("chart-2", "Chart 2");
-        service.createStatistic(second);
-
-        Statistic loaded = repository.findById("chart-2");
-        assertThat(loaded.getIndex()).isEqualTo(1);
     }
 
     @Test
@@ -156,37 +143,6 @@ class StatisticServiceTest {
         assertThatThrownBy(() -> service.setDatasetPercentageTarget("legacy", "Series", 50.0))
                 .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticConflictException.class);
         assertThat(repository.findById("legacy").getDatasets().getFirst().getPercentageTarget()).isEqualTo(100.0);
-    }
-
-    @Test
-    void getStatisticsAssignsMissingIndexAndPersistsIt() throws Exception {
-        String legacyJsonWithoutIndex = """
-                {
-                  "id": "legacy-chart",
-                  "title": "Legacy Chart",
-                  "reverse": false,
-                  "xAxisName": "Date",
-                  "yAxisName": "Price",
-                  "datasets": []
-                }
-                """;
-        Files.writeString(tempDir.resolve("legacy-chart.json"), legacyJsonWithoutIndex);
-
-        Statistic indexed = createStatistic("indexed-chart", "Indexed Chart");
-        indexed.setIndex(0);
-        repository.save(indexed);
-
-        List<Statistic> stats = service.getStatistics();
-
-        assertThat(stats)
-                .extracting(Statistic::getIndex)
-                .isSortedAccordingTo(Comparator.nullsLast(Integer::compareTo));
-        Statistic legacy = stats.stream()
-                .filter(stat -> "legacy-chart".equals(stat.getId()))
-                .findFirst()
-                .orElseThrow();
-        assertThat(legacy.getIndex()).isNotNull();
-        assertThat(repository.findById("legacy-chart").getIndex()).isEqualTo(legacy.getIndex());
     }
 
     @Test

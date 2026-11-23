@@ -3,6 +3,7 @@ import {DataPoint, Stat} from '../models/stat';
 import {HttpClient} from '@angular/common/http';
 import {catchError, map, Observable, of} from 'rxjs';
 import {environment} from '../../environments/environment';
+import {DashboardLayout} from '../models/dashboard-layout';
 
 @Injectable({
   providedIn: 'root',
@@ -18,6 +19,14 @@ export class StatService {
     return this.http.get<Stat[]>(this.baseUrl);
   }
 
+  getLayout(): Observable<DashboardLayout> {
+    return this.http.get<DashboardLayout>(`${this.baseUrl}/layout`);
+  }
+
+  saveLayout(layout: DashboardLayout): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/layout`, layout);
+  }
+
   getArchivedStats(): Observable<Stat[]> {
     return this.http.get<Stat[]>(`${this.baseUrl}/archived`);
   }
@@ -27,7 +36,7 @@ export class StatService {
   }
 
   existsById(id: string): Observable<boolean> {
-    if (id === 'archived') {
+    if (id.toLowerCase() === 'archived' || id.toLowerCase() === 'layout') {
       return of(true);
     }
     return this.http.get<Stat>(`${this.baseUrl}/${id}`).pipe(
