@@ -31,7 +31,7 @@ export class CreateForm implements OnInit {
   statForm!: FormGroup;
   submissionError: string = '';
 
-  constructor(private formBuilder: FormBuilder, private statService: StatService, private router: Router) {
+  constructor(private readonly formBuilder: FormBuilder, private readonly statService: StatService, private readonly router: Router) {
   }
 
   ngOnInit(): void {

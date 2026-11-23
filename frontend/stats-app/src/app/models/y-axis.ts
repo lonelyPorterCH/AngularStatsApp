@@ -50,7 +50,7 @@ export class PercentageInputValue {
 }
 
 export function parseYAxisValue(value: string, stat: Stat): number {
-  if (stat.yAxisFormat !== 'pace') return parseFloat(value);
+  if (stat.yAxisFormat !== 'pace') return Number.parseFloat(value);
   const match = /^(\d+)(?:([.:])(\d{1,2}))?$/.exec(value.trim());
   if (!match) return NaN;
   const seconds = Number(match[3] ? (match[2] === '.' ? match[3].padEnd(2, '0') : match[3]) : 0);

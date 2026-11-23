@@ -22,7 +22,7 @@ import {DEFAULT_DATASET_COLORS} from '../../models/dataset-colors';
     MatIcon,
     MatList,
     MatListItem,
-    MatCheckbox,
+    MatCheckbox
   ],
   templateUrl: './manage-datasets-form.html',
   styleUrl: './manage-datasets-form.css'
@@ -45,8 +45,8 @@ export class ManageDatasetsForm implements OnInit {
   datasetUnitErrors = signal<Record<string, string | undefined>>({});
 
   constructor(
-    private statService: StatService,
-    private formBuilder: FormBuilder
+    private readonly statService: StatService,
+    private readonly formBuilder: FormBuilder
   ) {
   }
 
@@ -159,8 +159,10 @@ export class ManageDatasetsForm implements OnInit {
         console.error(err);
         input.value = dataset.unit ?? '';
         this.datasetUnitSaving.update(saving => ({...saving, [dataset.label]: false}));
-        this.datasetUnitErrors.update(errors => ({...errors, [dataset.label]:
-          'Could not save the unit. Please try again.'}));
+        this.datasetUnitErrors.update(errors => ({
+          ...errors, [dataset.label]:
+            'Could not save the unit. Please try again.'
+        }));
       }
     });
   }
@@ -184,7 +186,10 @@ export class ManageDatasetsForm implements OnInit {
         console.error(err);
         event.source.checked = dataset.interpolateGaps ?? false;
         this.interpolateGapsSaving.update(saving => ({...saving, [dataset.label]: false}));
-        this.interpolateGapsErrors.update(errors => ({...errors, [dataset.label]: 'Could not save gap filling. Please try again.'}));
+        this.interpolateGapsErrors.update(errors => ({
+          ...errors,
+          [dataset.label]: 'Could not save gap filling. Please try again.'
+        }));
       }
     });
   }
@@ -192,7 +197,10 @@ export class ManageDatasetsForm implements OnInit {
   onSetSmoothingWindow(dataset: Dataset, input: HTMLInputElement): void {
     const value = input.valueAsNumber;
     if (!input.validity.valid || !Number.isInteger(value) || value < 1 || value > 2147483647) {
-      this.smoothingWindowErrors.update(errors => ({...errors, [dataset.label]: 'Enter a whole number between 1 and 2147483647.'}));
+      this.smoothingWindowErrors.update(errors => ({
+        ...errors,
+        [dataset.label]: 'Enter a whole number between 1 and 2147483647.'
+      }));
       return;
     }
     this.clearSmoothingWindowError(dataset.label);
@@ -207,7 +215,10 @@ export class ManageDatasetsForm implements OnInit {
         console.error(err);
         this.smoothingWindowSaving.update(saving => ({...saving, [dataset.label]: false}));
         input.value = String(dataset.smoothingWindow ?? 7);
-        this.smoothingWindowErrors.update(errors => ({...errors, [dataset.label]: 'Could not save the smoothing window. Please try again.'}));
+        this.smoothingWindowErrors.update(errors => ({
+          ...errors,
+          [dataset.label]: 'Could not save the smoothing window. Please try again.'
+        }));
       }
     });
   }
@@ -230,8 +241,10 @@ export class ManageDatasetsForm implements OnInit {
         console.error(err);
         input.value = String(dataset.percentageTarget ?? 100);
         this.percentageTargetSaving.update(saving => ({...saving, [dataset.label]: false}));
-        this.percentageTargetErrors.update(errors => ({...errors, [dataset.label]:
-          'Could not save the 100% target. Please try again.'}));
+        this.percentageTargetErrors.update(errors => ({
+          ...errors, [dataset.label]:
+            'Could not save the 100% target. Please try again.'
+        }));
       }
     });
   }
@@ -246,9 +259,9 @@ export class ManageDatasetsForm implements OnInit {
   }
 
   private hexToRgb(hex: string): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
+    const r = Number.parseInt(hex.slice(1, 3), 16);
+    const g = Number.parseInt(hex.slice(3, 5), 16);
+    const b = Number.parseInt(hex.slice(5, 7), 16);
     return `${r} ${g} ${b}`;
   }
 }

@@ -24,7 +24,7 @@ import {HarvestPreview} from '../harvest-preview/harvest-preview';
 export class StatsList implements OnInit {
   stats = signal<Stat[]>([]);
 
-  constructor(private statService: StatService) {
+  constructor(private readonly statService: StatService) {
   }
 
   ngOnInit(): void {

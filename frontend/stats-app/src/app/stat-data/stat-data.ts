@@ -29,10 +29,10 @@ export class StatData implements OnInit {
   editDeleteForm = viewChild<EditDeleteForm>('editDeleteForm');
 
   constructor(
-    private statService: StatService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private title: Title) {
+    private readonly statService: StatService,
+    private readonly route: ActivatedRoute,
+    private readonly router: Router,
+    private readonly title: Title) {
   }
 
   ngOnInit(): void {

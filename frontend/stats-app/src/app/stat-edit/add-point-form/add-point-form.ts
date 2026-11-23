@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
 import {MatFormFieldModule} from '@angular/material/form-field';
-import {MatError, MatFormField, MatInput, MatInputModule, MatLabel} from '@angular/material/input';
+import {MatInputModule} from '@angular/material/input';
 import {DataPoint, Stat} from '../../models/stat';
 import {FormBuilder, FormGroup, ReactiveFormsModule, Validators} from '@angular/forms';
 import {StatService} from '../../services/stat-service';
@@ -18,15 +18,11 @@ import {isPercentageInput, PercentageInputValue} from '../../models/y-axis';
   imports: [
     MatFormFieldModule,
     MatInputModule,
-    MatFormField,
-    MatLabel,
+    ReactiveFormsModule,
     MatDatepickerInput,
     MatDatepickerToggle,
     MatDatepicker,
-    MatError,
     MatIcon,
-    ReactiveFormsModule,
-    MatInput,
     MatButton,
     MatSelect,
     MatOption,
@@ -45,8 +41,8 @@ export class AddPointForm implements OnInit, OnChanges {
   private readonly entryValue = new PercentageInputValue();
 
   constructor(
-    private statService: StatService,
-    private formBuilder: FormBuilder
+    private readonly statService: StatService,
+    private readonly formBuilder: FormBuilder
   ) {
   }
 
@@ -124,8 +120,8 @@ export class AddPointForm implements OnInit, OnChanges {
       return;
     }
 
-    const amount = parseFloat(amountStr.substring(1));
-    const newValue = parseFloat(latestPoint.y) + amount;
+    const amount = Number.parseFloat(amountStr.substring(1));
+    const newValue = Number.parseFloat(latestPoint.y) + amount;
 
     const newPoint: DataPoint = {
       x,

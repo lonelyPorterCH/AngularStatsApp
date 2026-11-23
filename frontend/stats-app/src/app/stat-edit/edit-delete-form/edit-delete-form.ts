@@ -1,4 +1,14 @@
-import {Component, computed, EventEmitter, Input, OnChanges, OnInit, Output, signal, SimpleChanges} from '@angular/core';
+import {
+  Component,
+  computed,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  signal,
+  SimpleChanges
+} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {MatButton} from '@angular/material/button';
 import {MatFormField, MatInput, MatLabel} from '@angular/material/input';
@@ -12,11 +22,18 @@ import {StatService} from '../../services/stat-service';
 import {MatDialog} from '@angular/material/dialog';
 import {ConfirmDialog} from '../../confirm-dialog/confirm-dialog';
 import {compareDataPoints, isLinearXAxis} from '../../models/x-axis';
-import {countToPercentage, formatInputNumber, isPercentageInput, parseYAxisValue, PercentageInputValue} from '../../models/y-axis';
+import {
+  countToPercentage,
+  formatInputNumber,
+  isPercentageInput,
+  parseYAxisValue,
+  PercentageInputValue
+} from '../../models/y-axis';
 
 @Component({
   selector: 'app-edit-delete-form',
   imports: [
+    ReactiveFormsModule,
     DatePipe,
     MatButton,
     MatFormField,
@@ -25,8 +42,7 @@ import {countToPercentage, formatInputNumber, isPercentageInput, parseYAxisValue
     MatLabel,
     MatOption,
     MatSelect,
-    MatSuffix,
-    ReactiveFormsModule
+    MatSuffix
   ],
   templateUrl: './edit-delete-form.html',
   styleUrl: './edit-delete-form.css',
@@ -39,8 +55,6 @@ export class EditDeleteForm implements OnInit, OnChanges {
 
   selectedDatasetLabel = signal<string | null>(null);
   submissionError = signal('');
-  private readonly entryValue = new PercentageInputValue();
-
   sortedDataPoints = computed(() => {
     const label = this.selectedDatasetLabel();
     if (!this.stat || !label) return [];
@@ -49,14 +63,14 @@ export class EditDeleteForm implements OnInit, OnChanges {
     return [...ds.dataPoints]
       .sort((a, b) => compareDataPoints(a, b, this.stat));
   });
-
   protected readonly isLinearXAxis = isLinearXAxis;
   protected readonly isPercentageInput = isPercentageInput;
+  private readonly entryValue = new PercentageInputValue();
 
   constructor(
-    private statService: StatService,
-    private formBuilder: FormBuilder,
-    private dialog: MatDialog,
+    private readonly statService: StatService,
+    private readonly formBuilder: FormBuilder,
+    private readonly dialog: MatDialog,
   ) {
   }
 
@@ -123,15 +137,6 @@ export class EditDeleteForm implements OnInit, OnChanges {
     this.setPointValue(event.value);
   }
 
-  private setPointValue(point: DataPoint): void {
-    const dataset = this.stat.datasets.find(ds => ds.label === this.selectedDatasetLabel());
-    const value = dataset && this.stat.yAxisFormat === 'percentage'
-      ? this.entryValue.displayCount(point.y, dataset, isPercentageInput(this.stat)) : point.y;
-    const control = this.editPointForm.get('value')!;
-    control.enable({emitEvent: false});
-    control.setValue(value, {emitEvent: false});
-  }
-
   pointInputValue(point: DataPoint): string {
     const dataset = this.stat.datasets.find(ds => ds.label === this.selectedDatasetLabel());
     return isPercentageInput(this.stat) && dataset ? formatInputNumber(countToPercentage(Number(point.y), dataset)) : point.y;
@@ -171,6 +176,15 @@ export class EditDeleteForm implements OnInit, OnChanges {
       }
       this.replacePoint(datasetLabel, selected, value);
     }
+  }
+
+  private setPointValue(point: DataPoint): void {
+    const dataset = this.stat.datasets.find(ds => ds.label === this.selectedDatasetLabel());
+    const value = dataset && this.stat.yAxisFormat === 'percentage'
+      ? this.entryValue.displayCount(point.y, dataset, isPercentageInput(this.stat)) : point.y;
+    const control = this.editPointForm.get('value')!;
+    control.enable({emitEvent: false});
+    control.setValue(value, {emitEvent: false});
   }
 
   private deletePoint(datasetLabel: string, point: DataPoint): void {

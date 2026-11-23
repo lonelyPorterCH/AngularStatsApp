@@ -9,9 +9,9 @@ import {environment} from '../../environments/environment';
 })
 export class StatService {
 
-  private baseUrl = environment.apiBaseUrl;
+  private readonly baseUrl = environment.apiBaseUrl;
 
-  constructor(private http: HttpClient) {
+  constructor(private readonly http: HttpClient) {
   }
 
   getStats(): Observable<Stat[]> {

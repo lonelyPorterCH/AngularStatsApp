@@ -20,7 +20,7 @@ import {StatsCard} from '../stats-card/stats-card';
 export class Archive implements OnInit {
   stats = signal<Stat[]>([]);
 
-  constructor(private statService: StatService) {
+  constructor(private readonly statService: StatService) {
   }
 
   ngOnInit(): void {

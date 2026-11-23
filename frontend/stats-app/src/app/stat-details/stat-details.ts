@@ -23,11 +23,11 @@ export class StatDetails implements OnInit {
   notFound = signal(false);
 
   constructor(
-    private statService: StatService,
-    private route: ActivatedRoute,
-    private dialog: MatDialog,
-    private router: Router,
-    private title: Title) {
+    private readonly statService: StatService,
+    private readonly route: ActivatedRoute,
+    private readonly dialog: MatDialog,
+    private readonly router: Router,
+    private readonly title: Title) {
   }
 
   ngOnInit(): void {

@@ -14,7 +14,7 @@
   @if (stat.xAxisScaleType === 'linear') {
     <mat-form-field appearance="outline">
       <mat-label>{{ stat.xAxisName }}</mat-label>
-      <input formControlName="x" matInput min="0" step="any" type="number"/>
+      <input formControlName="x" matInput min="0" step="any" type="number" aria-label="{{ stat.xAxisName }}"/>
       @if (addPointForm.get('x')?.errors?.['required']) {
         <mat-error>{{ stat.xAxisName }} is required</mat-error>
       }
@@ -25,7 +25,7 @@
   } @else {
     <mat-form-field appearance="outline">
       <mat-label>Date</mat-label>
-      <input [matDatepicker]="picker" formControlName="x" matInput/>
+      <input [matDatepicker]="picker" formControlName="x" matInput aria-label="Date"/>
       <mat-datepicker-toggle [for]="picker" matIconSuffix></mat-datepicker-toggle>
       <mat-datepicker #picker></mat-datepicker>
       @if (addPointForm.get('x')?.errors?.['required']) {
@@ -34,9 +34,10 @@
     </mat-form-field>
   }
 
+  @let yLabel = isPercentageInput(stat) ? 'Completed percentage' : stat.yAxisFormat === 'percentage' ? 'Completed count' : stat.yAxisName;
   <mat-form-field appearance="outline">
-    <mat-label>{{ isPercentageInput(stat) ? 'Completed percentage' : stat.yAxisFormat === 'percentage' ? 'Completed count' : stat.yAxisName }}</mat-label>
-    <input formControlName="y" matInput type="text"
+    <mat-label>{{ yLabel }}</mat-label>
+    <input formControlName="y" matInput type="text" aria-label="{{ yLabel }}"
       [matTooltip]="isPercentageInput(stat) ? 'Enter a percentage or +number to add percentage points to the latest value.' : stat.yAxisFormat === 'pace' ? 'Enter pace as m:ss or M.SS (5.1 means 5:10). No increments.' : 'Enter a number (e.g., 100) or +number to increment the latest value (e.g., +10)'"/>
     @if (isPercentageInput(stat)) { <span matTextSuffix>%</span> }
     @if (addPointForm.get('y')?.errors?.['required']) {

@@ -43,6 +43,26 @@ describe('AddPointForm', () => {
     httpTesting.verify();
   });
 
+  it('keeps input accessible names aligned with their visible labels', () => {
+    const cases: {stat: Stat; xLabel: string; yLabel: string}[] = [
+      {stat: MOCK_STAT, xLabel: 'Date', yLabel: 'Value'},
+      {stat: {...MOCK_STAT, xAxisScaleType: 'linear', xAxisName: 'Distance'}, xLabel: 'Distance', yLabel: 'Value'},
+      {stat: {...MOCK_STAT, yAxisFormat: 'percentage'}, xLabel: 'Date', yLabel: 'Completed count'},
+      {stat: {...MOCK_STAT, yAxisFormat: 'percentage', percentageInputMode: 'percentage'},
+        xLabel: 'Date', yLabel: 'Completed percentage'}
+    ];
+
+    for (const {stat, xLabel, yLabel} of cases) {
+      fixture.componentRef.setInput('stat', stat);
+      fixture.detectChanges();
+      for (const [control, expected] of [['x', xLabel], ['y', yLabel]]) {
+        const input: HTMLInputElement = fixture.nativeElement.querySelector(`input[formControlName="${control}"]`);
+        expect(input.getAttribute('aria-label')).toBe(expected);
+        expect(input.labels?.[0]?.querySelector('mat-label')?.textContent?.trim()).toBe(expected);
+      }
+    }
+  });
+
   //SKIP: when I set the luxon date, addPointForm.invalid becomes invalid.
   // If I set it to string, it becomes valid, but toFormat throws Error
   it.skip('should emit pointChanged on successful add', () => {
