@@ -3,6 +3,7 @@ package ch.lonelyporter.statsapp.service;
 import ch.lonelyporter.statsapp.StorageProperties;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
 import ch.lonelyporter.statsapp.web.model.Statistic;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -226,8 +227,19 @@ class StatisticServiceTest {
         repository.save(createStatistic("chart", "Chart"));
         Path statisticFile = tempDir.resolve("chart.json");
         String originalJson = Files.readString(statisticFile);
+        List<Runnable> mutations = getMutations();
+
+        for (Runnable mutation : mutations) {
+            assertThatThrownBy(mutation::run)
+                    .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class)
+                    .hasMessageContaining("Missing");
+            assertThat(Files.readString(statisticFile)).isEqualTo(originalJson);
+        }
+    }
+
+    private @NonNull List<Runnable> getMutations() {
         Statistic.DataPoint point = new Statistic.DataPoint("2026-10-30", "1");
-        List<Runnable> mutations = List.of(
+        return List.of(
                 () -> service.deleteDataset("chart", "Missing"),
                 () -> service.renameDataset("chart", "Missing", "Renamed"),
                 () -> service.setDatasetFilled("chart", "Missing", true),
@@ -236,13 +248,6 @@ class StatisticServiceTest {
                 () -> service.deleteDataPoint("chart", "Missing", point),
                 () -> service.reorderDatasets("chart", List.of("Missing"))
         );
-
-        for (Runnable mutation : mutations) {
-            assertThatThrownBy(mutation::run)
-                    .isInstanceOf(ch.lonelyporter.statsapp.exception.StatisticNotFoundException.class)
-                    .hasMessageContaining("Missing");
-            assertThat(Files.readString(statisticFile)).isEqualTo(originalJson);
-        }
     }
 
     @Test

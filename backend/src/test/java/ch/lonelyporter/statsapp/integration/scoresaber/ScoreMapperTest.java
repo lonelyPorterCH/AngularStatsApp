@@ -15,6 +15,7 @@ class ScoreMapperTest {
         var score = new PlayerScoresDto.Score(1, 0.9, 900, java.time.Instant.EPOCH, List.of());
         var missingScore = new PlayerScoresDto.PlayerScore(null, null);
         var missingLeaderboard = new PlayerScoresDto.PlayerScore(score, null);
+        //noinspection DataFlowIssue
         assertThatThrownBy(() -> ScoreMapper.mapTopScore(null))
                 .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("top score");
         assertThatThrownBy(() -> ScoreMapper.mapTopScore(missingScore))
@@ -30,6 +31,7 @@ class ScoreMapperTest {
         assertThat(ScoreMapper.mapNoFail(List.of("FS", "NF"))).isTrue();
         assertThat(ScoreMapper.mapNoFail(List.of())).isFalse();
         assertThat(ScoreMapper.mapNoFail(List.of("FS", "NFS"))).isFalse();
+        //noinspection DataFlowIssue
         assertThatThrownBy(() -> ScoreMapper.mapNoFail(null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> ScoreMapper.mapNoFail(modifiersWithNull))
                 .isInstanceOf(IllegalArgumentException.class);
@@ -51,6 +53,7 @@ class ScoreMapperTest {
     void rejectsMissingOrUnknownDifficultyRatherThanGuessing() {
         var unknownDifficulty = new PlayerScoresDto.Difficulty(2, "SoloStandard");
         var unknownCharacteristic = new PlayerScoresDto.Difficulty(5, "Unknown");
+        //noinspection DataFlowIssue
         assertThatThrownBy(() -> ScoreMapper.mapDifficulty(null)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> ScoreMapper.mapDifficulty(unknownDifficulty))
                 .isInstanceOf(IllegalArgumentException.class);

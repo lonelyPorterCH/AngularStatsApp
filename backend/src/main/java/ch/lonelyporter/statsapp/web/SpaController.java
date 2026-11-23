@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class SpaController {
 
     @GetMapping({"/{path:[^.]*}", "/**/{path:[^.]*}"})
-    public String forward(@PathVariable("path") String path) {
+    public String forward(@PathVariable String path) {
         return "forward:/index.html";
     }
 }
