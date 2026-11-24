@@ -1,0 +1,32 @@
+#!/bin/sh
+echo "$*" >> "$TEST_DIR/calls"
+case "$1" in
+    info) echo 24.0.2 ;;
+    load) [ "$CASE" != load-failure ] ;;
+    compose) exit 0 ;;
+    stop|rename) exit 0 ;;
+    inspect)
+        if [ "$2" != -f ]; then
+            case "$2:$CASE" in
+                stats-app-pre-compose:backup-conflict|stats-app-pre-compose:pending) exit 0 ;;
+                stats-app-pre-compose:*) exit 1 ;;
+                stats-app:pending) exit 1 ;;
+                *) exit 0 ;;
+            esac
+        fi
+        case "$3" in
+            *com.docker.compose.project*)
+                [ "$CASE" = managed ] && echo statsapp || true ;;
+            *com.docker.compose.service*)
+                [ "$CASE" = managed ] && echo stats-app || true ;;
+            *HostConfig.NetworkMode*) echo bridge ;;
+            *Config.Image*) echo statsapp:latest ;;
+            *range\ .Mounts*)
+                if [ "$CASE" = bad-mount ]; then echo unexpected; else echo 'bind:/volume1/docker/StatsApp:/data:true;'; fi ;;
+            *RestartPolicy.Name*) echo no ;;
+            *PortBindings*) echo '8081/tcp::8081;' ;;
+            *State.Running*) echo true ;;
+            *) echo "Unexpected inspect format: $3" >&2; exit 1 ;;
+        esac ;;
+    *) echo "Unexpected docker command: $*" >&2; exit 1 ;;
+esac

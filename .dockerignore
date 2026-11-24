@@ -3,6 +3,7 @@
 .idea
 .vscode
 *.tar
+tools
 
 backend/build
 backend/bin

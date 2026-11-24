@@ -42,6 +42,7 @@ separate feature/change set, a change after release, or when explicitly requeste
    ```
 
 > Bug fixes do not require a version bump unless they change observable behaviour.
+> Deployment scripts are not application features and do not require a version bump.
 
 Do not touch other md files like README.md or SCORESABER-DATA-FLOW.md or create new ones unless told to.
 

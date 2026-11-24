@@ -1,0 +1,15 @@
+services:
+  stats-app:
+    image: statsapp:latest
+    container_name: stats-app
+    network_mode: bridge
+    ports:
+      - "8081:8081"
+    volumes:
+      - /volume1/docker/StatsApp:/data
+    environment:
+      APP_STATS_STORAGE_PATH: /data/statistics
+      APP_SCORES_STORAGE_PATH: /data/scores
+      SCORESABER_BASE_URL: https://scoresaber.com
+      SERVER_PORT: "8081"
+    restart: "no"
