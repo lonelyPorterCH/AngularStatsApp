@@ -28,6 +28,7 @@ export class StatsList implements OnInit {
   dragPreview = signal<{groupId: string | null; chart: ChartPlacement; charts: ChartPlacement[]} | null>(null);
   resizePreview = signal<{groupId: string | null; chart: ChartPlacement; charts: ChartPlacement[]} | null>(null);
   placementPreview = computed(() => this.resizePreview() ?? this.dragPreview());
+  liveChart = signal<{id: string; width: number; height: number; left?: number; top?: number} | null>(null);
   private savedLayout: DashboardLayout | null = null;
   private dragging: {chart: ChartPlacement; sourceId: string | null; offsetX: number; offsetY: number} | null = null;
   private resize: {id: string; groupId: string | null; startX: number; startY: number;
@@ -147,6 +148,8 @@ export class StatsList implements OnInit {
     const bounds = card.getBoundingClientRect();
     this.dragging = {chart: {...chart}, sourceId: groupId,
       offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top};
+    this.liveChart.set({id: chart.statisticId, width: bounds.width, height: bounds.height,
+      left: bounds.left, top: bounds.top});
     event.dataTransfer.setData('text/plain', chart.statisticId);
     event.dataTransfer.effectAllowed = 'move';
     const transparent = document.createElement('canvas');
@@ -157,11 +160,20 @@ export class StatsList implements OnInit {
   dragEnd(): void {
     this.dragging = null;
     this.dragPreview.set(null);
+    this.liveChart.set(null);
+  }
+
+  moveChart(event: DragEvent): void {
+    const dragging = this.dragging;
+    const live = this.liveChart();
+    if (!dragging || !live || (event.clientX === 0 && event.clientY === 0)) return;
+    this.liveChart.set({...live, left: event.clientX - dragging.offsetX, top: event.clientY - dragging.offsetY});
   }
 
   previewDrop(event: DragEvent, groupId: string | null, placements: ChartPlacement[]): void {
     const dragging = this.dragging;
     if (!this.editing() || this.saving() || !dragging) return;
+    this.moveChart(event);
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
     const grid = event.currentTarget as HTMLElement;
@@ -226,6 +238,12 @@ export class StatsList implements OnInit {
       width: Math.max(MIN_CHART_WIDTH, Math.min(GRID_COLUMNS - original.x,
         resize.width + Math.round((event.clientX - resize.startX) / resize.columnStep))),
       height: Math.max(MIN_CHART_HEIGHT, resize.height + Math.round((event.clientY - resize.startY) / 116))};
+    this.liveChart.set({id: resize.id,
+      width: Math.max(MIN_CHART_WIDTH * resize.columnStep - 16,
+        Math.min((GRID_COLUMNS - original.x) * resize.columnStep - 16,
+          resize.width * resize.columnStep - 16 + event.clientX - resize.startX)),
+      height: Math.max(MIN_CHART_HEIGHT * 116 - 16,
+        resize.height * 116 - 16 + event.clientY - resize.startY)});
     this.resizePreview.set({groupId: resize.groupId, chart, charts: placeChart(structuredClone(charts), chart)});
   }
 
@@ -240,6 +258,7 @@ export class StatsList implements OnInit {
   cancelResize(): void {
     this.resize = null;
     this.resizePreview.set(null);
+    this.liveChart.set(null);
   }
 
   private gridCharts(layout: DashboardLayout, groupId: string | null): ChartPlacement[] | undefined {

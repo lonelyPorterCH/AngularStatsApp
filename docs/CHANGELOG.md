@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 - Drag charts by their top edge, with a preview of the new placement.
 - Charts without a group appear directly on the dashboard instead of in an Ungrouped group.
 - Resize charts using a subtle corner grip integrated into the card edge, with a blue size preview before release.
+- Charts follow the cursor smoothly while moving or resizing, then snap to the previewed grid on release.
 
 ## [2.6.3] - 2026-11-20
 

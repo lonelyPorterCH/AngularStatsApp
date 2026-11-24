@@ -49,9 +49,16 @@
           <div class="dashboard-chart"
                [style.grid-column]="(chart.x + 1) + ' / span ' + chart.width"
                [style.grid-row]="(chart.y + 1) + ' / span ' + chart.height">
+            <div class="chart-surface"
+                 [class.live]="liveChart()?.id === chart.statisticId"
+                 [class.moving]="liveChart()?.id === chart.statisticId && liveChart()?.left !== undefined"
+                 [style.width.px]="liveChart()?.id === chart.statisticId ? liveChart()?.width : null"
+                 [style.height.px]="liveChart()?.id === chart.statisticId ? liveChart()?.height : null"
+                 [style.left.px]="liveChart()?.id === chart.statisticId ? liveChart()?.left : null"
+                 [style.top.px]="liveChart()?.id === chart.statisticId ? liveChart()?.top : null">
             @if (editing()) {
               <div class="drag-handle" draggable="true"
-                   (dragstart)="dragStart($event, groupId, chart)" (dragend)="dragEnd()"
+                   (dragstart)="dragStart($event, groupId, chart)" (drag)="moveChart($event)" (dragend)="dragEnd()"
                    [attr.aria-label]="'Drag ' + statFor(chart.statisticId).title" title="Drag to move"></div>
             }
             <app-stats-card [stat]="statFor(chart.statisticId)"></app-stats-card>
@@ -61,6 +68,7 @@
                       (pointercancel)="cancelResize()" (lostpointercapture)="cancelResize()"
                       [attr.aria-label]="'Resize ' + statFor(chart.statisticId).title" title="Drag to resize"></button>
             }
+            </div>
           </div>
         }
         @if (placementPreview(); as preview) {

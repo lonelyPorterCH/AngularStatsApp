@@ -213,4 +213,56 @@ describe('StatsList layout editing', () => {
     expect(component.layout()).toEqual(original);
     expect(component.placementPreview()).toBeNull();
   });
+
+  it('resizes the visible chart by exact pixels before snapping to the preview on release', () => {
+    component.startEditing();
+    const grid = document.createElement('div');
+    grid.className = 'dashboard-grid';
+    const handle = document.createElement('button');
+    grid.appendChild(handle);
+    handle.setPointerCapture = () => {};
+    grid.getBoundingClientRect = () => new DOMRect(0, 0, 1200, 448);
+    const down = new MouseEvent('pointerdown', {clientX: 500, clientY: 500}) as PointerEvent;
+    Object.defineProperties(down, {currentTarget: {value: handle}, pointerId: {value: 1}});
+    component.startResize(down, 'group', component.layout()!.groups[0].charts[0]);
+    const initialWidth = component.liveChart()!.width;
+    component.resizeChart(new MouseEvent('pointermove', {clientX: 483, clientY: 517}) as PointerEvent);
+    expect(component.liveChart()!.width).toBeCloseTo(initialWidth - 17);
+    expect(component.liveChart()!.height).toBe(465);
+    expect(component.resizePreview()?.chart).toMatchObject({width: 6, height: 4});
+    component.resizeChart(new MouseEvent('pointermove', {clientX: 450, clientY: 570}) as PointerEvent);
+    expect(component.liveChart()!.width).toBeCloseTo(initialWidth - 50);
+    expect(component.liveChart()!.height).toBe(518);
+    const preview = structuredClone(component.resizePreview()!.charts);
+    expect(component.layout()).toEqual(original);
+    component.stopResize();
+    expect(component.layout()!.groups[0].charts).toEqual(preview);
+    expect(component.liveChart()).toBeNull();
+  });
+
+  it('moves the visible chart with the pointer without snapping until drop', () => {
+    component.startEditing();
+    const card = document.createElement('div');
+    card.className = 'dashboard-chart';
+    const handle = document.createElement('div');
+    card.appendChild(handle);
+    card.getBoundingClientRect = () => new DOMRect(100, 100, 600, 448);
+    const start = new MouseEvent('dragstart', {clientX: 137, clientY: 110}) as DragEvent;
+    Object.defineProperties(start, {currentTarget: {value: handle},
+      dataTransfer: {value: {setData: vi.fn(), setDragImage: vi.fn()}}});
+    component.dragStart(start, 'group', component.layout()!.groups[0].charts[0]);
+    component.moveChart(new MouseEvent('drag', {clientX: 154, clientY: 133}) as DragEvent);
+    expect(component.liveChart()).toEqual({id: 'one', left: 117, top: 123, width: 600, height: 448});
+    const grid = document.createElement('div');
+    grid.getBoundingClientRect = () => new DOMRect(0, 0, 1200, 448);
+    const over = new MouseEvent('dragover', {clientX: 166, clientY: 139, cancelable: true}) as DragEvent;
+    Object.defineProperty(over, 'currentTarget', {value: grid});
+    component.previewDrop(over, null, component.layout()!.charts);
+    expect(component.liveChart()).toMatchObject({left: 129, top: 129});
+    expect(component.dragPreview()?.chart).toMatchObject({x: 1, y: 1});
+    expect(component.layout()).toEqual(original);
+    component.drop(new MouseEvent('drop', {cancelable: true}) as DragEvent, null);
+    expect(component.layout()!.charts[0]).toMatchObject({x: 1, y: 1});
+    expect(component.liveChart()).toBeNull();
+  });
 });
