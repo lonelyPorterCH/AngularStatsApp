@@ -181,7 +181,36 @@ describe('StatsList layout editing', () => {
     Object.defineProperties(down, {currentTarget: {value: handle}, pointerId: {value: 1}});
     component.startResize(down, 'group', component.layout()!.groups[0].charts[0]);
     component.resizeChart(new MouseEvent('pointermove', {clientX: 0, clientY: 0}) as PointerEvent);
-    expect(component.layout()!.groups[0].charts[0]).toMatchObject({width: 2, height: 3});
+    expect(component.resizePreview()?.chart).toMatchObject({width: 2, height: 3});
+    expect(component.layout()).toEqual(original);
     component.stopResize();
+    expect(component.layout()!.groups[0].charts[0]).toMatchObject({width: 2, height: 3});
+    expect(component.placementPreview()).toBeNull();
+  });
+
+  it('previews collision displacement during resizing and discards cancelled changes', () => {
+    original.groups[0].charts.push({statisticId: 'other', x: 6, y: 4, width: 6, height: 4});
+    component.layout.set(structuredClone(original));
+    component.stats.set([stat, {...stat, id: 'other'}]);
+    component.startEditing();
+    const grid = document.createElement('div');
+    grid.className = 'dashboard-grid';
+    const handle = document.createElement('button');
+    grid.appendChild(handle);
+    handle.setPointerCapture = () => {};
+    grid.getBoundingClientRect = () => new DOMRect(0, 0, 1200, 100);
+    const down = new MouseEvent('pointerdown', {clientX: 500, clientY: 500}) as PointerEvent;
+    Object.defineProperties(down, {currentTarget: {value: handle}, pointerId: {value: 1}});
+    component.startResize(down, 'group', component.layout()!.groups[0].charts[0]);
+    component.resizeChart(new MouseEvent('pointermove', {clientX: 500, clientY: 616}) as PointerEvent);
+    expect(component.resizePreview()?.chart.height).toBe(5);
+    expect(component.visibleCharts(component.layout()!.groups[0].charts, 'group')).toEqual([
+      {statisticId: 'one', x: 6, y: 0, width: 6, height: 4},
+      {statisticId: 'other', x: 6, y: 5, width: 6, height: 4}
+    ]);
+    expect(component.layout()).toEqual(original);
+    component.cancelResize();
+    expect(component.layout()).toEqual(original);
+    expect(component.placementPreview()).toBeNull();
   });
 });

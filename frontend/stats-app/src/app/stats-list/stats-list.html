@@ -57,12 +57,13 @@
             <app-stats-card [stat]="statFor(chart.statisticId)"></app-stats-card>
             @if (editing()) {
               <button class="resize-handle" type="button" (pointerdown)="startResize($event, groupId, chart)"
-                      (pointermove)="resizeChart($event)" (pointerup)="stopResize()" (pointercancel)="stopResize()"
-                      [attr.aria-label]="'Resize ' + statFor(chart.statisticId).title" title="Drag to resize">◢</button>
+                      (pointermove)="resizeChart($event)" (pointerup)="resizeChart($event); stopResize()"
+                      (pointercancel)="cancelResize()" (lostpointercapture)="cancelResize()"
+                      [attr.aria-label]="'Resize ' + statFor(chart.statisticId).title" title="Drag to resize"></button>
             }
           </div>
         }
-        @if (dragPreview(); as preview) {
+        @if (placementPreview(); as preview) {
           @if (preview.groupId === groupId) {
             <div class="drop-preview" aria-hidden="true"
                  [style.grid-column]="(preview.chart.x + 1) + ' / span ' + preview.chart.width"

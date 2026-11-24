@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, computed, OnInit, signal} from '@angular/core';
 import {NgTemplateOutlet} from '@angular/common';
 import {forkJoin} from 'rxjs';
 import {StatsCard} from '../stats-card/stats-card';
@@ -26,6 +26,8 @@ export class StatsList implements OnInit {
   saving = signal(false);
   error = signal('');
   dragPreview = signal<{groupId: string | null; chart: ChartPlacement; charts: ChartPlacement[]} | null>(null);
+  resizePreview = signal<{groupId: string | null; chart: ChartPlacement; charts: ChartPlacement[]} | null>(null);
+  placementPreview = computed(() => this.resizePreview() ?? this.dragPreview());
   private savedLayout: DashboardLayout | null = null;
   private dragging: {chart: ChartPlacement; sourceId: string | null; offsetX: number; offsetY: number} | null = null;
   private resize: {id: string; groupId: string | null; startX: number; startY: number;
@@ -62,11 +64,11 @@ export class StatsList implements OnInit {
 
   visibleCharts(placements: ChartPlacement[], groupId: string | null): ChartPlacement[] {
     const active = new Set(this.stats().map(stat => stat.id));
-    const preview = this.dragPreview();
+    const preview = this.placementPreview();
     const charts = placements.filter(chart => active.has(chart.statisticId))
       .sort((a, b) => a.y - b.y || a.x - b.x);
     if (!preview || preview.groupId !== groupId) return charts;
-    return charts.map(chart => chart.statisticId === this.dragging?.chart.statisticId
+    return charts.map(chart => chart.statisticId === preview.chart.statisticId
       ? chart : preview.charts.find(item => item.statisticId === chart.statisticId) ?? chart);
   }
 
@@ -201,7 +203,7 @@ export class StatsList implements OnInit {
   }
 
   startResize(event: PointerEvent, groupId: string | null, chart: ChartPlacement): void {
-    if (this.saving()) return;
+    if (!this.editing() || this.saving() || event.button !== 0) return;
     const handle = event.currentTarget as HTMLElement;
     const grid = handle.closest('.dashboard-grid') as HTMLElement | null;
     if (!grid) return;
@@ -209,24 +211,35 @@ export class StatsList implements OnInit {
     handle.setPointerCapture(event.pointerId);
     this.resize = {id: chart.statisticId, groupId, startX: event.clientX, startY: event.clientY,
       width: chart.width, height: chart.height, columnStep: (grid.getBoundingClientRect().width + 16) / GRID_COLUMNS};
+    this.resizeChart(event);
   }
 
   resizeChart(event: PointerEvent): void {
     const resize = this.resize;
     if (!resize) return;
-    this.updateLayout(layout => {
-      const charts = this.gridCharts(layout, resize.groupId);
-      const chart = charts?.find(item => item.statisticId === resize.id);
-      if (!charts || !chart) return;
-      chart.width = Math.max(MIN_CHART_WIDTH, Math.min(GRID_COLUMNS - chart.x,
-        resize.width + Math.round((event.clientX - resize.startX) / resize.columnStep)));
-      chart.height = Math.max(MIN_CHART_HEIGHT, resize.height + Math.round((event.clientY - resize.startY) / 116));
-      this.setGridCharts(layout, resize.groupId, placeChart(charts, chart));
-    });
+    const layout = this.layout();
+    if (!layout) return;
+    const charts = this.gridCharts(layout, resize.groupId);
+    const original = charts?.find(item => item.statisticId === resize.id);
+    if (!charts || !original) return;
+    const chart = {...original,
+      width: Math.max(MIN_CHART_WIDTH, Math.min(GRID_COLUMNS - original.x,
+        resize.width + Math.round((event.clientX - resize.startX) / resize.columnStep))),
+      height: Math.max(MIN_CHART_HEIGHT, resize.height + Math.round((event.clientY - resize.startY) / 116))};
+    this.resizePreview.set({groupId: resize.groupId, chart, charts: placeChart(structuredClone(charts), chart)});
   }
 
   stopResize(): void {
+    const preview = this.resizePreview();
+    if (this.resize && preview) {
+      this.updateLayout(layout => this.setGridCharts(layout, preview.groupId, preview.charts));
+    }
+    this.cancelResize();
+  }
+
+  cancelResize(): void {
     this.resize = null;
+    this.resizePreview.set(null);
   }
 
   private gridCharts(layout: DashboardLayout, groupId: string | null): ChartPlacement[] | undefined {
