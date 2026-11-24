@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -30,43 +31,49 @@ public class LayoutService {
 
     public void removeStatistic(String id) {
         DashboardLayout layout = load();
-        if (layout.groups().stream().noneMatch(group ->
-                group.charts().stream().anyMatch(chart -> chart.statisticId().equals(id)))) {
+        if (layout.charts().stream().noneMatch(chart -> chart.statisticId().equals(id))
+                && layout.groups().stream().noneMatch(group ->
+                        group.charts().stream().anyMatch(chart -> chart.statisticId().equals(id)))) {
             return;
         }
+        var charts = layout.charts().stream().filter(chart -> !chart.statisticId().equals(id)).toList();
         var groups = layout.groups().stream()
                 .map(group -> new DashboardLayout.Group(group.id(), group.title(),
                         group.charts().stream().filter(chart -> !chart.statisticId().equals(id)).toList()))
                 .toList();
-        repository.save(new DashboardLayout(groups));
+        repository.save(new DashboardLayout(charts, groups));
     }
 
     private void validate(DashboardLayout layout) {
-        if (layout == null || layout.groups() == null || layout.groups().isEmpty()
-                || layout.groups().getFirst() == null || !"ungrouped".equals(layout.groups().getFirst().id())) {
-            throw new InvalidDataPointException("Layout must start with the ungrouped section");
+        if (layout == null || layout.charts() == null || layout.groups() == null) {
+            throw new InvalidDataPointException("Layout must contain charts and groups");
         }
         Set<String> groupIds = new HashSet<>();
         Set<String> statisticIds = new HashSet<>();
+        validateCharts(layout.charts(), statisticIds);
         for (DashboardLayout.Group group : layout.groups()) {
             if (group == null || group.id() == null || group.id().isBlank() || !groupIds.add(group.id())
                     || group.title() == null || group.title().isBlank() || group.charts() == null) {
                 throw new InvalidDataPointException("Invalid dashboard group");
             }
-            for (int i = 0; i < group.charts().size(); i++) {
-                DashboardLayout.Chart chart = group.charts().get(i);
-                if (chart == null || chart.statisticId() == null || chart.statisticId().isBlank()
-                        || !statisticIds.add(chart.statisticId()) || chart.x() == null || chart.y() == null
-                        || chart.width() == null || chart.height() == null
-                        || chart.x() < 0 || chart.y() < 0 || chart.width() < MIN_WIDTH || chart.height() < MIN_HEIGHT
-                        || (long) chart.x() + chart.width() > COLUMNS
-                        || (long) chart.y() + chart.height() > Integer.MAX_VALUE) {
-                    throw new InvalidDataPointException("Invalid chart placement");
-                }
-                for (int j = 0; j < i; j++) {
-                    if (overlaps(chart, group.charts().get(j))) {
-                        throw new InvalidDataPointException("Chart placements must not overlap");
-                    }
+            validateCharts(group.charts(), statisticIds);
+        }
+    }
+
+    private void validateCharts(List<DashboardLayout.Chart> charts, Set<String> statisticIds) {
+        for (int i = 0; i < charts.size(); i++) {
+            DashboardLayout.Chart chart = charts.get(i);
+            if (chart == null || chart.statisticId() == null || chart.statisticId().isBlank()
+                    || !statisticIds.add(chart.statisticId()) || chart.x() == null || chart.y() == null
+                    || chart.width() == null || chart.height() == null
+                    || chart.x() < 0 || chart.y() < 0 || chart.width() < MIN_WIDTH || chart.height() < MIN_HEIGHT
+                    || (long) chart.x() + chart.width() > COLUMNS
+                    || (long) chart.y() + chart.height() > Integer.MAX_VALUE) {
+                throw new InvalidDataPointException("Invalid chart placement");
+            }
+            for (int j = 0; j < i; j++) {
+                if (overlaps(chart, charts.get(j))) {
+                    throw new InvalidDataPointException("Chart placements must not overlap");
                 }
             }
         }

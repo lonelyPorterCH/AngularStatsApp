@@ -45,7 +45,7 @@ describe('StatService', () => {
   });
 
   it('loads and saves the dashboard layout and reserves its id', async () => {
-    const layout = {groups: [{id: 'ungrouped', title: 'Ungrouped', charts: []}]};
+    const layout = {charts: [], groups: []};
     const loading = firstValueFrom(service.getLayout());
     httpTesting.expectOne(`${environment.apiBaseUrl}/layout`).flush(layout);
     expect(await loading).toEqual(layout);

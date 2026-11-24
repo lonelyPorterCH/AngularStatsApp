@@ -2,7 +2,7 @@ package ch.lonelyporter.statsapp.web.model;
 
 import java.util.List;
 
-public record DashboardLayout(List<Group> groups) {
+public record DashboardLayout(List<Chart> charts, List<Group> groups) {
     public record Group(String id, String title, List<Chart> charts) {
     }
 

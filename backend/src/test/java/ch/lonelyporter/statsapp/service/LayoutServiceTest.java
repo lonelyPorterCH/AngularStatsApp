@@ -66,6 +66,25 @@ class LayoutServiceTest {
     }
 
     @Test
+    void rejectsDuplicateChartsAcrossTheDashboardAndGroups() {
+        var chart = new DashboardLayout.Chart("chart", 0, 0, 6, 4);
+        var layout = new DashboardLayout(List.of(chart),
+                List.of(new DashboardLayout.Group("group", "Group", List.of(chart))));
+        assertThatThrownBy(() -> service.save(layout)).isInstanceOf(InvalidDataPointException.class);
+    }
+
+    @Test
+    void removesGroupedChartsWithoutAffectingUngroupedCharts() {
+        var ungrouped = new DashboardLayout.Chart("free", 0, 0, 6, 4);
+        var grouped = new DashboardLayout.Chart("grouped", 0, 0, 6, 4);
+        service.save(new DashboardLayout(List.of(ungrouped),
+                List.of(new DashboardLayout.Group("group", "Group", List.of(grouped)))));
+        service.removeStatistic("grouped");
+        assertThat(service.load().charts()).containsExactly(ungrouped);
+        assertThat(service.load().groups().getFirst().charts()).isEmpty();
+    }
+
+    @Test
     void corruptLayoutIsNotSilentlyReplaced() throws Exception {
         Files.writeString(directory.resolve("layout.json"), "not json");
         assertThatThrownBy(() -> service.load())
@@ -81,12 +100,12 @@ class LayoutServiceTest {
         service.save(layout(List.of(new DashboardLayout.Chart("chart", 0, 0, 6, 4))));
         StatisticService statisticService = new StatisticService(statistics, service);
         statisticService.toggleArchive("chart");
-        assertThat(service.load().groups().getFirst().charts()).hasSize(1);
+        assertThat(service.load().charts()).hasSize(1);
         statisticService.deleteStatisticById("chart");
-        assertThat(service.load().groups().getFirst().charts()).isEmpty();
+        assertThat(service.load().charts()).isEmpty();
     }
 
     private DashboardLayout layout(List<DashboardLayout.Chart> charts) {
-        return new DashboardLayout(List.of(new DashboardLayout.Group("ungrouped", "Ungrouped", charts)));
+        return new DashboardLayout(charts, List.of());
     }
 }

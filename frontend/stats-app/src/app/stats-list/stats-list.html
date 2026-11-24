@@ -22,48 +22,55 @@
   <p class="error" role="alert">{{ error() }}</p>
 }
 @if (layout(); as dashboard) {
+  <div class="dashboard-ungrouped">
+    <ng-container [ngTemplateOutlet]="chartGrid"
+                  [ngTemplateOutletContext]="{$implicit: dashboard.charts, groupId: null}"></ng-container>
+  </div>
   @for (group of dashboard.groups; track group.id) {
     <section class="dashboard-group">
       <div class="group-heading">
         @if (editing()) {
           <label>Group name <input #groupName [value]="group.title" (input)="renameGroup(group.id, groupName.value)" [disabled]="saving()"></label>
-          @if (group.id !== 'ungrouped') {
-            <button matButton="text" (click)="deleteGroup(group.id)" [disabled]="saving()">Delete group</button>
-          }
+          <button matButton="text" (click)="deleteGroup(group.id)" [disabled]="saving()">Delete group</button>
         } @else {
           <h3>{{ group.title }}</h3>
         }
       </div>
-      <div class="dashboard-grid" [class.editing]="editing()" (dragover)="previewDrop($event, group)"
-           (dragleave)="leaveGrid($event, group.id)" (drop)="drop($event, group.id)">
-        @for (chart of visibleCharts(group); track chart.statisticId) {
+      <ng-container [ngTemplateOutlet]="chartGrid"
+                    [ngTemplateOutletContext]="{$implicit: group.charts, groupId: group.id}"></ng-container>
+    </section>
+  }
+}
+
+<ng-template #chartGrid let-charts let-groupId="groupId">
+      <div class="dashboard-grid" [class.editing]="editing()" (dragover)="previewDrop($event, groupId, charts)"
+           (dragleave)="leaveGrid($event, groupId)" (drop)="drop($event, groupId)">
+        @for (chart of visibleCharts(charts, groupId); track chart.statisticId) {
           <div class="dashboard-chart"
                [style.grid-column]="(chart.x + 1) + ' / span ' + chart.width"
                [style.grid-row]="(chart.y + 1) + ' / span ' + chart.height">
             @if (editing()) {
               <div class="drag-handle" draggable="true"
-                   (dragstart)="dragStart($event, group.id, chart)" (dragend)="dragEnd()"
+                   (dragstart)="dragStart($event, groupId, chart)" (dragend)="dragEnd()"
                    [attr.aria-label]="'Drag ' + statFor(chart.statisticId).title" title="Drag to move"></div>
             }
             <app-stats-card [stat]="statFor(chart.statisticId)"></app-stats-card>
             @if (editing()) {
-              <button class="resize-handle" type="button" (pointerdown)="startResize($event, group.id, chart)"
+              <button class="resize-handle" type="button" (pointerdown)="startResize($event, groupId, chart)"
                       (pointermove)="resizeChart($event)" (pointerup)="stopResize()" (pointercancel)="stopResize()"
                       [attr.aria-label]="'Resize ' + statFor(chart.statisticId).title" title="Drag to resize">◢</button>
             }
           </div>
         }
         @if (dragPreview(); as preview) {
-          @if (preview.groupId === group.id) {
+          @if (preview.groupId === groupId) {
             <div class="drop-preview" aria-hidden="true"
                  [style.grid-column]="(preview.chart.x + 1) + ' / span ' + preview.chart.width"
                  [style.grid-row]="(preview.chart.y + 1) + ' / span ' + preview.chart.height"></div>
           }
         }
       </div>
-    </section>
-  }
-}
+</ng-template>
 
 <h2>Additional Stats</h2>
 <div class="stats-overview">

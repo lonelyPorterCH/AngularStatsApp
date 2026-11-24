@@ -21,7 +21,7 @@ public class LayoutRepository {
     public DashboardLayout load() {
         Path file = Path.of(storageProperties.getStoragePath()).resolve("layout.json");
         if (Files.notExists(file)) {
-            return new DashboardLayout(List.of(new DashboardLayout.Group("ungrouped", "Ungrouped", List.of())));
+            return new DashboardLayout(List.of(), List.of());
         }
         try {
             return objectMapper.readValue(file.toFile(), DashboardLayout.class);

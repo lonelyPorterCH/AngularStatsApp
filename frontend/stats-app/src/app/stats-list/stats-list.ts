@@ -1,10 +1,11 @@
 import {Component, OnInit, signal} from '@angular/core';
+import {NgTemplateOutlet} from '@angular/common';
 import {forkJoin} from 'rxjs';
 import {StatsCard} from '../stats-card/stats-card';
 import {StatService} from '../services/stat-service';
 import {Stat} from '../models/stat';
 import {
-  appendChart, ChartPlacement, DashboardGroup, DashboardLayout, GRID_COLUMNS, MIN_CHART_HEIGHT, MIN_CHART_WIDTH, placeChart
+  appendChart, ChartPlacement, DashboardLayout, GRID_COLUMNS, MIN_CHART_HEIGHT, MIN_CHART_WIDTH, placeChart
 } from '../models/dashboard-layout';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
@@ -14,7 +15,7 @@ import {HarvestPreview} from '../harvest-preview/harvest-preview';
 
 @Component({
   selector: 'app-stats-list',
-  imports: [StatsCard, MatButton, MatIcon, RouterLink, ScorePreview, HarvestPreview],
+  imports: [NgTemplateOutlet, StatsCard, MatButton, MatIcon, RouterLink, ScorePreview, HarvestPreview],
   templateUrl: './stats-list.html',
   styleUrl: './stats-list.scss',
 })
@@ -24,10 +25,10 @@ export class StatsList implements OnInit {
   editing = signal(false);
   saving = signal(false);
   error = signal('');
-  dragPreview = signal<{groupId: string; chart: ChartPlacement; group: DashboardGroup} | null>(null);
+  dragPreview = signal<{groupId: string | null; chart: ChartPlacement; charts: ChartPlacement[]} | null>(null);
   private savedLayout: DashboardLayout | null = null;
-  private dragging: {chart: ChartPlacement; sourceId: string; offsetX: number; offsetY: number} | null = null;
-  private resize: {id: string; groupId: string; startX: number; startY: number;
+  private dragging: {chart: ChartPlacement; sourceId: string | null; offsetX: number; offsetY: number} | null = null;
+  private resize: {id: string; groupId: string | null; startX: number; startY: number;
     width: number; height: number; columnStep: number} | null = null;
 
   constructor(private readonly statService: StatService) {
@@ -36,11 +37,12 @@ export class StatsList implements OnInit {
   ngOnInit(): void {
     forkJoin({stats: this.statService.getStats(), layout: this.statService.getLayout()}).subscribe({
       next: ({stats, layout}) => {
-        const known = new Set(layout.groups.flatMap(group => group.charts.map(chart => chart.statisticId)));
+        const known = new Set([...layout.charts, ...layout.groups.flatMap(group => group.charts)]
+          .map(chart => chart.statisticId));
         let changed = false;
         for (const stat of [...stats].sort((a, b) => a.title.localeCompare(b.title))) {
           if (!known.has(stat.id)) {
-            appendChart(layout.groups[0], stat.id);
+            appendChart(layout.charts, stat.id);
             changed = true;
           }
         }
@@ -58,14 +60,14 @@ export class StatsList implements OnInit {
     });
   }
 
-  visibleCharts(group: DashboardGroup): ChartPlacement[] {
+  visibleCharts(placements: ChartPlacement[], groupId: string | null): ChartPlacement[] {
     const active = new Set(this.stats().map(stat => stat.id));
     const preview = this.dragPreview();
-    const charts = group.charts.filter(chart => active.has(chart.statisticId))
+    const charts = placements.filter(chart => active.has(chart.statisticId))
       .sort((a, b) => a.y - b.y || a.x - b.x);
-    if (preview?.groupId !== group.id) return charts;
+    if (!preview || preview.groupId !== groupId) return charts;
     return charts.map(chart => chart.statisticId === this.dragging?.chart.statisticId
-      ? chart : preview.group.charts.find(item => item.statisticId === chart.statisticId) ?? chart);
+      ? chart : preview.charts.find(item => item.statisticId === chart.statisticId) ?? chart);
   }
 
   statFor(id: string): Stat {
@@ -120,17 +122,16 @@ export class StatsList implements OnInit {
   deleteGroup(id: string): void {
     this.updateLayout(layout => {
       const group = layout.groups.find(item => item.id === id);
-      if (!group || id === 'ungrouped') return;
+      if (!group) return;
+      const y = Math.max(0, ...layout.charts.map(item => item.y + item.height));
       for (const chart of group.charts) {
-        const destination = layout.groups[0];
-        const y = Math.max(0, ...destination.charts.map(item => item.y + item.height));
-        destination.charts.push({...chart, x: 0, y});
+        layout.charts.push({...chart, y: chart.y + y});
       }
       layout.groups = layout.groups.filter(item => item.id !== id);
     });
   }
 
-  dragStart(event: DragEvent, groupId: string, chart: ChartPlacement): void {
+  dragStart(event: DragEvent, groupId: string | null, chart: ChartPlacement): void {
     if (!this.editing() || this.saving()) {
       event.preventDefault();
       return;
@@ -156,7 +157,7 @@ export class StatsList implements OnInit {
     this.dragPreview.set(null);
   }
 
-  previewDrop(event: DragEvent, group: DashboardGroup): void {
+  previewDrop(event: DragEvent, groupId: string | null, placements: ChartPlacement[]): void {
     const dragging = this.dragging;
     if (!this.editing() || this.saving() || !dragging) return;
     event.preventDefault();
@@ -169,36 +170,37 @@ export class StatsList implements OnInit {
         Math.round((event.clientX - bounds.left - dragging.offsetX) / columnStep))),
       y: Math.max(0, Math.round((event.clientY - bounds.top - dragging.offsetY) / 116))};
     const current = this.dragPreview();
-    if (current?.groupId === group.id && current.chart.x === chart.x && current.chart.y === chart.y) return;
-    const previewGroup = structuredClone(group);
-    placeChart(previewGroup, chart);
-    this.dragPreview.set({groupId: group.id, chart, group: previewGroup});
+    if (current && current.groupId === groupId && current.chart.x === chart.x && current.chart.y === chart.y) return;
+    const charts = placeChart(structuredClone(placements), chart);
+    this.dragPreview.set({groupId, chart, charts});
   }
 
-  leaveGrid(event: DragEvent, groupId: string): void {
+  leaveGrid(event: DragEvent, groupId: string | null): void {
     const grid = event.currentTarget as HTMLElement;
-    if (this.dragPreview()?.groupId === groupId
+    const preview = this.dragPreview();
+    if (preview && preview.groupId === groupId
       && !(event.relatedTarget instanceof Node && grid.contains(event.relatedTarget))) {
       this.dragPreview.set(null);
     }
   }
 
-  drop(event: DragEvent, groupId: string): void {
+  drop(event: DragEvent, groupId: string | null): void {
     const preview = this.dragPreview();
     const dragging = this.dragging;
     if (!dragging || !preview || preview.groupId !== groupId || !this.editing() || this.saving()) return;
     event.preventDefault();
     this.updateLayout(layout => {
-      const source = layout.groups.find(group => group.id === dragging.sourceId);
-      const target = layout.groups.find(group => group.id === preview.groupId);
+      const source = this.gridCharts(layout, dragging.sourceId);
+      const target = this.gridCharts(layout, preview.groupId);
       if (!source || !target) return;
-      source.charts = source.charts.filter(chart => chart.statisticId !== dragging.chart.statisticId);
-      target.charts = preview.group.charts;
+      this.setGridCharts(layout, dragging.sourceId,
+        source.filter(chart => chart.statisticId !== dragging.chart.statisticId));
+      this.setGridCharts(layout, preview.groupId, preview.charts);
     });
     this.dragEnd();
   }
 
-  startResize(event: PointerEvent, groupId: string, chart: ChartPlacement): void {
+  startResize(event: PointerEvent, groupId: string | null, chart: ChartPlacement): void {
     if (this.saving()) return;
     const handle = event.currentTarget as HTMLElement;
     const grid = handle.closest('.dashboard-grid') as HTMLElement | null;
@@ -213,18 +215,31 @@ export class StatsList implements OnInit {
     const resize = this.resize;
     if (!resize) return;
     this.updateLayout(layout => {
-      const group = layout.groups.find(item => item.id === resize.groupId);
-      const chart = group?.charts.find(item => item.statisticId === resize.id);
-      if (!group || !chart) return;
+      const charts = this.gridCharts(layout, resize.groupId);
+      const chart = charts?.find(item => item.statisticId === resize.id);
+      if (!charts || !chart) return;
       chart.width = Math.max(MIN_CHART_WIDTH, Math.min(GRID_COLUMNS - chart.x,
         resize.width + Math.round((event.clientX - resize.startX) / resize.columnStep)));
       chart.height = Math.max(MIN_CHART_HEIGHT, resize.height + Math.round((event.clientY - resize.startY) / 116));
-      placeChart(group, chart);
+      this.setGridCharts(layout, resize.groupId, placeChart(charts, chart));
     });
   }
 
   stopResize(): void {
     this.resize = null;
+  }
+
+  private gridCharts(layout: DashboardLayout, groupId: string | null): ChartPlacement[] | undefined {
+    return groupId === null ? layout.charts : layout.groups.find(group => group.id === groupId)?.charts;
+  }
+
+  private setGridCharts(layout: DashboardLayout, groupId: string | null, charts: ChartPlacement[]): void {
+    if (groupId === null) {
+      layout.charts = charts;
+    } else {
+      const group = layout.groups.find(item => item.id === groupId);
+      if (group) group.charts = charts;
+    }
   }
 
   private updateLayout(update: (layout: DashboardLayout) => void): void {
