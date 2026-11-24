@@ -24,8 +24,9 @@ export class StatsList implements OnInit {
   editing = signal(false);
   saving = signal(false);
   error = signal('');
+  dragPreview = signal<{groupId: string; chart: ChartPlacement; group: DashboardGroup} | null>(null);
   private savedLayout: DashboardLayout | null = null;
-  private draggingId: string | null = null;
+  private dragging: {chart: ChartPlacement; sourceId: string; offsetX: number; offsetY: number} | null = null;
   private resize: {id: string; groupId: string; startX: number; startY: number;
     width: number; height: number; columnStep: number} | null = null;
 
@@ -59,8 +60,12 @@ export class StatsList implements OnInit {
 
   visibleCharts(group: DashboardGroup): ChartPlacement[] {
     const active = new Set(this.stats().map(stat => stat.id));
-    return group.charts.filter(chart => active.has(chart.statisticId))
+    const preview = this.dragPreview();
+    const charts = group.charts.filter(chart => active.has(chart.statisticId))
       .sort((a, b) => a.y - b.y || a.x - b.x);
+    if (preview?.groupId !== group.id) return charts;
+    return charts.map(chart => chart.statisticId === this.dragging?.chart.statisticId
+      ? chart : preview.group.charts.find(item => item.statisticId === chart.statisticId) ?? chart);
   }
 
   statFor(id: string): Stat {
@@ -125,42 +130,72 @@ export class StatsList implements OnInit {
     });
   }
 
-  dragStart(event: DragEvent, id: string): void {
-    if (this.saving()) {
+  dragStart(event: DragEvent, groupId: string, chart: ChartPlacement): void {
+    if (!this.editing() || this.saving()) {
       event.preventDefault();
       return;
     }
-    this.draggingId = id;
-    event.dataTransfer?.setData('text/plain', id);
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+    const handle = event.currentTarget as HTMLElement;
+    const card = handle.closest('.dashboard-chart');
+    if (!card || !event.dataTransfer) {
+      event.preventDefault();
+      return;
+    }
+    const bounds = card.getBoundingClientRect();
+    this.dragging = {chart: {...chart}, sourceId: groupId,
+      offsetX: event.clientX - bounds.left, offsetY: event.clientY - bounds.top};
+    event.dataTransfer.setData('text/plain', chart.statisticId);
+    event.dataTransfer.effectAllowed = 'move';
+    const transparent = document.createElement('canvas');
+    transparent.width = transparent.height = 1;
+    event.dataTransfer.setDragImage(transparent, 0, 0);
   }
 
   dragEnd(): void {
-    this.draggingId = null;
+    this.dragging = null;
+    this.dragPreview.set(null);
   }
 
-  allowDrop(event: DragEvent): void {
-    if (this.editing() && this.draggingId) event.preventDefault();
+  previewDrop(event: DragEvent, group: DashboardGroup): void {
+    const dragging = this.dragging;
+    if (!this.editing() || this.saving() || !dragging) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    const grid = event.currentTarget as HTMLElement;
+    const bounds = grid.getBoundingClientRect();
+    const columnStep = (bounds.width + 16) / GRID_COLUMNS;
+    const chart = {...dragging.chart,
+      x: Math.max(0, Math.min(GRID_COLUMNS - dragging.chart.width,
+        Math.round((event.clientX - bounds.left - dragging.offsetX) / columnStep))),
+      y: Math.max(0, Math.round((event.clientY - bounds.top - dragging.offsetY) / 116))};
+    const current = this.dragPreview();
+    if (current?.groupId === group.id && current.chart.x === chart.x && current.chart.y === chart.y) return;
+    const previewGroup = structuredClone(group);
+    placeChart(previewGroup, chart);
+    this.dragPreview.set({groupId: group.id, chart, group: previewGroup});
+  }
+
+  leaveGrid(event: DragEvent, groupId: string): void {
+    const grid = event.currentTarget as HTMLElement;
+    if (this.dragPreview()?.groupId === groupId
+      && !(event.relatedTarget instanceof Node && grid.contains(event.relatedTarget))) {
+      this.dragPreview.set(null);
+    }
   }
 
   drop(event: DragEvent, groupId: string): void {
+    const preview = this.dragPreview();
+    const dragging = this.dragging;
+    if (!dragging || !preview || preview.groupId !== groupId || !this.editing() || this.saving()) return;
     event.preventDefault();
-    const id = this.draggingId;
-    this.draggingId = null;
-    const grid = event.currentTarget as HTMLElement;
-    if (!id || !grid) return;
-    const bounds = grid.getBoundingClientRect();
-    const columnStep = (bounds.width + 16) / GRID_COLUMNS;
     this.updateLayout(layout => {
-      const source = layout.groups.find(group => group.charts.some(chart => chart.statisticId === id));
-      const target = layout.groups.find(group => group.id === groupId);
-      const chart = source?.charts.find(item => item.statisticId === id);
-      if (!source || !target || !chart) return;
-      source.charts = source.charts.filter(item => item.statisticId !== id);
-      chart.x = Math.max(0, Math.min(GRID_COLUMNS - chart.width, Math.floor((event.clientX - bounds.left) / columnStep)));
-      chart.y = Math.max(0, Math.floor((event.clientY - bounds.top) / 116));
-      placeChart(target, chart);
+      const source = layout.groups.find(group => group.id === dragging.sourceId);
+      const target = layout.groups.find(group => group.id === preview.groupId);
+      if (!source || !target) return;
+      source.charts = source.charts.filter(chart => chart.statisticId !== dragging.chart.statisticId);
+      target.charts = preview.group.charts;
     });
+    this.dragEnd();
   }
 
   startResize(event: PointerEvent, groupId: string, chart: ChartPlacement): void {

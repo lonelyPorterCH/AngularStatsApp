@@ -41,15 +41,25 @@ h2, h3 {
   min-height: 0;
 }
 
-.chart-controls {
+.drag-handle {
   position: absolute;
   z-index: 1;
-  top: 2px;
-  right: 2px;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 25px;
+  cursor: move;
 }
 
-.drag-handle, .resize-handle {
-  cursor: grab;
+.drop-preview {
+  z-index: 2;
+  pointer-events: none;
+  box-sizing: border-box;
+  border: 2px solid #1976d2;
+  background: rgba(25, 118, 210, .18);
+}
+
+.resize-handle {
   background: var(--mat-sys-surface-container-high);
   color: var(--mat-sys-on-surface);
   border: 1px solid var(--mat-sys-outline);
@@ -84,7 +94,7 @@ h2, h3 {
     gap: 0;
   }
   .dashboard-chart { height: 300px; }
-  .chart-controls, .resize-handle { display: none; }
+  .drag-handle, .resize-handle { display: none; }
   .stats-overview {
     grid-template-columns: 1fr;
     gap: 0;

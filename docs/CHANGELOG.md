@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Chart positions are stored in a dashboard layout instead of statistic indices.
+- Drag charts by their top edge, with a preview of the new placement.
 
 ## [2.6.3] - 2026-11-20
 
