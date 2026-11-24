@@ -16,4 +16,5 @@ import {ChartComponent} from '../chart/chart';
 })
 export class StatsCard {
   @Input() stat?: Stat;
+  @Input() detailsDisabled = false;
 }

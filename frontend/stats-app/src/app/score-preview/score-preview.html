@@ -14,5 +14,5 @@
       <app-score-scatter-plot [playerScores]="scores()" [playerNames]="playerNames()" [compact]="true"></app-score-scatter-plot>
     }
   </div>
-  <button [routerLink]="['/scores']" matButton="text">View Details</button>
+  <button [routerLink]="detailsDisabled ? null : ['/scores']" [disabled]="detailsDisabled" matButton="text">View Details</button>
 </div>

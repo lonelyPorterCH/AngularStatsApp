@@ -61,7 +61,7 @@
                    (dragstart)="dragStart($event, groupId, chart)" (drag)="moveChart($event)" (dragend)="dragEnd()"
                    [attr.aria-label]="'Drag ' + statFor(chart.statisticId).title" title="Drag to move"></div>
             }
-            <app-stats-card [stat]="statFor(chart.statisticId)"></app-stats-card>
+            <app-stats-card [stat]="statFor(chart.statisticId)" [detailsDisabled]="editing()"></app-stats-card>
             @if (editing()) {
               <button class="resize-handle" type="button" (pointerdown)="startResize($event, groupId, chart)"
                       (pointermove)="resizeChart($event)" (pointerup)="resizeChart($event); stopResize()"
@@ -83,8 +83,8 @@
 
 <h2>Additional Stats</h2>
 <div class="stats-overview">
-  <app-score-preview></app-score-preview>
-  <app-harvest-preview></app-harvest-preview>
+  <app-score-preview [detailsDisabled]="editing()"></app-score-preview>
+  <app-harvest-preview [detailsDisabled]="editing()"></app-harvest-preview>
 </div>
 
 <button [routerLink]="['/archive']" matButton="outlined">

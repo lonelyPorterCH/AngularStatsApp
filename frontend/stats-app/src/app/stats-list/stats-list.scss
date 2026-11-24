@@ -48,7 +48,7 @@ h2, h3 {
   background: var(--mat-sys-surface);
 
   &.live {
-    z-index: 1;
+    z-index: 3;
   }
 
   &.moving {
@@ -69,9 +69,10 @@ h2, h3 {
 }
 
 .drop-preview {
-  z-index: 4;
+  z-index: 2;
   pointer-events: none;
   box-sizing: border-box;
+  margin: -4px;
   border: 2px solid #1976d2;
   background: rgba(25, 118, 210, .18);
 }

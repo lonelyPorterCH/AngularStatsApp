@@ -15,5 +15,5 @@
       <app-harvest-donut-chart [totals]="view()!.plantTotals" [compact]="true"></app-harvest-donut-chart>
     }
   </div>
-  <button [routerLink]="['/harvest']" matButton="text">View Details</button>
+  <button [routerLink]="detailsDisabled ? null : ['/harvest']" [disabled]="detailsDisabled" matButton="text">View Details</button>
 </div>

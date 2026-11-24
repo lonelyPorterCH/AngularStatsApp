@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, Input, OnInit, signal} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
@@ -13,6 +13,7 @@ import {HarvestDonutChart} from '../harvest-donut-chart/harvest-donut-chart';
   styleUrl: './harvest-preview.scss'
 })
 export class HarvestPreview implements OnInit {
+  @Input() detailsDisabled = false;
   view = signal<HarvestView | undefined>(undefined);
   loading = signal(true);
   year = new Date().getFullYear();

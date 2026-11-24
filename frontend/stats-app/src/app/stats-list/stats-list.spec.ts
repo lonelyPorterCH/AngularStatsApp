@@ -3,6 +3,19 @@ import {StatsList} from './stats-list';
 import {StatService} from '../services/stat-service';
 import {DashboardLayout} from '../models/dashboard-layout';
 import {Stat} from '../models/stat';
+import {Component, input} from '@angular/core';
+import {TestBed} from '@angular/core/testing';
+import {provideRouter, RouterLink} from '@angular/router';
+import {By} from '@angular/platform-browser';
+import {StatsCard} from '../stats-card/stats-card';
+import {ChartComponent} from '../chart/chart';
+import {ScoreService} from '../services/score-service';
+import {HarvestService} from '../services/harvest-service';
+
+@Component({selector: 'app-chart', template: ''})
+class ChartStub {
+  stat = input<Stat>();
+}
 
 describe('StatsList layout editing', () => {
   const stat: Stat = {id: 'one', title: 'One', xAxisName: '', yAxisName: '', reverse: false, datasets: []};
@@ -17,6 +30,49 @@ describe('StatsList layout editing', () => {
     service = {getStats: () => of([stat]), getLayout: () => of(structuredClone(original)), saveLayout: () => of(undefined)};
     component = new StatsList(service as StatService);
     component.ngOnInit();
+  });
+
+  describe('dashboard details navigation while editing', () => {
+    it('disables all details links during editing and restores them after cancel or save', async () => {
+      const stat: Stat = {id: 'one', title: 'One', xAxisName: '', yAxisName: '', reverse: false, datasets: []};
+      await TestBed.configureTestingModule({
+        imports: [StatsList],
+        providers: [
+          provideRouter([]),
+          {provide: StatService, useValue: {
+            getStats: () => of([stat]),
+            getLayout: () => of({charts: [{statisticId: 'one', x: 0, y: 0, width: 6, height: 4}], groups: []}),
+            saveLayout: () => of(undefined)
+          }},
+          {provide: ScoreService, useValue: {getPlayers: () => of([])}},
+          {provide: HarvestService, useValue: {getSeason: () => of({plantTotals: []})}}
+        ]
+      }).overrideComponent(StatsCard, {remove: {imports: [ChartComponent]}, add: {imports: [ChartStub]}}).compileComponents();
+      const fixture = TestBed.createComponent(StatsList);
+      await fixture.whenStable();
+      const details = () => fixture.debugElement.queryAll(By.directive(RouterLink))
+        .filter(element => element.nativeElement.textContent.trim() === 'View Details');
+      const assertDisabled = (disabled: boolean) => {
+        expect(details()).toHaveLength(3);
+        for (const element of details()) {
+          expect((element.nativeElement as HTMLButtonElement).disabled).toBe(disabled);
+          expect(element.injector.get(RouterLink).urlTree === null).toBe(disabled);
+        }
+      };
+      assertDisabled(false);
+      fixture.componentInstance.startEditing();
+      fixture.detectChanges();
+      assertDisabled(true);
+      fixture.componentInstance.cancelEditing();
+      fixture.detectChanges();
+      assertDisabled(false);
+      fixture.componentInstance.startEditing();
+      fixture.detectChanges();
+      assertDisabled(true);
+      fixture.componentInstance.save();
+      fixture.detectChanges();
+      assertDisabled(false);
+    });
   });
 
   it('moves charts to ungrouped when deleting a group and can cancel the edit', () => {

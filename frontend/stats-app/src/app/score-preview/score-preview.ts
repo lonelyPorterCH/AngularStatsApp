@@ -1,4 +1,4 @@
-import {Component, OnInit, signal} from '@angular/core';
+import {Component, Input, OnInit, signal} from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {MatButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
@@ -13,6 +13,7 @@ import {ScoreScatterPlot} from '../score-scatter-plot/score-scatter-plot';
   styleUrl: './score-preview.scss'
 })
 export class ScorePreview implements OnInit {
+  @Input() detailsDisabled = false;
   players = signal<Player[]>([]);
   playerNames = signal<Record<string, string>>({});
   scores = signal<Record<string, Score[]>>({});

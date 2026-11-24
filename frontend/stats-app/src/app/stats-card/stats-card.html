@@ -3,5 +3,5 @@
   <div class="chart-wrapper">
     <app-chart [stat]="stat!"></app-chart>
   </div>
-  <button [routerLink]="['/stats', stat?.id]" matButton="text">View Details</button>
+  <button [routerLink]="detailsDisabled ? null : ['/stats', stat?.id]" [disabled]="detailsDisabled" matButton="text">View Details</button>
 </div>
