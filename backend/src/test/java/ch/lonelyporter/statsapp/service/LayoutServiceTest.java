@@ -4,6 +4,7 @@ import ch.lonelyporter.statsapp.StorageProperties;
 import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import ch.lonelyporter.statsapp.persistence.LayoutRepository;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
+import ch.lonelyporter.statsapp.service.validation.StatisticValidator;
 import ch.lonelyporter.statsapp.web.model.DashboardLayout;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,7 @@ class LayoutServiceTest {
         chart.setId("chart");
         statistics.create(chart);
         service.save(layout(List.of(new DashboardLayout.Chart("chart", 0, 0, 6, 4))));
-        StatisticService statisticService = new StatisticService(statistics, service);
+        StatisticService statisticService = new StatisticService(statistics, service, new StatisticValidator());
         statisticService.toggleArchive("chart");
         assertThat(service.load().charts()).hasSize(1);
         statisticService.deleteStatisticById("chart");

@@ -3,6 +3,7 @@ package ch.lonelyporter.statsapp.web.model;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Getter
@@ -114,5 +115,30 @@ public class Statistic {
     public static class DataPoint {
         private String x;
         private String y;
+    }
+
+    public void sortDatasets() {
+        if (datasets != null) {
+            datasets.sort(Comparator.comparingInt(Statistic.Dataset::getIndex));
+        }
+    }
+
+    /**
+     * Adds a new empty dataset
+     */
+    public void addDataset(String label) {
+        var dataset = new Statistic.Dataset(label, new ArrayList<>());
+        dataset.setIndex(getNextIndex());
+        datasets.add(dataset);
+    }
+
+    private int getNextIndex() {
+        if (datasets != null) {
+            return datasets.stream()
+                    .mapToInt(Statistic.Dataset::getIndex)
+                    .max()
+                    .orElse(-1) + 1;
+        }
+        return -1;
     }
 }

@@ -1,43 +1,48 @@
 package ch.lonelyporter.statsapp.service;
 
-import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import ch.lonelyporter.statsapp.exception.StatisticNotFoundException;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
+import ch.lonelyporter.statsapp.service.validation.StatisticValidator;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 
 @Service
 @RequiredArgsConstructor
 public class StatisticService {
 
-    public static final String LINEAR = "linear";
     private final StatisticRepository repository;
     private final LayoutService layoutService;
+    private final StatisticValidator validator;
 
+    /**
+     * Returns all Statistics, datasets are sorted by index
+     */
     public List<Statistic> getStatistics() {
         List<Statistic> stats = new ArrayList<>(repository.findAll());
-        stats.forEach(this::sortDatasets);
+        stats.forEach(Statistic::sortDatasets);
         return stats;
     }
 
+    /**
+     * Returns all archived Statistics, datasets are sorted by index
+     */
     public List<Statistic> getArchivedStatistics() {
         List<Statistic> stats = new ArrayList<>(repository.findAllArchived());
-        stats.forEach(this::sortDatasets);
+        stats.forEach(Statistic::sortDatasets);
         return stats;
     }
 
+    /**
+     * Creates a new statistic, if the given statistic is valid
+     */
     public void createStatistic(Statistic statistic) {
-        validateChartType(statistic.getChartType());
-        validateYAxisFormat(statistic);
-        validatePercentageInputMode(statistic.getPercentageInputMode());
-        validateYAxisBounds(statistic.getYAxisMin(), statistic.getYAxisMax());
-        validateBarDatasets(statistic);
-        statistic.getDatasets().forEach(dataset -> validateSmoothingWindow(dataset.getSmoothingWindow()));
-        statistic.getDatasets().forEach(dataset -> validatePercentageTarget(dataset.getPercentageTarget()));
+        validator.validateForCreation(statistic);
         repository.create(statistic);
     }
 
@@ -46,18 +51,27 @@ public class StatisticService {
      */
     public Statistic getStatisticById(String id) {
         Statistic statistic = repository.findById(id);
-        sortDatasets(statistic);
+        statistic.sortDatasets();
         return statistic;
     }
 
+    /**
+     * returns if the statistic for the given id is in archive
+     */
     public boolean isArchived(String id) {
         return repository.isArchived(id);
     }
 
+    /**
+     * Archives a statistic by its id
+     */
     public void toggleArchive(String id) {
         repository.toggleArchive(id);
     }
 
+    /**
+     * Deletes a statistic by its id.
+     */
     public void deleteStatisticById(String id) {
         repository.deleteById(id);
         layoutService.removeStatistic(id);
@@ -71,13 +85,7 @@ public class StatisticService {
      */
     public void addDataset(String id, String label) {
         Statistic statistic = repository.findById(id);
-        int nextIndex = statistic.getDatasets().stream()
-                .mapToInt(Statistic.Dataset::getIndex)
-                .max()
-                .orElse(-1) + 1;
-        Statistic.Dataset ds = new Statistic.Dataset(label, new ArrayList<>());
-        ds.setIndex(nextIndex);
-        statistic.getDatasets().add(ds);
+        statistic.addDataset(label);
         repository.save(statistic);
     }
 
@@ -106,7 +114,7 @@ public class StatisticService {
     }
 
     public void setDatasetSmoothingWindow(String id, String label, int smoothingWindow) {
-        validateSmoothingWindow(smoothingWindow);
+        validator.validateSmoothingWindow(smoothingWindow);
         updateDataset(id, label, (statistic, dataset) -> dataset.setSmoothingWindow(smoothingWindow));
     }
 
@@ -115,26 +123,12 @@ public class StatisticService {
     }
 
     public void setDatasetPercentageTarget(String id, String label, Double percentageTarget) {
-        validatePercentageTarget(percentageTarget);
+        validator.validatePercentageTarget(percentageTarget);
         updateDataset(id, label, (statistic, dataset) -> dataset.setPercentageTarget(percentageTarget));
     }
 
-    private void validatePercentageTarget(Double percentageTarget) {
-        if (percentageTarget == null || !Double.isFinite(percentageTarget) || percentageTarget <= 0) {
-            throw new InvalidDataPointException("100% target must be a positive finite number");
-        }
-    }
-
-    private void validateSmoothingWindow(int smoothingWindow) {
-        if (smoothingWindow < 1) {
-            throw new InvalidDataPointException("Smoothing window must be a positive whole number");
-        }
-    }
-
     public void renameStatistic(String id, String title) {
-        if (title == null || title.isBlank()) {
-            throw new InvalidDataPointException("Graph title must not be blank");
-        }
+        validator.validateTitle(title);
         Statistic statistic = repository.findById(id);
         statistic.setTitle(title.strip());
         repository.save(statistic);
@@ -149,101 +143,37 @@ public class StatisticService {
     public void setYAxisFormat(String id, String yAxisFormat) {
         Statistic statistic = repository.findById(id);
         statistic.setYAxisFormat(yAxisFormat);
-        if (yAxisFormat == null) {
-            throw new InvalidDataPointException("Y axis format must be number, pace or percentage");
-        }
-        validateYAxisFormat(statistic);
+        validator.validateYAxisFormatValue(yAxisFormat);
+        validator.validatePaceDataPoints(statistic);
         repository.save(statistic);
     }
 
     public void setPercentageInputMode(String id, String percentageInputMode) {
-        validatePercentageInputMode(percentageInputMode);
+        validator.validatePercentageInputMode(percentageInputMode);
         Statistic statistic = repository.findById(id);
         statistic.setPercentageInputMode(percentageInputMode);
         repository.save(statistic);
     }
 
-    private void validatePercentageInputMode(String percentageInputMode) {
-        if (!"number".equals(percentageInputMode) && !"percentage".equals(percentageInputMode)) {
-            throw new InvalidDataPointException("Percentage input mode must be number or percentage");
-        }
-    }
-
-    private void validateYAxisFormat(Statistic statistic) {
-        if (!"number".equals(statistic.getYAxisFormat()) && !"pace".equals(statistic.getYAxisFormat())
-                && !"percentage".equals(statistic.getYAxisFormat())) {
-            throw new InvalidDataPointException("Y axis format must be number, pace or percentage");
-        }
-        if ("pace".equals(statistic.getYAxisFormat())) {
-            statistic.getDatasets().forEach(dataset -> dataset.getDataPoints().forEach(this::validatePace));
-        }
-    }
-
-    private void validatePace(Statistic.DataPoint point) {
-        String value = point.getY() == null ? "" : point.getY().strip();
-        if (!value.matches("\\d+(?:[.:]\\d{1,2})?")) {
-            throw new InvalidDataPointException("Pace must use m:ss or M.SS (e.g. 5:09 or 5.09)");
-        }
-        String[] parts = value.split("[.:]");
-        String seconds = parts.length == 1 ? "0" : parts[1];
-        if (value.contains(".") && seconds.length() == 1) seconds += "0";
-        if (Integer.parseInt(seconds) >= 60 || !Double.isFinite(Double.parseDouble(parts[0]) * 60)) {
-            throw new InvalidDataPointException("Pace must have finite minutes and seconds between 00 and 59");
-        }
-    }
-
     public void setChartType(String id, String chartType) {
-        validateChartType(chartType);
+        validator.validateChartType(chartType);
         Statistic statistic = repository.findById(id);
         statistic.setChartType(chartType);
-        validateBarDatasets(statistic);
+        validator.validateBarDatasets(statistic);
         repository.save(statistic);
     }
 
-    private void validateChartType(String chartType) {
-        if (!"line".equals(chartType) && !"bar".equals(chartType)) {
-            throw new InvalidDataPointException("Chart type must be line or bar");
-        }
-    }
-
-    private void validateBarDatasets(Statistic statistic) {
-        if (!"bar".equals(statistic.getChartType())) return;
-        for (Statistic.Dataset dataset : statistic.getDatasets()) {
-            var xValues = new HashSet<>();
-            for (Statistic.DataPoint point : dataset.getDataPoints()) {
-                validateDataPoint(statistic, point);
-                Object x = LINEAR.equals(statistic.getXAxisScaleType())
-                        ? Double.parseDouble(point.getX()) + 0.0 : point.getX();
-                if (!xValues.add(x)) {
-                    throw new InvalidDataPointException("Bar charts require one value per dataset and X value. Edit the existing point for "
-                            + dataset.getLabel() + " at " + point.getX() + ".");
-                }
-            }
-        }
-    }
-
     public void setYAxisBounds(String id, Double yAxisMin, Double yAxisMax) {
-        validateYAxisBounds(yAxisMin, yAxisMax);
+        validator.validateYAxisBounds(yAxisMin, yAxisMax);
         Statistic statistic = repository.findById(id);
         statistic.setYAxisMin(yAxisMin);
         statistic.setYAxisMax(yAxisMax);
         repository.save(statistic);
     }
 
-    private void validateYAxisBounds(Double min, Double max) {
-        if ((min != null && !Double.isFinite(min)) || (max != null && !Double.isFinite(max))) {
-            throw new InvalidDataPointException("Y-axis bounds must be finite numbers");
-        }
-        if (min != null && max != null && min >= max) {
-            throw new InvalidDataPointException("Y-axis minimum must be less than maximum");
-        }
-    }
-
     public void setStacked(String id, boolean stacked) {
         Statistic statistic = repository.findById(id);
-        if (stacked && statistic.getDatasets().size() < 2) {
-            throw new InvalidDataPointException("Stacked charts require at least two datasets");
-        }
+        validator.validateStacked(statistic, stacked);
         statistic.setStacked(stacked);
         repository.save(statistic);
     }
@@ -253,39 +183,21 @@ public class StatisticService {
         if (xAxisName != null) statistic.setXAxisName(xAxisName);
         if (yAxisName != null) statistic.setYAxisName(yAxisName);
         if (xAxisScaleType != null) {
-            if (!"time".equals(xAxisScaleType) && !LINEAR.equals(xAxisScaleType)) {
-                throw new InvalidDataPointException("Unsupported x-axis scale type: " + xAxisScaleType);
-            }
+            validator.validateXAxisScaleType(xAxisScaleType);
             statistic.setXAxisScaleType(xAxisScaleType);
         }
         if (xAxisUnit != null) statistic.setXAxisUnit(xAxisUnit.trim());
-        validateBarDatasets(statistic);
+        validator.validateBarDatasets(statistic);
         repository.save(statistic);
     }
 
     public void addDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
         Statistic statistic = repository.findById(id);
-        validateDataPoint(statistic, dataPoint);
+        validator.validateDataPoint(statistic, dataPoint);
         updateDataset(statistic, id, datasetLabel, (ignored, dataset) -> {
             dataset.getDataPoints().add(dataPoint);
-            validateBarDatasets(statistic);
+            validator.validateBarDatasets(statistic);
         });
-    }
-
-    private void validateDataPoint(Statistic statistic, Statistic.DataPoint dataPoint) {
-        if ("pace".equals(statistic.getYAxisFormat())) validatePace(dataPoint);
-        if (!LINEAR.equals(statistic.getXAxisScaleType())) {
-            return;
-        }
-
-        try {
-            double x = Double.parseDouble(dataPoint.getX());
-            if (!Double.isFinite(x) || x < 0) {
-                throw new NumberFormatException();
-            }
-        } catch (NumberFormatException | NullPointerException e) {
-            throw new InvalidDataPointException("Linear x-axis values must be non-negative finite numbers");
-        }
     }
 
     public void deleteDataPoint(String id, String datasetLabel, Statistic.DataPoint dataPoint) {
@@ -322,9 +234,4 @@ public class StatisticService {
                         "dataset '" + label + "' in statistic '" + statisticId + "'"));
     }
 
-    private void sortDatasets(Statistic statistic) {
-        if (statistic.getDatasets() != null) {
-            statistic.getDatasets().sort(Comparator.comparingInt(Statistic.Dataset::getIndex));
-        }
-    }
 }
