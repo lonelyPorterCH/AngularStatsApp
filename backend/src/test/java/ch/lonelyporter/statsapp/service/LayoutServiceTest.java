@@ -4,6 +4,7 @@ import ch.lonelyporter.statsapp.StorageProperties;
 import ch.lonelyporter.statsapp.exception.InvalidDataPointException;
 import ch.lonelyporter.statsapp.persistence.LayoutRepository;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
+import ch.lonelyporter.statsapp.service.validation.DashboardLayoutValidator;
 import ch.lonelyporter.statsapp.service.validation.StatisticValidator;
 import ch.lonelyporter.statsapp.web.model.DashboardLayout;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,7 @@ class LayoutServiceTest {
         StorageProperties properties = new StorageProperties();
         properties.setStoragePath(directory.toString());
         ObjectMapper mapper = new ObjectMapper();
-        service = new LayoutService(new LayoutRepository(properties, mapper));
+        service = new LayoutService(new LayoutRepository(properties, mapper), new DashboardLayoutValidator());
         statistics = new StatisticRepository(properties, mapper);
     }
 

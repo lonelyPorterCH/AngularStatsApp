@@ -3,6 +3,7 @@ package ch.lonelyporter.statsapp.service;
 import ch.lonelyporter.statsapp.StorageProperties;
 import ch.lonelyporter.statsapp.persistence.StatisticRepository;
 import ch.lonelyporter.statsapp.persistence.LayoutRepository;
+import ch.lonelyporter.statsapp.service.validation.DashboardLayoutValidator;
 import ch.lonelyporter.statsapp.service.validation.StatisticValidator;
 import ch.lonelyporter.statsapp.web.model.Statistic;
 import org.jspecify.annotations.NonNull;
@@ -34,7 +35,7 @@ class StatisticServiceTest {
         repository = new StatisticRepository(props, new ObjectMapper());
         service = new StatisticService(
                 repository,
-                new LayoutService(new LayoutRepository(props, new ObjectMapper())),
+                new LayoutService(new LayoutRepository(props, new ObjectMapper()), new DashboardLayoutValidator()),
                 new StatisticValidator()
         );
     }
