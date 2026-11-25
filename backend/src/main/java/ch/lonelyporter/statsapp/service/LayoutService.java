@@ -24,17 +24,6 @@ public class LayoutService {
     }
 
     public void removeStatistic(String id) {
-        DashboardLayout layout = load();
-        if (layout.charts().stream().noneMatch(chart -> chart.statisticId().equals(id))
-                && layout.groups().stream().noneMatch(group ->
-                        group.charts().stream().anyMatch(chart -> chart.statisticId().equals(id)))) {
-            return;
-        }
-        var charts = layout.charts().stream().filter(chart -> !chart.statisticId().equals(id)).toList();
-        var groups = layout.groups().stream()
-                .map(group -> new DashboardLayout.Group(group.id(), group.title(),
-                        group.charts().stream().filter(chart -> !chart.statisticId().equals(id)).toList()))
-                .toList();
-        repository.save(new DashboardLayout(charts, groups));
+        load().withoutStatistic(id).ifPresent(repository::save);
     }
 }
